@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BWAPMS — Task Management</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:        #0f1f3d;
+      --navy-mid:    #162d52;
+      --green:       #1a7a4a;
+      --green-light: #22a05e;
+      --green-dim:   #e8f5ee;
+      --yellow:      #f59e0b;
+      --yellow-bg:   #fffbeb;
+      --red:         #dc2626;
+      --red-bg:      #fef2f2;
+      --blue:        #2563eb;
+      --blue-bg:     #eff6ff;
+      --purple:      #7c3aed;
+      --purple-bg:   #f5f3ff;
+      --cream:       #f5f3ee;
+      --white:       #ffffff;
+      --border:      #e2e8f0;
+      --text-main:   #1a2640;
+      --text-muted:  #64748b;
+      --text-light:  #94a3b8;
+      --sidebar-w:   220px;
+      --topbar-h:    60px;
+      --radius:      10px;
+      --shadow:      0 1px 4px rgba(0,0,0,0.08);
+    }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+    /* ── Sidebar ── */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--navy); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+    .sidebar-logo { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo-text { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    .sidebar-logo-sub  { font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 500; letter-spacing: 0.04em; margin-top: 1px; }
+    .sidebar-sys { padding: 8px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-sys-name { font-size: 12px; font-weight: 700; color: #fff; }
+    .sidebar-sys-sub  { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .tier-badge { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 2px 8px; border-radius: 10px; margin-top: 5px; letter-spacing: 0.05em; }
+    .tier-badge.t1 { background: var(--yellow); color: var(--navy); }
+    .tier-badge.t2 { background: var(--blue); color: #fff; }
+    .tier-badge.t3 { background: var(--green); color: #fff; }
+    .tier-badge.t4 { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+
+    .nav-section { padding: 14px 10px 4px; }
+    .nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-item.active { background: var(--green); color: #fff; }
+    .nav-item svg { flex-shrink: 0; opacity: 0.8; }
+    .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+
+    .sidebar-bottom { margin-top: auto; padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-tier { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); padding: 4px; transition: color 0.15s; border-radius: 4px; }
+    .btn-logout:hover { color: #fff; }
+
+    /* ── Topbar ── */
+    .topbar { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; z-index: 90; box-shadow: var(--shadow); }
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .topbar-date { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; }
+    .content { padding: 22px 24px 60px; }
+
+    /* ── Section label ── */
+    .section-title { font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 22px; }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Stat cards ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .stat-label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .stat-value { font-size: 26px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .stat-sub { font-size: 10.5px; color: var(--text-light); margin-top: 4px; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.red .stat-value { color: var(--red); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.purple .stat-value { color: var(--purple); }
+
+    /* ── Card ── */
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+    .card-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-secondary { background: var(--cream); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-sm { padding: 5px 10px; font-size: 11.5px; }
+    .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; }
+    .btn-blue:hover { background: #bfdbfe; }
+    .btn-yellow { background: var(--yellow-bg); color: #b45309; border: 1px solid #fde68a; }
+
+    /* ── Tabs ── */
+    .tab-bar { display: flex; gap: 4px; padding: 14px 18px 0; border-bottom: 1px solid var(--border); background: var(--white); }
+    .tab-btn { padding: 8px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; border-radius: 6px 6px 0 0; }
+    .tab-btn:hover { color: var(--navy); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: var(--green-dim); }
+    .tab-count { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; font-size: 9.5px; font-weight: 800; margin-left: 5px; }
+    .tab-btn.active .tab-count { background: var(--green); color: #fff; }
+    .tab-btn:not(.active) .tab-count { background: var(--border); color: var(--text-muted); }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .filter-select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; color: var(--text-main); background: var(--white); cursor: pointer; }
+    .filter-input { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; color: var(--text-main); background: var(--white); flex: 1; min-width: 160px; }
+    .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--green); }
+
+    /* ── Task list ── */
+    .task-list { }
+    .task-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+    .task-row:last-child { border-bottom: none; }
+    .task-row:hover { background: #f8fafc; }
+    .task-row.overdue-row { background: #fff8f8; border-left: 3px solid var(--red); }
+    .task-priority-bar { width: 4px; min-height: 36px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+    .p-critical { background: var(--red); }
+    .p-high     { background: var(--yellow); }
+    .p-medium   { background: var(--blue); }
+    .p-low      { background: var(--green); }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+    .task-name { font-size: 13.5px; font-weight: 700; color: var(--text-main); }
+    .task-id-label { font-size: 10px; color: var(--text-light); font-weight: 600; }
+    .task-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 3px; }
+    .task-meta-item { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+    .task-assignees { display: flex; align-items: center; gap: 5px; margin-top: 6px; }
+    .assignee-chip { font-size: 10.5px; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; color: var(--text-muted); font-weight: 600; }
+    .assignee-chip.primary { background: var(--green-dim); border-color: #a7d8ba; color: var(--green); }
+    .task-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .progress-wrap { width: 80px; }
+    .progress-label { font-size: 10px; color: var(--text-muted); text-align: right; margin-bottom: 3px; }
+    .progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .fill-green  { background: var(--green); }
+    .fill-yellow { background: var(--yellow); }
+    .fill-red    { background: var(--red); }
+    .penalty-badge { font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg); padding: 2px 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; }
+
+    /* ── Pills / status badges ── */
+    .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .pill.pending   { background: var(--cream); color: var(--text-muted); }
+    .pill.inprog    { background: var(--blue-bg); color: var(--blue); }
+    .pill.done      { background: var(--green-dim); color: var(--green); }
+    .pill.late      { background: var(--yellow-bg); color: #b45309; }
+    .pill.overdue   { background: var(--red-bg); color: var(--red); }
+    .pill.cancelled { background: var(--cream); color: var(--text-light); }
+    .pill.delegated { background: var(--purple-bg); color: var(--purple); }
+    .pill.critical  { background: var(--red-bg); color: var(--red); }
+    .pill.high      { background: var(--yellow-bg); color: #b45309; }
+    .pill.medium    { background: var(--blue-bg); color: var(--blue); }
+    .pill.low       { background: var(--green-dim); color: var(--green); }
+    .pill.impact    { background: var(--purple-bg); color: var(--purple); font-size: 10px; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-msg { font-size: 13.5px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+    .empty-sub { font-size: 12px; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,31,61,0.45); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: var(--white); border-radius: 14px; width: 100%; max-width: 620px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+    .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 15px; font-weight: 800; color: var(--navy); }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; line-height: 1; padding: 4px; border-radius: 6px; }
+    .modal-close:hover { background: var(--cream); color: var(--text-main); }
+    .modal-body { padding: 20px 22px; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* ── Form fields ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: block; }
+    .form-label.required::after { content: ' *'; color: var(--red); }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border-radius: 7px; border: 1px solid var(--border); font-size: 13px; color: var(--text-main); background: var(--white); font-family: inherit; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,74,0.1); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .form-section-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+    /* ── Task detail panel ── */
+    .detail-section { margin-bottom: 18px; }
+    .detail-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .detail-value { font-size: 13px; color: var(--text-main); font-weight: 500; line-height: 1.5; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .update-item { padding: 10px 14px; background: var(--cream); border-radius: 8px; border-left: 3px solid var(--border); margin-bottom: 8px; }
+    .update-item.latest { border-left-color: var(--green); }
+    .update-meta { font-size: 10.5px; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .update-text { font-size: 12.5px; color: var(--text-main); }
+
+    /* ── Penalty alert ── */
+    .penalty-alert { background: var(--red-bg); border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; }
+    .penalty-icon { font-size: 16px; margin-top: 1px; }
+    .penalty-msg { font-size: 12.5px; color: var(--red); font-weight: 600; }
+    .penalty-sub { font-size: 11px; color: #ef4444; margin-top: 3px; font-weight: 400; }
+
+    /* ── Sequential lock warning ── */
+    .lock-alert { background: var(--yellow-bg); border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; font-size: 12.5px; color: #92400e; font-weight: 600; }
+
+    /* ── Delegation panel ── */
+    .delegation-note { background: var(--purple-bg); border: 1px solid #c4b5fd; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--purple); margin-bottom: 14px; }
+
+    /* ── Timer ── */
+    .timer-display { font-size: 28px; font-weight: 800; color: var(--navy); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; text-align: center; margin: 10px 0; }
+    .timer-controls { display: flex; gap: 8px; justify-content: center; }
+
+    /* ── Tier-restricted UI ── */
+    [data-tier-hide] { }
+    .assign-section { }
+
+    /* ── Scrollable modal body ── */
+    .modal-body-scroll { max-height: 65vh; overflow-y: auto; padding-right: 4px; }
+
+    /* ── Two col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ── Info callout ── */
+    .info-callout { background: var(--blue-bg); border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #1e40af; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 8px; }
+
+    /* ── ★ Daily Report styles (Blueprint §9.7) ── */
+    .dr-status-bar { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 0; }
+    .dr-status-left { display: flex; align-items: center; gap: 12px; }
+    .dr-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dr-dot.submitted { background: var(--green); }
+    .dr-dot.missing   { background: var(--red); animation: pulse-red 1.5s infinite; }
+    .dr-dot.pending   { background: var(--yellow); }
+    @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .dr-status-text { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .dr-status-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .dr-penalty-warn { background: var(--red-bg); border: 1px solid #fecaca; border-radius: 7px; padding: 8px 14px; font-size: 12px; color: var(--red); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .dr-history-item { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+    .dr-history-item:last-child { border-bottom: none; }
+    .dr-history-date { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 80px; padding-top: 2px; }
+    .dr-history-body { flex: 1; }
+    .dr-history-title { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; }
+    .dr-history-meta  { font-size: 11.5px; color: var(--text-muted); }
+    .dr-field-group { margin-bottom: 18px; }
+    .dr-field-label { font-size: 11.5px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+    .dr-field-label .req-star { color: var(--red); }
+    .dr-field-label .opt-tag  { font-size: 9.5px; font-weight: 600; color: var(--text-light); background: var(--cream); padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+    .dr-char-count { font-size: 10.5px; color: var(--text-light); text-align: right; margin-top: 3px; }
+    .dr-section-divider { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted); margin: 20px 0 14px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .dr-preview-field { margin-bottom: 12px; }
+    .dr-preview-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 4px; }
+    .dr-preview-val   { font-size: 13px; color: var(--text-main); line-height: 1.5; background: var(--cream); border-radius: 6px; padding: 8px 12px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { transform: translateX(-220px); transition: transform 0.2s; }
+      .sidebar.open { transform: translateX(0); width: 220px; }
+      .topbar { left: 0; }
+      .main { margin-left: 0; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div>
+      <div class="sidebar-logo-text">BWAPMS</div>
+      <div class="sidebar-logo-sub">GramGP Programme</div>
+    </div>
+  </div>
+  <div class="sidebar-sys">
+    <div class="sidebar-sys-name" id="sidebarUserName">Loading…</div>
+    <div class="sidebar-sys-sub" id="sidebarDesig">—</div>
+    <span class="tier-badge" id="sidebarTierBadge">—</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a href="dashboard-tier1.html" class="nav-item" id="navDash">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="attendance.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+      Attendance
+    </a>
+    <a href="tasks.html" class="nav-item active">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Tasks
+      <span class="nav-badge" id="navTaskBadge" style="display:none">0</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">HR & Finance</div>
+    <a href="leave.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Leave
+    </a>
+    <a href="payroll.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Payroll
+    </a>
+    <a href="kpi.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      KPI
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Collaboration</div>
+    <a href="meetings.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Meetings
+    </a>
+    <a href="issues.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Issues
+    </a>
+    <a href="reports.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      Reports
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar" id="userAvatarSidebar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userNameSidebar">—</div>
+        <div class="user-tier" id="userTierSidebar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Logout">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">📋 Task Management</div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-date" id="topbarDate">—</span>
+    <button class="btn btn-primary btn-sm" id="btnCreateTask" onclick="openCreateModal()" style="display:none">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      New Task
+    </button>
+    <button class="btn btn-secondary btn-sm" id="btnDailyReport" onclick="openDailyReportModal()" style="display:none">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      <span id="btnDRLabel">Daily Report</span>
+      <span id="btnDRBadge" style="display:none;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:8px;margin-left:2px;">!</span>
+    </button>
+  </div>
+</header>
+
+<!-- ── Main Content ── -->
+<main class="main">
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="section-title">Overview — This Month</div>
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-label">Assigned</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub">Total tasks</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value" id="statDone">—</div>
+        <div class="stat-sub">On time</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="statInProg">—</div>
+        <div class="stat-sub">Active now</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" id="statOverdue">—</div>
+        <div class="stat-sub">Past deadline</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Task KPI</div>
+        <div class="stat-value" id="statKpi">—</div>
+        <div class="stat-sub">Performance score</div>
+      </div>
+    </div>
+
+    <!-- Active In-Progress lock banner (Tier 3/4) -->
+    <div class="lock-alert" id="lockAlertBanner" style="display:none; margin-top:16px;">
+      <span>⚠️</span>
+      <div>
+        <div>You have an active task in progress: <strong id="lockTaskName">—</strong></div>
+        <div style="font-size:11px; font-weight:400; margin-top:2px; color:#b45309;">Submit a progress update or complete this task before starting another.</div>
+      </div>
+    </div>
+
+    <!-- ★ Daily Report Status Bar (Blueprint §9.7) -->
+    <div class="section-title" id="drSectionTitle" style="margin-top:0; display:none">Daily Report — <span id="drTodayDate">—</span></div>
+    <div class="dr-status-bar" id="drStatusBar" style="display:none">
+      <div class="dr-status-left">
+        <div class="dr-dot" id="drDot"></div>
+        <div>
+          <div class="dr-status-text" id="drStatusText">—</div>
+          <div class="dr-status-sub" id="drStatusSub">—</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="dr-penalty-warn" id="drPenaltyWarn" style="display:none">
+          ⚠️ −5% Reporting Discipline KPI if not submitted today
+        </div>
+        <button class="btn btn-primary btn-sm" id="drActionBtn" onclick="openDailyReportModal()">Submit Today's Report</button>
+      </div>
+    </div>
+
+    <!-- Daily Report History (last 7 days) -->
+    <div id="drHistorySection" style="display:none; margin-top:14px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Recent Daily Reports</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadDRHistory()">Refresh</button>
+        </div>
+        <div id="drHistoryList">
+          <div class="empty-state" style="padding:28px"><div class="empty-icon">📝</div><div class="empty-msg">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task List Card -->
+    <div class="section-title" style="margin-top:20px;">Task List</div>
+    <div class="card">
+      <!-- Tabs -->
+      <div class="tab-bar" id="taskTabBar">
+        <button class="tab-btn active" onclick="switchTab('all')" data-tab="all">All <span class="tab-count" id="countAll">0</span></button>
+        <button class="tab-btn" onclick="switchTab('pending')" data-tab="pending">Pending <span class="tab-count" id="countPending">0</span></button>
+        <button class="tab-btn" onclick="switchTab('inprog')" data-tab="inprog">In Progress <span class="tab-count" id="countInProg">0</span></button>
+        <button class="tab-btn" onclick="switchTab('done')" data-tab="done">Completed <span class="tab-count" id="countDone">0</span></button>
+        <button class="tab-btn" onclick="switchTab('overdue')" data-tab="overdue">Overdue <span class="tab-count" id="countOverdue">0</span></button>
+        <!-- Tier 1/2 only -->
+        <button class="tab-btn tier12-only" onclick="switchTab('all_staff')" data-tab="all_staff" style="display:none">All Staff</button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <input class="filter-input" type="text" id="searchInput" placeholder="Search tasks…" oninput="applyFilters()"/>
+        <select class="filter-select" id="filterPriority" onchange="applyFilters()">
+          <option value="">All Priority</option>
+          <option>Critical</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+        <select class="filter-select" id="filterType" onchange="applyFilters()">
+          <option value="">All Types</option>
+          <option>Manual</option>
+          <option>Auto-Generated</option>
+          <option>Collaborative</option>
+          <option>Tier 3 Assigned</option>
+        </select>
+        <select class="filter-select tier12-only" id="filterEmployee" onchange="applyFilters()" style="display:none">
+          <option value="">All Employees</option>
+        </select>
+      </div>
+
+      <!-- Task rows -->
+      <div class="task-list" id="taskListContainer">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-msg">Loading tasks…</div>
+          <div class="empty-sub">Please wait</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════
+     MODAL 1 — Create / Edit Task
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalCreate">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="createModalTitle">Create New Task</div>
+      <button class="modal-close" onclick="closeModal('modalCreate')">✕</button>
+    </div>
+    <div class="modal-body modal-body-scroll">
+
+      <div class="form-group">
+        <label class="form-label required">Task Title</label>
+        <input class="form-input" id="cTitle" placeholder="Short descriptive title"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="cDesc" placeholder="Detailed task description, objectives, expected output…" rows="3"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Priority</label>
+          <select class="form-select" id="cPriority">
+            <option>Low</option>
+            <option selected>Medium</option>
+            <option>High</option>
+            <option>Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Task Type</label>
+          <select class="form-select" id="cType">
+            <option>Manual</option>
+            <option>Auto-Generated</option>
+            <option>Collaborative</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Due Date</label>
+          <input class="form-input" type="date" id="cDueDate"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hard Deadline</label>
+          <input class="form-input" type="datetime-local" id="cHardDeadline"/>
+          <div class="form-hint">For High/Critical tasks — penalty engine triggers after this</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">Performance Impact Score</label>
+          <select class="form-select" id="cImpact">
+            <option value="1">1 — Minimal</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5" selected>5 — Moderate</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10 — Critical Business Impact</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expected Completion (hours)</label>
+          <input class="form-input" type="number" id="cExpHours" placeholder="e.g. 4" min="0.5" step="0.5"/>
+          <div class="form-hint">Used for Work Efficiency KPI</div>
+        </div>
+      </div>
+
+      <div class="form-section-label">Assignment</div>
+
+      <div class="form-group">
+        <label class="form-label required">Primary Assignee</label>
+        <select class="form-select" id="cAssignee">
+          <option value="">— Select Employee —</option>
+        </select>
+        <div class="form-hint">Primary assignee receives 100% KPI impact</div>
+      </div>
+
+      <div class="form-group" id="supportingMembersGroup">
+        <label class="form-label">Supporting Members</label>
+        <select class="form-select" id="cSupporting" multiple size="3" style="height:auto">
+        </select>
+        <div class="form-hint">Hold Ctrl/Cmd to select multiple. Supporting members' contribution is tracked but no direct score deduction.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Evidence Required?</label>
+        <select class="form-select" id="cEvidence">
+          <option value="0">No</option>
+          <option value="1">Yes (mandatory for Critical tasks)</option>
+        </select>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalCreate')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        Save Task
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL 2 — Task Detail / Update
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDetail">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detailTitle">—</div>
+        <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;" id="detailBadges"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalDetail')">✕</button>
+    </div>
+    <div class="modal-body modal-body-scroll">
+
+      <!-- Penalty alert -->
+      <div class="penalty-alert" id="detailPenaltyAlert" style="display:none">
+        <span class="penalty-icon">⚠️</span>
+        <div>
+          <div class="penalty-msg">Automated Penalty Applied</div>
+          <div class="penalty-sub" id="detailPenaltyMsg">—</div>
+        </div>
+      </div>
+
+      <!-- Delegation note -->
+      <div class="delegation-note" id="detailDelegationNote" style="display:none">
+        🔄 <strong>Delegated Task</strong> — Originally assigned to <span id="delegationOriginal">—</span>. Delegated on <span id="delegationDate">—</span>.
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <div class="detail-label">Priority</div>
+          <div class="detail-value" id="detailPriority">—</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Type</div>
+          <div class="detail-value" id="detailType">—</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Due Date</div>
+          <div class="detail-value" id="detailDue">—</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Hard Deadline</div>
+          <div class="detail-value" id="detailHard">—</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Impact Score</div>
+          <div class="detail-value" id="detailImpact">—</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Total Penalty</div>
+          <div class="detail-value" id="detailPenaltyTotal">—</div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Description</div>
+        <div class="detail-value" id="detailDesc">—</div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-label">Assignees</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;" id="detailAssignees"></div>
+      </div>
+
+      <!-- Task Timer (v1.3 §2.6) -->
+      <div class="detail-section" id="timerSection" style="display:none">
+        <div class="detail-label">Task Timer</div>
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="timer-controls">
+          <button class="btn btn-primary btn-sm" id="btnTimerStart" onclick="startTimer()">▶ Start</button>
+          <button class="btn btn-secondary btn-sm" id="btnTimerStop" onclick="stopTimer()" style="display:none">⏹ Stop & Log</button>
+        </div>
+        <div style="font-size:10.5px; color:var(--text-muted); text-align:center; margin-top:6px;" id="timerStatus">Timer not started</div>
+      </div>
+
+      <!-- Progress Updates history -->
+      <div class="detail-section">
+        <div class="detail-label">Progress Updates</div>
+        <div id="detailUpdates">
+          <div style="font-size:12px; color:var(--text-muted);">No updates yet.</div>
+        </div>
+      </div>
+
+      <!-- Submit update (for assignee) -->
+      <div id="updateSubmitSection" style="display:none">
+        <div class="form-section-label">Submit Progress Update</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label required">New Status</label>
+            <select class="form-select" id="uStatus">
+              <option>In Progress</option>
+              <option>Completed On Time</option>
+              <option>Completed Late</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Progress %</label>
+            <input class="form-input" type="number" id="uProgress" min="0" max="100" value="50" placeholder="0–100"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">Work Completed</label>
+          <textarea class="form-textarea" id="uWorkDone" placeholder="Describe what was accomplished…" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Challenges Faced</label>
+          <textarea class="form-textarea" id="uChallenges" placeholder="Any blockers or issues encountered…" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Support Required?</label>
+          <input class="form-input" id="uSupport" placeholder="Optional — describe what help is needed"/>
+        </div>
+
+        <div class="form-group" id="evidenceGroup" style="display:none">
+          <label class="form-label required">Evidence URL / Document Link</label>
+          <input class="form-input" id="uEvidence" placeholder="https://drive.google.com/…"/>
+          <div class="form-hint">Mandatory for Critical tasks on completion</div>
+        </div>
+      </div>
+
+      <!-- Tier 2/3 actions: Delegate, Edit deadline -->
+      <div id="adminActionsSection" style="display:none">
+        <div class="form-section-label">Admin Actions</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-yellow btn-sm" onclick="openDelegateModal()">🔄 Delegate Task</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEditDeadline()">📅 Adjust Deadline</button>
+          <button class="btn btn-danger btn-sm" id="btnCancelTask" onclick="cancelTask()">Cancel Task</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDetail')">Close</button>
+      <button class="btn btn-primary" id="btnSubmitUpdate" onclick="submitUpdate()" style="display:none">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Submit Update
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL 3 — Delegate Task
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDelegate">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">Delegate Task</div>
+      <button class="modal-close" onclick="closeModal('modalDelegate')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-callout">
+        ℹ️ The original assignment record is retained in full for audit. The delegated task will be marked "Delegated" with original assignee reference.
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Delegate To</label>
+        <select class="form-select" id="delegateTo">
+          <option value="">— Select Employee —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Reason for Delegation</label>
+        <textarea class="form-textarea" id="delegateReason" placeholder="e.g. Original assignee on approved leave…" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDelegate')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmDelegate()">Confirm Delegation</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL 4 — Adjust Deadline
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDeadline">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Adjust Task Deadline</div>
+      <button class="modal-close" onclick="closeModal('modalDeadline')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-callout">
+        ℹ️ Tier 3 may adjust deadlines for Tier 4 tasks only. Tier 2 may adjust for Tiers 3 &amp; 4. All changes are audit-logged.
+      </div>
+      <div class="form-group">
+        <label class="form-label required">New Due Date</label>
+        <input class="form-input" type="date" id="newDueDate"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Hard Deadline</label>
+        <input class="form-input" type="datetime-local" id="newHardDeadline"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Reason</label>
+        <textarea class="form-textarea" id="deadlineReason" placeholder="Documented justification for deadline adjustment…" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDeadline')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmDeadlineAdjust()">Save Adjustment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ★ MODAL — Daily Report (Blueprint §9.7)
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDailyReport">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📝 Daily Report</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:3px;" id="drModalDateLabel">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalDailyReport')">✕</button>
+    </div>
+    <div class="modal-body modal-body-scroll">
+      <div class="info-callout" style="margin-bottom:18px;">
+        <span>📌</span>
+        <div>
+          <strong>Mandatory Daily Submission (Blueprint §9.7)</strong><br>
+          Missing reports automatically deduct <strong>−5% Reporting Discipline KPI</strong> per day. Incomplete reports are rejected and counted as missing until resubmission.
+        </div>
+      </div>
+
+      <div class="dr-section-divider" style="margin-top:0;padding-top:0;border-top:none;">Task Summary</div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Completed Tasks Today <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drCompleted" rows="3"
+          placeholder="List tasks completed today — include task name, outcome, and evidence URL if applicable…"
+          oninput="drCount('drCompleted','drCountCompleted',500)"></textarea>
+        <div class="dr-char-count"><span id="drCountCompleted">0</span>/500</div>
+      </div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Pending / Carried Forward Tasks <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drPending" rows="3"
+          placeholder="Tasks not yet completed — state current status and reason for carry-forward…"
+          oninput="drCount('drPending','drCountPending',500)"></textarea>
+        <div class="dr-char-count"><span id="drCountPending">0</span>/500</div>
+      </div>
+
+      <div class="dr-section-divider">Achievements & Challenges</div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Key Achievements <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drAchievements" rows="2"
+          placeholder="Notable accomplishments, milestones reached, or positive outcomes today…"
+          oninput="drCount('drAchievements','drCountAchv',300)"></textarea>
+        <div class="dr-char-count"><span id="drCountAchv">0</span>/300</div>
+      </div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Problems Faced <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drProblems" rows="2"
+          placeholder="Challenges encountered — specific blockers, delays, or issues requiring attention…"
+          oninput="drCount('drProblems','drCountProb',300)"></textarea>
+        <div class="dr-char-count"><span id="drCountProb">0</span>/300</div>
+      </div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Support Needed <span class="opt-tag">Optional</span></div>
+        <textarea class="form-textarea" id="drSupport" rows="2"
+          placeholder="Resources, decisions, or help required from management or colleagues…"
+          oninput="drCount('drSupport','drCountSupp',300)"></textarea>
+        <div class="dr-char-count"><span id="drCountSupp">0</span>/300</div>
+      </div>
+
+      <div class="dr-section-divider">Tomorrow's Plan</div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Tomorrow's Plan <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drTomorrow" rows="3"
+          placeholder="Tasks, meetings, and field activities planned for tomorrow — be specific…"
+          oninput="drCount('drTomorrow','drCountTom',500)"></textarea>
+        <div class="dr-char-count"><span id="drCountTom">0</span>/500</div>
+      </div>
+
+      <div class="dr-field-group">
+        <div class="dr-field-label">Priority Activities for Tomorrow <span class="req-star">*</span></div>
+        <textarea class="form-textarea" id="drPriorities" rows="2"
+          placeholder="Top 3 priority items for tomorrow in order of importance…"
+          oninput="drCount('drPriorities','drCountPri',300)"></textarea>
+        <div class="dr-char-count"><span id="drCountPri">0</span>/300</div>
+      </div>
+
+      <div id="drValidationMsg" style="display:none; background:var(--red-bg); border:1px solid #fecaca; border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--red); font-weight:600; margin-top:4px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDailyReport')">Cancel</button>
+      <button class="btn btn-secondary btn-sm" onclick="previewDailyReport()" style="margin-right:auto">👁 Preview</button>
+      <button class="btn btn-primary" onclick="submitDailyReport()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Submit Report
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ★ MODAL — Daily Report Preview -->
+<div class="modal-overlay hidden" id="modalDRPreview">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">👁 Report Preview</div>
+      <button class="modal-close" onclick="closeModal('modalDRPreview')">✕</button>
+    </div>
+    <div class="modal-body modal-body-scroll" id="drPreviewContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDRPreview')">← Edit</button>
+      <button class="btn btn-primary" onclick="closeModal('modalDRPreview'); submitDailyReport()">Confirm & Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TOAST
+═══════════════════════════════════════════ -->
+<div id="toast" style="
+  position:fixed; bottom:24px; right:24px; z-index:999;
+  background:var(--navy); color:#fff; padding:12px 18px;
+  border-radius:10px; font-size:13px; font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,0.2);
+  transform:translateY(80px); opacity:0;
+  transition:all 0.25s ease;
+  pointer-events:none; max-width:320px;
+"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══════════════════════════════════════════
+   BWAPMS — tasks.html
+   Blueprint v1.2 §9 + v1.3 Phase 2–4
+   PATCH: Daily Report §9.7
+═══════════════════════════════════════════ */
+
+// ── Supabase config ──
+const SUPABASE_URL = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+
+// Real Supabase auth client — used ONLY for login-session checks and to read
+// the user's JWT. The hand-rolled `db` REST helper below still does the
+// actual table reads/writes, but now sends the logged-in user's access
+// token instead of the bare anon key, so RLS policies (auth.uid()) work
+// and this page sees the real employee's data instead of demo data.
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+let ACCESS_TOKEN = SUPABASE_KEY; // falls back to anon key until bootstrapSession() runs
+
+const db = {
+  async query(table, params = {}) {
+    let url = `${SUPABASE_URL}/rest/v1/${table}?`;
+    const headers = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${ACCESS_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
+    if (params.select)  url += `select=${params.select}&`;
+    if (params.filter)  url += `${params.filter}&`;
+    if (params.order)   url += `order=${params.order}&`;
+    if (params.limit)   url += `limit=${params.limit}&`;
+    const r = await fetch(url, { headers });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async insert(table, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async update(table, id, idField, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${idField}=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+};
+
+/* ── Session (real Supabase auth — no more demo fallback) ──
+ * bootstrapSession() runs before init() and:
+ *  1. Confirms a real Supabase login session exists (redirects to
+ *     index.html if not — same as every other page in the app).
+ *  2. Stores the user's access token so `db` sends authenticated requests.
+ *  3. Loads the employee's real row from employee_master and builds SESSION.
+ */
+let SESSION = null;
+
+async function bootstrapSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return false; }
+
+  ACCESS_TOKEN = session.access_token;
+
+  const { data: myRow, error } = await sb
+    .from('employee_master')
+    .select('employee_id, full_name, designation, tier')
+    .eq('auth_user_id', session.user.id)
+    .single();
+
+  if (error || !myRow) {
+    await sb.auth.signOut();
+    alert('আপনার অ্যাকাউন্ট সিস্টেমে নেই বা নিষ্ক্রিয়। Administrator-এর সাথে যোগাযোগ করুন।');
+    window.location.href = 'index.html';
+    return false;
+  }
+
+  const initials = (myRow.full_name || '').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || 'U';
+  SESSION = {
+    employee_id: myRow.employee_id,
+    name: myRow.full_name,
+    designation: myRow.designation,
+    tier: myRow.tier,
+    initials,
+  };
+  sessionStorage.setItem('bwapms_session', JSON.stringify(SESSION));
+  return true;
+}
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ * (REST helper version — no supabase-js auth client on this page.)
+ */
+async function registerSession() {
+  if (!SESSION || !SESSION.employee_id || SESSION.employee_id === 'demo-001') return;
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/user_sessions?on_conflict=employee_id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        employee_id: SESSION.employee_id,
+        session_token: mySessionToken,
+        last_seen_at: new Date().toISOString(),
+      })
+    });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const rows = await db.query('user_sessions', {
+        select: 'session_token',
+        filter: `employee_id=eq.${SESSION.employee_id}`,
+      });
+      const row = rows && rows[0];
+      if (row && row.session_token && row.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (row) {
+        // heartbeat — keep last_seen_at fresh
+        await db.update('user_sessions', SESSION.employee_id, 'employee_id', { last_seen_at: new Date().toISOString() }).catch(() => {});
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  sessionStorage.removeItem('bwapms_session');
+  localStorage.removeItem('bwapms_device_token');
+  try { await sb.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+
+/* ── State ── */
+let ALL_TASKS = [];
+let EMPLOYEES = [];
+let CURRENT_TASK = null;
+let ACTIVE_TAB = 'all';
+let timerInterval = null;
+let timerStart = null;
+let timerElapsed = 0;
+
+/* ── Helpers ── */
+const $ = id => document.getElementById(id);
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+const fmtDT   = d => d ? new Date(d).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+const isOverdue = task => task.hard_deadline && new Date(task.hard_deadline) < new Date() && !['Completed_On_Time','Completed_Late','Cancelled'].includes(task.status);
+const priorityOrder = { Critical:0, High:1, Medium:2, Low:3 };
+
+function showToast(msg, ok = true) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = ok ? 'var(--navy)' : 'var(--red)';
+  t.style.transform = 'translateY(0)'; t.style.opacity = '1';
+  setTimeout(() => { t.style.transform = 'translateY(80px)'; t.style.opacity = '0'; }, 3000);
+}
+
+/* ── Init ── */
+async function init() {
+  // Date in topbar
+  $('topbarDate').textContent = new Date().toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  startIdleWatcher();
+  await registerSession();
+
+  // Sidebar user info
+  $('sidebarUserName').textContent = SESSION.name;
+  $('sidebarDesig').textContent    = SESSION.designation;
+  $('userNameSidebar').textContent = SESSION.name;
+  $('userTierSidebar').textContent = 'Tier ' + SESSION.tier;
+  $('userAvatarSidebar').textContent = SESSION.initials || SESSION.name[0];
+
+  const tierLabels = { 1:'TIER 1 — SUPER ADMIN', 2:'TIER 2 — COUNTRY HEAD', 3:'TIER 3 — SENIOR STAFF', 4:'TIER 4 — STAFF' };
+  const tierClasses = { 1:'t1', 2:'t2', 3:'t3', 4:'t4' };
+  $('sidebarTierBadge').textContent = tierLabels[SESSION.tier] || '';
+  $('sidebarTierBadge').className   = 'tier-badge ' + (tierClasses[SESSION.tier] || '');
+
+  // Dashboard link per tier
+  $('navDash').href = `dashboard-tier${SESSION.tier}.html`;
+
+  // Show "New Task" button for Tier 1, 2, 3
+  if (SESSION.tier <= 3) $('btnCreateTask').style.display = 'inline-flex';
+
+  // Show Daily Report button for all Tiers 2–4 (§9.7: mandatory for all)
+  if (SESSION.tier >= 2) {
+    $('btnDailyReport').style.display = 'inline-flex';
+    $('drSectionTitle').style.display = '';
+    $('drStatusBar').style.display    = 'flex';
+    $('drHistorySection').style.display = 'block';
+  }
+
+  // Show tier1/2-only elements
+  if (SESSION.tier <= 2) {
+    document.querySelectorAll('.tier12-only').forEach(el => el.style.display = '');
+    $('taskTabBar').querySelector('[data-tab="all_staff"]').style.display = '';
+  }
+
+  await loadEmployees();
+  await loadTasks();
+  updateStats();
+  checkActiveLock();
+  if (SESSION.tier >= 2) { await initDailyReport(); }
+}
+
+/* ── Load employees ── */
+async function loadEmployees() {
+  try {
+    EMPLOYEES = await db.query('employee_master', {
+      select: 'employee_id,full_name,tier,designation',
+      filter: 'is_active=eq.true&tier=neq.1'
+    });
+  } catch(e) {
+    // Demo employees if DB not connected
+    EMPLOYEES = [
+      { employee_id:'emp-001', full_name:'Kamrul Hasan', tier:2, designation:'Country Head' },
+      { employee_id:'emp-002', full_name:'Nasrin Akter', tier:3, designation:'Sr. Programme Officer' },
+      { employee_id:'emp-003', full_name:'Rafiqul Islam', tier:3, designation:'Sr. Field Officer' },
+      { employee_id:'emp-004', full_name:'Mimi Begum',   tier:4, designation:'Programme Officer' },
+      { employee_id:'emp-005', full_name:'Jahangir Ali',  tier:4, designation:'Data Entry Officer' },
+      { employee_id:'emp-006', full_name:'Salma Khatun', tier:4, designation:'Field Officer' },
+    ];
+  }
+
+  // Populate assignee dropdowns
+  populateEmployeeDropdowns();
+}
+
+function populateEmployeeDropdowns() {
+  const assignable = EMPLOYEES.filter(e => {
+    if (SESSION.tier === 1) return true;
+    if (SESSION.tier === 2) return e.tier >= 2;
+    if (SESSION.tier === 3) return e.tier === 4;
+    return false;
+  });
+
+  [$('cAssignee'), $('cSupporting'), $('delegateTo')].forEach(sel => {
+    if (!sel) return;
+    sel.innerHTML = sel.id === 'cAssignee' ? '<option value="">— Select Employee —</option>' : '';
+    assignable.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = `${e.full_name} (T${e.tier} — ${e.designation})`;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Employee filter for tier1/2
+  const ef = $('filterEmployee');
+  if (ef) {
+    ef.innerHTML = '<option value="">All Employees</option>';
+    EMPLOYEES.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = e.full_name;
+      ef.appendChild(opt);
+    });
+  }
+}
+
+/* ── Load tasks ── */
+async function loadTasks() {
+  try {
+    let filter = 'is_active=eq.true';
+    if (SESSION.tier >= 3) filter += `&primary_assignee=eq.${SESSION.employee_id}`;
+    ALL_TASKS = await db.query('task_master', {
+      select: '*',
+      filter,
+      order: 'created_at.desc'
+    });
+  } catch(e) {
+    // Demo tasks
+    const today = new Date();
+    const yesterday = new Date(today - 86400000);
+    const tomorrow  = new Date(today.getTime() + 86400000);
+    const nextWeek  = new Date(today.getTime() + 7*86400000);
+    ALL_TASKS = [
+      { task_id:'t-001', title:'GramGP Q2 Progress Report', description:'Compile and submit Q2 progress report to the programme management team.', task_type:'Manual', priority:'Critical', status:'In_Progress', due_date:tomorrow.toISOString(), hard_deadline:tomorrow.toISOString(), performance_impact_score:9, primary_assignee:'emp-004', supporting_members:['emp-005'], delay_penalty_applied:false, total_penalty_percent:0, assigned_by:'emp-001', assigned_tier:2, progress_percentage:40, is_active:true, created_at: new Date().toISOString() },
+      { task_id:'t-002', title:'Upazila Health Office Meeting Notes', description:'Prepare and circulate meeting notes from the Upazila coordination meeting.', task_type:'Manual', priority:'High', status:'Pending', due_date:nextWeek.toISOString(), hard_deadline:null, performance_impact_score:6, primary_assignee:'emp-005', supporting_members:[], delay_penalty_applied:false, total_penalty_percent:0, assigned_by:'emp-002', assigned_tier:3, progress_percentage:0, is_active:true, created_at: new Date().toISOString() },
+      { task_id:'t-003', title:'Patient Data Entry — Clinic A (Rows 1–200)', description:'Enter patient registration data from Clinic A into EMR system.', task_type:'Manual', priority:'High', status:'Overdue', due_date:yesterday.toISOString(), hard_deadline:yesterday.toISOString(), performance_impact_score:8, primary_assignee:'emp-005', supporting_members:[], delay_penalty_applied:true, total_penalty_percent:4, assigned_by:'emp-002', assigned_tier:3, progress_percentage:70, is_active:true, created_at: new Date(today-3*86400000).toISOString() },
+      { task_id:'t-004', title:'Monthly Attendance Verification', description:'Verify and cross-check attendance records for the current month.', task_type:'Auto-Generated', priority:'Medium', status:'Completed On Time', due_date:yesterday.toISOString(), hard_deadline:null, performance_impact_score:5, primary_assignee:'emp-002', supporting_members:[], delay_penalty_applied:false, total_penalty_percent:0, assigned_by:'emp-001', assigned_tier:2, progress_percentage:100, is_active:true, created_at: new Date(today-10*86400000).toISOString() },
+      { task_id:'t-005', title:'Field Visit Report — Shahporan Upazila', description:'Submit official field visit report with GPS verification after Upazila office visit.', task_type:'Manual', priority:'Medium', status:'Pending', due_date:nextWeek.toISOString(), hard_deadline:null, performance_impact_score:5, primary_assignee:'emp-006', supporting_members:[], delay_penalty_applied:false, total_penalty_percent:0, assigned_by:'emp-002', assigned_tier:3, progress_percentage:0, is_active:true, created_at: new Date().toISOString() },
+      { task_id:'t-006', title:'Quarterly KPI Data Compilation', description:'Compile all KPI component data for Q2 quarterly review.', task_type:'Collaborative', priority:'Critical', status:'In_Progress', due_date:nextWeek.toISOString(), hard_deadline:nextWeek.toISOString(), performance_impact_score:10, primary_assignee:'emp-002', supporting_members:['emp-003','emp-004'], delay_penalty_applied:false, total_penalty_percent:0, assigned_by:'emp-001', assigned_tier:1, progress_percentage:25, is_active:true, created_at: new Date().toISOString() },
+    ];
+  }
+  renderTasks();
+}
+
+/* ── Render tasks ── */
+function renderTasks() {
+  updateTabCounts();
+  applyFilters();
+}
+
+function updateTabCounts() {
+  const myTasks   = visibleTasks(ALL_TASKS);
+  $('countAll').textContent     = myTasks.length;
+  $('countPending').textContent = myTasks.filter(t=>t.status==='Pending').length;
+  $('countInProg').textContent  = myTasks.filter(t=>t.status==='In_Progress'||t.status==='In Progress').length;
+  $('countDone').textContent    = myTasks.filter(t=>t.status.startsWith('Completed')).length;
+  $('countOverdue').textContent = myTasks.filter(t=>t.status==='Overdue'||isOverdue(t)).length;
+
+  // nav badge — pending + overdue for assignee
+  const urgent = myTasks.filter(t=>t.status==='Pending'||t.status==='Overdue'||isOverdue(t)).length;
+  const nb = $('navTaskBadge');
+  if (urgent > 0) { nb.textContent = urgent; nb.style.display = ''; }
+  else nb.style.display = 'none';
+}
+
+function visibleTasks(tasks) {
+  if (SESSION.tier <= 2) return tasks; // admin sees all
+  return tasks.filter(t =>
+    t.primary_assignee === SESSION.employee_id ||
+    (Array.isArray(t.supporting_members) && t.supporting_members.includes(SESSION.employee_id))
+  );
+}
+
+function applyFilters() {
+  let tasks = visibleTasks(ALL_TASKS);
+
+  // Tab filter
+  if (ACTIVE_TAB === 'pending')  tasks = tasks.filter(t=>t.status==='Pending');
+  if (ACTIVE_TAB === 'inprog')   tasks = tasks.filter(t=>t.status==='In_Progress'||t.status==='In Progress');
+  if (ACTIVE_TAB === 'done')     tasks = tasks.filter(t=>t.status.startsWith('Completed'));
+  if (ACTIVE_TAB === 'overdue')  tasks = tasks.filter(t=>t.status==='Overdue'||isOverdue(t));
+
+  // Search
+  const q = $('searchInput').value.toLowerCase();
+  if (q) tasks = tasks.filter(t=>t.title.toLowerCase().includes(q)||(t.description||'').toLowerCase().includes(q));
+
+  // Priority filter
+  const fp = $('filterPriority').value;
+  if (fp) tasks = tasks.filter(t=>t.priority===fp);
+
+  // Type filter
+  const ft = $('filterType').value;
+  if (ft) {
+    const map = { 'Manual':'Manual', 'Auto-Generated':'Auto-Generated', 'Collaborative':'Collaborative', 'Tier 3 Assigned':'Tier 3 Assigned' };
+    tasks = tasks.filter(t=>t.task_type===map[ft]||t.task_type===ft);
+  }
+
+  // Employee filter (Tier 1/2)
+  const fe = $('filterEmployee') ? $('filterEmployee').value : '';
+  if (fe) tasks = tasks.filter(t=>t.primary_assignee===fe);
+
+  // Sort: priority first, then by due date
+  tasks.sort((a,b) => {
+    const pd = (priorityOrder[a.priority]||9) - (priorityOrder[b.priority]||9);
+    if (pd !== 0) return pd;
+    return new Date(a.due_date||0) - new Date(b.due_date||0);
+  });
+
+  displayTasks(tasks);
+  updateStats();
+}
+
+function displayTasks(tasks) {
+  const cont = $('taskListContainer');
+  if (!tasks.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-msg">No tasks found</div><div class="empty-sub">Try adjusting your filters or create a new task.</div></div>`;
+    return;
+  }
+
+  cont.innerHTML = tasks.map(t => {
+    const od = isOverdue(t);
+    const assigneeName = getEmployeeName(t.primary_assignee);
+    const supporting   = (t.supporting_members||[]).map(id=>getEmployeeName(id));
+    const progressPct  = t.progress_percentage || 0;
+    const fillClass    = progressPct >= 100 ? 'fill-green' : progressPct >= 50 ? 'fill-yellow' : 'fill-red';
+    const statusStr    = normalizeStatus(t.status);
+    return `
+    <div class="task-row ${od?'overdue-row':''}" onclick="openDetail('${t.task_id}')">
+      <div class="task-priority-bar p-${(t.priority||'low').toLowerCase()}"></div>
+      <div class="task-body">
+        <div class="task-title-row">
+          <span class="task-name">${escHtml(t.title)}</span>
+          <span class="pill ${statusClass(statusStr)}">${statusStr}</span>
+          ${t.delay_penalty_applied ? `<span class="penalty-badge">⚠ −${t.total_penalty_percent||0}%</span>` : ''}
+        </div>
+        <div class="task-meta">
+          <span class="task-meta-item">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Due ${fmtDate(t.due_date)}
+          </span>
+          <span class="task-meta-item">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Impact: ${t.performance_impact_score||'—'}/10
+          </span>
+          <span class="task-meta-item"><span class="pill ${t.priority?t.priority.toLowerCase():''}" style="font-size:10px;padding:2px 7px">${t.priority||'—'}</span></span>
+          <span class="task-meta-item" style="font-size:10.5px; color:var(--text-light)">${t.task_type||'—'}</span>
+        </div>
+        <div class="task-assignees">
+          <span class="assignee-chip primary">👤 ${escHtml(assigneeName)}</span>
+          ${supporting.map(n=>`<span class="assignee-chip">${escHtml(n)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="task-right">
+        <div class="progress-wrap">
+          <div class="progress-label">${progressPct}%</div>
+          <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${progressPct}%"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  const my = visibleTasks(ALL_TASKS);
+  $('statTotal').textContent   = my.length;
+  $('statDone').textContent    = my.filter(t=>t.status.startsWith('Completed')).length;
+  $('statInProg').textContent  = my.filter(t=>t.status==='In_Progress'||t.status==='In Progress').length;
+  $('statOverdue').textContent = my.filter(t=>t.status==='Overdue'||isOverdue(t)).length;
+
+  // Simple KPI estimate
+  const total = my.length;
+  const done  = my.filter(t=>t.status==='Completed On Time'||t.status==='Completed_On_Time').length;
+  const kpi   = total > 0 ? Math.round((done/total)*100) : 100;
+  $('statKpi').textContent = kpi + '%';
+}
+
+function checkActiveLock() {
+  // Sequential task lock: warn if there's already an in-progress task
+  const active = visibleTasks(ALL_TASKS).find(t => (t.status==='In_Progress'||t.status==='In Progress') && t.primary_assignee===SESSION.employee_id);
+  if (active && SESSION.tier >= 3) {
+    $('lockAlertBanner').style.display = 'flex';
+    $('lockTaskName').textContent = active.title;
+  }
+}
+
+/* ── Tab switch ── */
+function switchTab(tab) {
+  ACTIVE_TAB = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  applyFilters();
+}
+
+/* ── Task detail modal ── */
+function openDetail(taskId) {
+  CURRENT_TASK = ALL_TASKS.find(t => t.task_id === taskId);
+  if (!CURRENT_TASK) return;
+  const t = CURRENT_TASK;
+  const od = isOverdue(t);
+  const statusStr = normalizeStatus(t.status);
+
+  $('detailTitle').textContent = t.title;
+  $('detailBadges').innerHTML = `
+    <span class="pill ${statusClass(statusStr)}">${statusStr}</span>
+    <span class="pill ${t.priority?t.priority.toLowerCase():''}">${t.priority||'—'}</span>
+    <span class="pill impact">Impact: ${t.performance_impact_score||'—'}/10</span>
+    ${t.task_type ? `<span class="pill medium" style="background:var(--cream);color:var(--text-muted)">${t.task_type}</span>` : ''}
+    ${t.delegated_from ? `<span class="pill delegated">Delegated</span>` : ''}
+  `;
+
+  $('detailPriority').textContent = t.priority || '—';
+  $('detailType').textContent     = t.task_type || '—';
+  $('detailDue').textContent      = fmtDate(t.due_date);
+  $('detailHard').textContent     = t.hard_deadline ? fmtDT(t.hard_deadline) : 'Not set';
+  $('detailImpact').textContent   = `${t.performance_impact_score||'—'} / 10`;
+  $('detailPenaltyTotal').innerHTML= t.total_penalty_percent > 0
+    ? `<span style="color:var(--red);font-weight:700">−${t.total_penalty_percent}%</span> (automated)`
+    : '<span style="color:var(--green)">None</span>';
+  $('detailDesc').textContent = t.description || '(No description)';
+
+  // Assignees
+  const assignees = $('detailAssignees');
+  assignees.innerHTML = `<span class="assignee-chip primary">👤 ${escHtml(getEmployeeName(t.primary_assignee))} (Primary)</span>`;
+  (t.supporting_members||[]).forEach(id => {
+    assignees.innerHTML += `<span class="assignee-chip">${escHtml(getEmployeeName(id))} (Support)</span>`;
+  });
+
+  // Penalty alert
+  if (t.delay_penalty_applied && t.total_penalty_percent > 0) {
+    $('detailPenaltyAlert').style.display = 'flex';
+    $('detailPenaltyMsg').textContent = `−${t.total_penalty_percent}% deducted from Task Performance KPI (${t.total_penalty_percent/2} × 24-hr windows past hard deadline). Automated — no override permitted except Tier 1.`;
+  } else {
+    $('detailPenaltyAlert').style.display = 'none';
+  }
+
+  // Delegation
+  if (t.delegated_from) {
+    $('detailDelegationNote').style.display = 'block';
+    $('delegationOriginal').textContent = getEmployeeName(t.delegated_from);
+    $('delegationDate').textContent     = fmtDate(t.delegated_at || t.created_at);
+  } else {
+    $('detailDelegationNote').style.display = 'none';
+  }
+
+  // Timer section (show for assignee)
+  const isAssignee = t.primary_assignee === SESSION.employee_id;
+  $('timerSection').style.display = isAssignee ? 'block' : 'none';
+  if (isAssignee) resetTimerUI();
+
+  // Progress updates (demo)
+  const updates = $('detailUpdates');
+  if (t.progress_percentage > 0) {
+    updates.innerHTML = `
+      <div class="update-item latest">
+        <div class="update-meta"><span>Progress Update</span><span>${fmtDT(t.created_at)}</span></div>
+        <div class="update-text">Progress: ${t.progress_percentage||0}% — Task is actively being worked on.</div>
+      </div>`;
+  } else {
+    updates.innerHTML = `<div style="font-size:12px;color:var(--text-muted)">No updates yet. Submit the first update below.</div>`;
+  }
+
+  // Show update form for assignees on active tasks
+  const canUpdate = isAssignee && !['Cancelled','Completed On Time','Completed Late','Completed_On_Time','Completed_Late'].includes(t.status);
+  $('updateSubmitSection').style.display = canUpdate ? 'block' : 'none';
+  $('btnSubmitUpdate').style.display     = canUpdate ? 'inline-flex' : 'none';
+
+  // Evidence required for critical
+  $('evidenceGroup').style.display = (t.priority === 'Critical') ? 'block' : 'none';
+
+  // Admin actions (Tier 1/2, or Tier 3 for Tier 4 tasks)
+  const canAdmin = SESSION.tier <= 2 || (SESSION.tier === 3 && (t.assigned_tier||5) >= 3);
+  $('adminActionsSection').style.display = canAdmin ? 'block' : 'none';
+
+  openModal('modalDetail');
+}
+
+/* ── Create task modal ── */
+function openCreateModal(prefillTask = null) {
+  $('createModalTitle').textContent = prefillTask ? 'Edit Task' : 'Create New Task';
+  if (!prefillTask) {
+    $('cTitle').value = ''; $('cDesc').value = ''; $('cPriority').value = 'Medium';
+    $('cType').value = 'Manual'; $('cDueDate').value = ''; $('cHardDeadline').value = '';
+    $('cImpact').value = '5'; $('cExpHours').value = ''; $('cAssignee').value = '';
+  }
+  openModal('modalCreate');
+}
+
+async function saveTask() {
+  const title    = $('cTitle').value.trim();
+  const assignee = $('cAssignee').value;
+  const dueDate  = $('cDueDate').value;
+  if (!title || !assignee || !dueDate) {
+    showToast('Please fill in all required fields.', false); return;
+  }
+
+  // Tier delegation check (blueprint §2.2)
+  const assigneeTier = (EMPLOYEES.find(e=>e.employee_id===assignee)||{}).tier || 5;
+  if (SESSION.tier === 3 && assigneeTier !== 4) {
+    showToast('Tier 3 can only assign tasks to Tier 4 staff.', false); return;
+  }
+  if (SESSION.tier === 4) {
+    showToast('You do not have permission to assign tasks.', false); return;
+  }
+
+  const supporting = Array.from($('cSupporting').selectedOptions).map(o=>o.value);
+
+  const newTask = {
+    title,
+    description:         $('cDesc').value.trim(),
+    priority:            $('cPriority').value,
+    task_type:           $('cType').value,
+    due_date:            dueDate,
+    hard_deadline:       $('cHardDeadline').value || null,
+    performance_impact_score: parseInt($('cImpact').value),
+    expected_completion_hours: parseFloat($('cExpHours').value) || null,
+    primary_assignee:    assignee,
+    supporting_members:  supporting,
+    status:              'Pending',
+    assigned_by:         SESSION.employee_id,
+    assigned_tier:       SESSION.tier,
+    delay_penalty_applied: false,
+    total_penalty_percent: 0,
+    progress_percentage: 0,
+    is_active:           true
+  };
+
+  try {
+    const res = await db.insert('task_master', newTask);
+    ALL_TASKS.unshift(res[0] || { ...newTask, task_id: 't-demo-' + Date.now() });
+    showToast('✅ Task created successfully.');
+  } catch(e) {
+    // Demo: add locally
+    ALL_TASKS.unshift({ ...newTask, task_id: 't-demo-' + Date.now(), created_at: new Date().toISOString() });
+    showToast('✅ Task created (demo mode).');
+  }
+
+  closeModal('modalCreate');
+  renderTasks();
+}
+
+/* ── Submit progress update ── */
+async function submitUpdate() {
+  if (!CURRENT_TASK) return;
+  const workDone = $('uWorkDone').value.trim();
+  if (!workDone) { showToast('Work Completed field is required.', false); return; }
+
+  const newStatus = $('uStatus').value.replace(' ','_');
+  const evidence  = $('uEvidence').value.trim();
+
+  if (CURRENT_TASK.priority==='Critical' && newStatus.startsWith('Completed') && !evidence) {
+    showToast('Evidence URL is mandatory for Critical task completion.', false); return;
+  }
+
+  const update = {
+    task_id:    CURRENT_TASK.task_id,
+    employee_id:SESSION.employee_id,
+    status:     newStatus,
+    progress_percentage: parseInt($('uProgress').value)||0,
+    work_completed: workDone,
+    challenges: $('uChallenges').value.trim(),
+    support_required: $('uSupport').value.trim(),
+    evidence_url: evidence || null,
+    submitted_at: new Date().toISOString(),
+    is_active: true
+  };
+
+  try {
+    await db.insert('task_updates', update);
+    await db.update('task_master', CURRENT_TASK.task_id, 'task_id', {
+      status: newStatus,
+      progress_percentage: update.progress_percentage,
+      updated_at: new Date().toISOString()
+    });
+    showToast('✅ Update submitted successfully.');
+  } catch(e) {
+    showToast('✅ Update submitted (demo mode).');
+  }
+
+  // Update local state
+  const idx = ALL_TASKS.findIndex(t=>t.task_id===CURRENT_TASK.task_id);
+  if (idx > -1) { ALL_TASKS[idx].status = newStatus; ALL_TASKS[idx].progress_percentage = update.progress_percentage; }
+
+  closeModal('modalDetail');
+  renderTasks();
+  checkActiveLock();
+}
+
+/* ── Delegate ── */
+function openDelegateModal() {
+  $('delegateTo').value = '';
+  $('delegateReason').value = '';
+  openModal('modalDelegate');
+}
+
+async function confirmDelegate() {
+  const toId   = $('delegateTo').value;
+  const reason = $('delegateReason').value.trim();
+  if (!toId || !reason) { showToast('Please select an employee and provide a reason.', false); return; }
+
+  try {
+    await db.update('task_master', CURRENT_TASK.task_id, 'task_id', {
+      primary_assignee: toId,
+      delegated_from:   CURRENT_TASK.primary_assignee,
+      delegated_at:     new Date().toISOString(),
+      delegation_reason:reason,
+      status: 'Pending'
+    });
+    showToast('✅ Task delegated. Original record retained in audit log.');
+  } catch(e) {
+    showToast('✅ Task delegated (demo mode).');
+  }
+  closeModal('modalDelegate');
+  closeModal('modalDetail');
+  await loadTasks();
+}
+
+/* ── Adjust deadline ── */
+function openEditDeadline() {
+  $('newDueDate').value = CURRENT_TASK.due_date ? CURRENT_TASK.due_date.split('T')[0] : '';
+  $('newHardDeadline').value = CURRENT_TASK.hard_deadline ? CURRENT_TASK.hard_deadline.slice(0,16) : '';
+  $('deadlineReason').value = '';
+  openModal('modalDeadline');
+}
+
+async function confirmDeadlineAdjust() {
+  const nd = $('newDueDate').value;
+  const reason = $('deadlineReason').value.trim();
+  if (!nd || !reason) { showToast('Due date and reason are required.', false); return; }
+
+  const assigneeTier = (EMPLOYEES.find(e=>e.employee_id===CURRENT_TASK.primary_assignee)||{}).tier||5;
+  if (SESSION.tier === 3 && assigneeTier !== 4) {
+    showToast('Tier 3 can only adjust deadlines for Tier 4 tasks.', false); return;
+  }
+
+  try {
+    await db.update('task_master', CURRENT_TASK.task_id, 'task_id', { due_date: nd, hard_deadline: $('newHardDeadline').value || null });
+    showToast('✅ Deadline adjusted and audit-logged.');
+  } catch(e) {
+    showToast('✅ Deadline adjusted (demo mode).');
+  }
+  closeModal('modalDeadline');
+  closeModal('modalDetail');
+  await loadTasks();
+}
+
+/* ── Cancel task ── */
+async function cancelTask() {
+  if (!CURRENT_TASK) return;
+  if (!confirm('Are you sure you want to cancel this task? This action will be audit-logged.')) return;
+  try {
+    await db.update('task_master', CURRENT_TASK.task_id, 'task_id', { status: 'Cancelled' });
+    showToast('Task cancelled.');
+  } catch(e) {
+    showToast('Task cancelled (demo mode).');
+  }
+  const idx = ALL_TASKS.findIndex(t=>t.task_id===CURRENT_TASK.task_id);
+  if (idx>-1) ALL_TASKS[idx].status = 'Cancelled';
+  closeModal('modalDetail');
+  renderTasks();
+}
+
+/* ── Timer (v1.3 §2.6) ── */
+function startTimer() {
+  timerStart = Date.now() - timerElapsed;
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+  $('btnTimerStart').style.display = 'none';
+  $('btnTimerStop').style.display  = 'inline-flex';
+  $('timerStatus').textContent = '⏱ Timer running…';
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerElapsed = Date.now() - timerStart;
+  $('btnTimerStart').style.display = 'inline-flex';
+  $('btnTimerStop').style.display  = 'none';
+  const mins = Math.round(timerElapsed / 60000 * 10) / 10;
+  $('timerStatus').textContent = `Logged: ${mins} min`;
+
+  // Log to task_timer table
+  if (CURRENT_TASK) {
+    const log = {
+      task_id:      CURRENT_TASK.task_id,
+      employee_id:  SESSION.employee_id,
+      start_time:   new Date(timerStart).toISOString(),
+      end_time:     new Date().toISOString(),
+      total_minutes: mins,
+      is_running:   false
+    };
+    db.insert('task_timer', log).catch(()=>{});
+  }
+  showToast(`⏱ Timer stopped — ${mins} min logged.`);
+}
+
+function updateTimerDisplay() {
+  const elapsed = Date.now() - timerStart;
+  const h = Math.floor(elapsed/3600000);
+  const m = Math.floor((elapsed%3600000)/60000);
+  const s = Math.floor((elapsed%60000)/1000);
+  $('timerDisplay').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function resetTimerUI() {
+  clearInterval(timerInterval);
+  timerElapsed = 0; timerStart = null;
+  $('timerDisplay').textContent = '00:00:00';
+  $('btnTimerStart').style.display = 'inline-flex';
+  $('btnTimerStop').style.display  = 'none';
+  $('timerStatus').textContent = 'Timer not started';
+}
+
+const pad = n => String(n).padStart(2,'0');
+
+/* ══════════════════════════════════════════════════════
+   ★ DAILY REPORT ENGINE (Blueprint §9.7)
+   Fields: completed_tasks, pending_tasks, key_achievements,
+           problems_faced, support_needed, tomorrow_plan,
+           priority_activities — mandatory except support_needed
+══════════════════════════════════════════════════════ */
+
+let DR_TODAY_SUBMITTED = false;
+let DR_HISTORY = [];
+
+async function initDailyReport() {
+  const today = new Date().toISOString().slice(0,10);
+  $('drTodayDate').textContent  = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  $('drModalDateLabel').textContent = `Reporting for: ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}`;
+
+  // Check if today's report already submitted
+  try {
+    const rows = await db.query('daily_reports', {
+      select: 'report_id,report_date,submitted_at,status',
+      filter: `employee_id=eq.${SESSION.employee_id}&report_date=eq.${today}`,
+      limit: 1
+    });
+    DR_TODAY_SUBMITTED = rows && rows.length > 0 && rows[0].status !== 'Incomplete';
+  } catch {
+    // Demo: assume not submitted
+    DR_TODAY_SUBMITTED = false;
+  }
+
+  updateDRStatusBar();
+  await loadDRHistory();
+}
+
+function updateDRStatusBar() {
+  const dot  = $('drDot');
+  const txt  = $('drStatusText');
+  const sub  = $('drStatusSub');
+  const warn = $('drPenaltyWarn');
+  const btn  = $('drActionBtn');
+  const badge = $('btnDRBadge');
+  const lbl   = $('btnDRLabel');
+
+  if (DR_TODAY_SUBMITTED) {
+    dot.className  = 'dr-dot submitted';
+    txt.textContent = '✅ Today\'s report submitted';
+    sub.textContent = 'Reporting Discipline KPI maintained for today.';
+    warn.style.display = 'none';
+    btn.textContent = 'View / Edit Report';
+    btn.className   = 'btn btn-secondary btn-sm';
+    badge.style.display = 'none';
+    lbl.textContent = 'Daily Report ✓';
+  } else {
+    const hr = new Date().getHours();
+    // Blueprint §5.4: office ends 6 PM; DR overdue warning at 7:00 PM
+    const overdue = hr >= 19;
+    dot.className   = overdue ? 'dr-dot missing' : 'dr-dot pending';
+    txt.textContent = overdue
+      ? '⚠️ Report overdue — not submitted'
+      : '⏳ Today\'s report not yet submitted';
+    sub.textContent = overdue
+      ? 'Submission window closed (7:00 PM). Submit immediately to avoid −5% KPI penalty.'
+      : 'Deadline: 7:00 PM today. Office hours end at 6:00 PM — submit before close.';
+    warn.style.display = overdue ? 'flex' : 'none';
+    btn.textContent = 'Submit Today\'s Report';
+    btn.className   = 'btn btn-primary btn-sm';
+    badge.style.display = 'inline';
+    lbl.textContent = 'Daily Report';
+  }
+}
+
+async function loadDRHistory() {
+  const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString().slice(0,10);
+  try {
+    DR_HISTORY = await db.query('daily_reports', {
+      select: 'report_id,report_date,submitted_at,status,key_achievements,problems_faced,tomorrow_plan',
+      filter: `employee_id=eq.${SESSION.employee_id}&report_date=gte.${sevenDaysAgo}`,
+      order:  'report_date.desc',
+      limit:  7
+    });
+  } catch {
+    // Demo history
+    DR_HISTORY = [
+      { report_id:'dr-001', report_date:'2026-06-27', submitted_at:'2026-06-27T17:15:00Z', status:'Submitted', key_achievements:'Completed field visit report for Shahporan Upazila.', problems_faced:'GPS accuracy issue at health complex — submitted exception request.', tomorrow_plan:'Attend coordination meeting at Upazila office.' },
+      { report_id:'dr-002', report_date:'2026-06-26', submitted_at:'2026-06-26T16:45:00Z', status:'Submitted', key_achievements:'Submitted Q2 data entry batch.', problems_faced:'None.', tomorrow_plan:'Field visit to Jalalabad clinic.' },
+      { report_id:'dr-003', report_date:'2026-06-25', submitted_at:null, status:'Missing', key_achievements:'', problems_faced:'', tomorrow_plan:'' },
+    ];
+  }
+  renderDRHistory();
+}
+
+function renderDRHistory() {
+  const cont = $('drHistoryList');
+  if (!DR_HISTORY.length) {
+    cont.innerHTML = `<div class="empty-state" style="padding:28px"><div class="empty-icon">📝</div><div class="empty-msg">No report history found</div></div>`;
+    return;
+  }
+
+  cont.innerHTML = DR_HISTORY.map(r => {
+    const dateLabel = new Date(r.report_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short' });
+    const isToday   = r.report_date === new Date().toISOString().slice(0,10);
+    const statusPill = r.status === 'Submitted'
+      ? `<span style="background:var(--green-dim);color:var(--green);padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700;">✅ Submitted</span>`
+      : r.status === 'Missing'
+      ? `<span style="background:var(--red-bg);color:var(--red);padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700;">❌ Missing</span>`
+      : `<span style="background:var(--yellow-bg);color:#b45309;padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700;">⚠ Incomplete</span>`;
+
+    const timeStr = r.submitted_at ? ` · Submitted at ${new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}` : '';
+    const preview = r.key_achievements ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4;">${escHtml(r.key_achievements).slice(0,120)}${r.key_achievements.length>120?'…':''}</div>` : '';
+
+    return `<div class="dr-history-item">
+      <div class="dr-history-date">${dateLabel}${isToday?' <span style="background:var(--navy);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;">TODAY</span>':''}</div>
+      <div class="dr-history-body">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${statusPill}
+          <span style="font-size:11px;color:var(--text-light);">${timeStr}</span>
+          ${r.status === 'Submitted' ? `<button class="btn btn-secondary btn-sm" style="margin-left:auto;font-size:10.5px;" onclick="viewDRDetail('${r.report_id}')">View</button>` : ''}
+          ${r.status === 'Missing' || r.status === 'Incomplete' ? `<button class="btn btn-primary btn-sm" style="margin-left:auto;font-size:10.5px;" onclick="openDailyReportModal()">Submit</button>` : ''}
+        </div>
+        ${preview}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDailyReportModal() {
+  // Clear form
+  ['drCompleted','drPending','drAchievements','drProblems','drSupport','drTomorrow','drPriorities'].forEach(id => { $(id).value = ''; });
+  ['drCountCompleted','drCountPending','drCountAchv','drCountProb','drCountSupp','drCountTom','drCountPri'].forEach(id => { $(id).textContent = '0'; });
+  $('drValidationMsg').style.display = 'none';
+  $('drModalDateLabel').textContent  = `Reporting for: ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}`;
+  openModal('modalDailyReport');
+}
+
+function drCount(textareaId, counterId, max) {
+  const val = $(textareaId).value;
+  $(counterId).textContent = val.length;
+  $(counterId).style.color = val.length > max * 0.9 ? 'var(--red)' : 'var(--text-light)';
+  if (val.length > max) $(textareaId).value = val.slice(0, max);
+}
+
+function previewDailyReport() {
+  const fields = getDRFormValues();
+  const missing = validateDRFields(fields);
+  if (missing.length) {
+    showDRValidation(missing); return;
+  }
+  $('drValidationMsg').style.display = 'none';
+
+  const labels = {
+    completed:     'Completed Tasks Today',
+    pending:       'Pending / Carried Forward Tasks',
+    achievements:  'Key Achievements',
+    problems:      'Problems Faced',
+    support:       'Support Needed',
+    tomorrow:      'Tomorrow\'s Plan',
+    priorities:    'Priority Activities for Tomorrow'
+  };
+
+  $('drPreviewContent').innerHTML = `
+    <div style="background:var(--cream);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">Daily Report — ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escHtml(SESSION.name)} · ${escHtml(SESSION.designation)}</div>
+    </div>
+    ${Object.entries(fields).map(([key, val]) => val ? `
+      <div class="dr-preview-field">
+        <div class="dr-preview-label">${labels[key]||key}${key==='support'?' (Optional)':' *'}</div>
+        <div class="dr-preview-val">${escHtml(val)}</div>
+      </div>` : '').join('')}
+    <div style="font-size:11px;color:var(--text-light);margin-top:14px;">Generated: ${new Date().toLocaleString('en-GB')} · BWAPMS v1.2</div>`;
+
+  openModal('modalDRPreview');
+}
+
+async function submitDailyReport() {
+  const fields  = getDRFormValues();
+  const missing = validateDRFields(fields);
+  if (missing.length) { showDRValidation(missing); return; }
+  $('drValidationMsg').style.display = 'none';
+
+  const today = new Date().toISOString().slice(0,10);
+  const report = {
+    employee_id:       SESSION.employee_id,
+    report_date:       today,
+    completed_tasks:   fields.completed,
+    pending_tasks:     fields.pending,
+    key_achievements:  fields.achievements,
+    problems_faced:    fields.problems,
+    support_needed:    fields.support || null,
+    tomorrow_plan:     fields.tomorrow,
+    priority_activities: fields.priorities,
+    status:            'Submitted',
+    submitted_at:      new Date().toISOString(),
+    is_active:         true
+  };
+
+  try {
+    await db.insert('daily_reports', report);
+    showToast('✅ Daily report submitted. Reporting Discipline KPI maintained.');
+  } catch {
+    showToast('✅ Daily report submitted (demo mode).');
+  }
+
+  DR_TODAY_SUBMITTED = true;
+  DR_HISTORY.unshift({ ...report, report_id: 'dr-' + Date.now() });
+  closeModal('modalDailyReport');
+  closeModal('modalDRPreview');
+  updateDRStatusBar();
+  renderDRHistory();
+}
+
+function getDRFormValues() {
+  return {
+    completed:    $('drCompleted').value.trim(),
+    pending:      $('drPending').value.trim(),
+    achievements: $('drAchievements').value.trim(),
+    problems:     $('drProblems').value.trim(),
+    support:      $('drSupport').value.trim(),
+    tomorrow:     $('drTomorrow').value.trim(),
+    priorities:   $('drPriorities').value.trim()
+  };
+}
+
+function validateDRFields(fields) {
+  // §9.7: all mandatory except support_needed
+  const mandatory = {
+    completed:    'Completed Tasks Today',
+    pending:      'Pending / Carried Forward Tasks',
+    achievements: 'Key Achievements',
+    problems:     'Problems Faced',
+    tomorrow:     'Tomorrow\'s Plan',
+    priorities:   'Priority Activities for Tomorrow'
+  };
+  return Object.entries(mandatory).filter(([k]) => !fields[k]).map(([,label]) => label);
+}
+
+function showDRValidation(missing) {
+  const msg = $('drValidationMsg');
+  msg.innerHTML = `⚠ Please complete all mandatory fields:<br><ul style="margin:6px 0 0 16px;">${missing.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+  msg.style.display = 'block';
+  msg.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function viewDRDetail(id) {
+  const r = DR_HISTORY.find(x => x.report_id === id);
+  if (!r) return;
+  const labels = [
+    ['Completed Tasks',         r.completed_tasks],
+    ['Pending Tasks',           r.pending_tasks],
+    ['Key Achievements',        r.key_achievements],
+    ['Problems Faced',          r.problems_faced],
+    ['Support Needed',          r.support_needed || '—'],
+    ['Tomorrow\'s Plan',        r.tomorrow_plan],
+    ['Priority Activities',     r.priority_activities],
+  ];
+  $('drPreviewContent').innerHTML = `
+    <div style="background:var(--cream);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">Daily Report — ${new Date(r.report_date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escHtml(SESSION.name)} · Submitted ${r.submitted_at ? new Date(r.submitted_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+    </div>
+    ${labels.map(([lbl,val])=>val&&val!=='—'?`<div class="dr-preview-field"><div class="dr-preview-label">${lbl}</div><div class="dr-preview-val">${escHtml(String(val))}</div></div>`:'').join('')}`;
+  openModal('modalDRPreview');
+}
+
+/* ── Misc helpers ── */
+function getEmployeeName(id) {
+  if (!id) return '—';
+  if (id === SESSION.employee_id) return SESSION.name;
+  const e = EMPLOYEES.find(em=>em.employee_id===id);
+  return e ? e.full_name : id.slice(0,8)+'…';
+}
+
+function normalizeStatus(s) {
+  if (!s) return 'Pending';
+  return s.replace(/_/g,' ');
+}
+
+function statusClass(s) {
+  const map = {
+    'Pending':'pending', 'In Progress':'inprog', 'In_Progress':'inprog',
+    'Completed On Time':'done', 'Completed_On_Time':'done',
+    'Completed Late':'late', 'Completed_Late':'late',
+    'Overdue':'overdue', 'Cancelled':'cancelled', 'Delegated':'delegated'
+  };
+  return map[s] || 'pending';
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openModal(id)  { $(id).classList.remove('hidden'); }
+function closeModal(id) { $(id).classList.add('hidden'); }
+
+async function logout() {
+  sessionStorage.removeItem('bwapms_session');
+  localStorage.removeItem('bwapms_device_token');
+  try { await sb.auth.signOut(); } catch (e) {}
+  window.location.href = 'index.html';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+// Init
+(async () => {
+  const ok = await bootstrapSession();
+  if (ok) await init().catch(console.error);
+})();
+</script>
+</body>
+</html>

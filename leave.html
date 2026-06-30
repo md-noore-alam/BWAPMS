@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BWAPMS — Leave & Requests</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:        #0f1f3d;
+      --navy-mid:    #162d52;
+      --green:       #1a7a4a;
+      --green-light: #22a05e;
+      --green-dim:   #e8f5ee;
+      --yellow:      #f59e0b;
+      --yellow-bg:   #fffbeb;
+      --red:         #dc2626;
+      --red-bg:      #fef2f2;
+      --blue:        #2563eb;
+      --blue-bg:     #eff6ff;
+      --purple:      #7c3aed;
+      --purple-bg:   #f5f3ff;
+      --cream:       #f5f3ee;
+      --white:       #ffffff;
+      --border:      #e2e8f0;
+      --text-main:   #1a2640;
+      --text-muted:  #64748b;
+      --text-light:  #94a3b8;
+      --sidebar-w:   220px;
+      --topbar-h:    60px;
+      --radius:      10px;
+      --shadow:      0 1px 4px rgba(0,0,0,0.08);
+    }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+    /* ── Sidebar ── */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--navy); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+    .sidebar-logo { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-logo-text { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    .sidebar-logo-sub  { font-size: 9px; color: rgba(255,255,255,0.4); font-weight: 500; letter-spacing: 0.04em; margin-top: 1px; }
+    .sidebar-sys { padding: 8px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-sys-name { font-size: 12px; font-weight: 700; color: #fff; }
+    .sidebar-sys-sub  { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .tier-badge { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 2px 8px; border-radius: 10px; margin-top: 5px; letter-spacing: 0.05em; }
+    .tier-badge.t1 { background: var(--yellow); color: var(--navy); }
+    .tier-badge.t2 { background: var(--blue); color: #fff; }
+    .tier-badge.t3 { background: var(--green); color: #fff; }
+    .tier-badge.t4 { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+    .nav-section { padding: 14px 10px 4px; }
+    .nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-item.active { background: var(--green); color: #fff; }
+    .nav-item svg { flex-shrink: 0; opacity: 0.8; }
+    .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+    .sidebar-bottom { margin-top: auto; padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-tier { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); padding: 4px; transition: color 0.15s; border-radius: 4px; }
+    .btn-logout:hover { color: #fff; }
+
+    /* ── Topbar ── */
+    .topbar { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; z-index: 90; box-shadow: var(--shadow); }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .topbar-date { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; }
+    .content { padding: 22px 24px 60px; }
+    .section-title { font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 22px; }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Leave Balance Cards ── */
+    .balance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .balance-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 20px 22px; position: relative; overflow: hidden; }
+    .balance-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .balance-card.cl::before  { background: var(--blue); }
+    .balance-card.sl::before  { background: var(--green); }
+    .balance-card.mat::before { background: var(--purple); }
+    .balance-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; }
+    .balance-name { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 14px; }
+    .balance-bar-wrap { margin-bottom: 10px; }
+    .balance-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .balance-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .balance-card.cl  .balance-bar-fill { background: var(--blue); }
+    .balance-card.sl  .balance-bar-fill { background: var(--green); }
+    .balance-card.mat .balance-bar-fill { background: var(--purple); }
+    .balance-nums { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+    .balance-remaining { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .balance-remaining.low { color: var(--red); }
+    .balance-detail { font-size: 11px; color: var(--text-muted); text-align: right; line-height: 1.5; }
+    .balance-expiry { font-size: 10.5px; color: var(--text-light); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+    .expiry-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); }
+
+    /* ── Policy callout ── */
+    .policy-box { background: var(--yellow-bg); border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; }
+    .policy-icon { font-size: 16px; flex-shrink: 0; }
+    .policy-text { font-size: 12px; color: #92400e; line-height: 1.5; }
+    .policy-text strong { font-weight: 700; }
+
+    /* ── ★ NEW: Download bar (Blueprint §6.3) ── */
+    .download-bar { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 0; }
+    .download-bar-label { font-size: 12px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 7px; }
+    .download-bar-label svg { color: var(--green); }
+    .download-bar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .download-sep { width: 1px; height: 20px; background: var(--border); }
+
+    /* ── Card ── */
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+
+    /* ── Tabs ── */
+    .tab-bar { display: flex; gap: 4px; padding: 14px 18px 0; border-bottom: 1px solid var(--border); background: var(--white); flex-wrap: wrap; }
+    .tab-btn { padding: 8px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; border-radius: 6px 6px 0 0; }
+    .tab-btn:hover { color: var(--navy); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: var(--green-dim); }
+    .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; border-radius: 10px; font-size: 9.5px; font-weight: 800; margin-left: 5px; padding: 0 4px; }
+    .tab-btn.active .tab-count { background: var(--green); color: #fff; }
+    .tab-btn:not(.active) .tab-count { background: var(--border); color: var(--text-muted); }
+
+    /* ── Request list ── */
+    .req-item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+    .req-item:last-child { border-bottom: none; }
+    .req-item:hover { background: #f8fafc; }
+    .req-icon { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .req-icon.cl  { background: var(--blue-bg); }
+    .req-icon.sl  { background: var(--green-dim); }
+    .req-icon.mat { background: var(--purple-bg); }
+    .req-icon.em  { background: var(--red-bg); }
+    .req-icon.att { background: var(--yellow-bg); }
+    .req-icon.just { background: var(--cream); }
+    .req-body { flex: 1; min-width: 0; }
+    .req-title { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+    .req-meta { font-size: 11.5px; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .req-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+
+    /* ── Pills ── */
+    .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .pill.pending  { background: var(--yellow-bg); color: #b45309; }
+    .pill.approved { background: var(--green-dim); color: var(--green); }
+    .pill.rejected { background: var(--red-bg); color: var(--red); }
+    .pill.cancelled{ background: var(--cream); color: var(--text-light); }
+    .pill.cl  { background: var(--blue-bg); color: var(--blue); }
+    .pill.sl  { background: var(--green-dim); color: var(--green); }
+    .pill.mat { background: var(--purple-bg); color: var(--purple); }
+    .pill.em  { background: var(--red-bg); color: var(--red); }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; white-space: nowrap; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-secondary { background: var(--cream); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-approve { background: var(--green-dim); color: var(--green); border: 1px solid #a7d8ba; }
+    .btn-approve:hover { background: #c6e8d4; }
+    .btn-reject  { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+    .btn-reject:hover  { background: #fecaca; }
+    .btn-sm { padding: 5px 10px; font-size: 11.5px; }
+    .btn-outline { background: transparent; color: var(--navy); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--cream); }
+
+    /* ── Approval actions ── */
+    .approval-row { display: flex; gap: 6px; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-msg { font-size: 13.5px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+    .empty-sub { font-size: 12px; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,31,61,0.45); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: var(--white); border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+    .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 15px; font-weight: 800; color: var(--navy); }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; line-height: 1; padding: 4px; border-radius: 6px; }
+    .modal-close:hover { background: var(--cream); }
+    .modal-body { padding: 20px 22px; max-height: 70vh; overflow-y: auto; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: block; }
+    .form-label.req::after { content: ' *'; color: var(--red); }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border-radius: 7px; border: 1px solid var(--border); font-size: 13px; color: var(--text-main); background: var(--white); font-family: inherit; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,122,74,0.1); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .form-section { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 18px 0 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+    /* ── Days calculator ── */
+    .days-calc { background: var(--navy); color: #fff; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+    .days-calc-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+    .days-calc-val { font-size: 26px; font-weight: 800; }
+    .days-calc-sub { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .days-calc-warning { font-size: 11.5px; color: #fcd34d; font-weight: 600; display: none; }
+
+    /* ── Detail modal ── */
+    .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .detail-val { font-size: 12.5px; color: var(--text-main); font-weight: 500; text-align: right; max-width: 60%; }
+    .decision-box { border-radius: 8px; padding: 12px 14px; margin-top: 14px; }
+    .decision-box.approved { background: var(--green-dim); border: 1px solid #a7d8ba; }
+    .decision-box.rejected { background: var(--red-bg); border: 1px solid #fecaca; }
+    .decision-box.pending  { background: var(--yellow-bg); border: 1px solid #fde68a; }
+    .decision-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .decision-box.approved .decision-label { color: var(--green); }
+    .decision-box.rejected .decision-label { color: var(--red); }
+    .decision-box.pending  .decision-label { color: #b45309; }
+    .decision-text { font-size: 12.5px; color: var(--text-main); }
+
+    /* ── Two-col layout ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ── Grievance section ── */
+    .grievance-alert { background: var(--red-bg); border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+    .grievance-icon { font-size: 16px; }
+    .grievance-text { font-size: 12px; color: #7f1d1d; }
+    .grievance-text strong { color: var(--red); }
+
+    /* ── Approval queue badge ── */
+    .queue-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .filter-select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; color: var(--text-main); background: var(--white); cursor: pointer; }
+    .filter-input  { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; color: var(--text-main); background: var(--white); flex: 1; min-width: 140px; }
+    .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--green); }
+
+    /* ── ★ NEW: Leave Slip modal (Blueprint §6.3) ── */
+    .slip-preview { background: var(--cream); border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; border: 1px solid var(--border); }
+    .slip-preview-title { font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+    .slip-preview-org { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
+    .slip-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .slip-row:last-child { border-bottom: none; }
+    .slip-label { color: var(--text-muted); font-weight: 600; }
+    .slip-val { font-weight: 700; color: var(--text-main); }
+    .slip-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .slip-badge.ok { background: var(--green-dim); color: var(--green); }
+    .slip-badge.low { background: var(--red-bg); color: var(--red); }
+    .slip-footer { margin-top: 12px; font-size: 10.5px; color: var(--text-light); line-height: 1.5; }
+    .summary-period-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .balance-grid { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .balance-grid { grid-template-columns: 1fr; }
+      :root { --sidebar-w: 0px; }
+      .sidebar { transform: translateX(-220px); }
+      .topbar { left: 0; }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-text">BWAPMS</div>
+    <div class="sidebar-logo-sub">GramGP Programme</div>
+  </div>
+  <div class="sidebar-sys">
+    <div class="sidebar-sys-name" id="sidebarUserName">Loading…</div>
+    <div class="sidebar-sys-sub"  id="sidebarDesig">—</div>
+    <span class="tier-badge" id="sidebarTierBadge">—</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a href="#" class="nav-item" id="navDash">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="attendance.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+      Attendance
+    </a>
+    <a href="tasks.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Tasks
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">HR & Finance</div>
+    <a href="leave.html" class="nav-item active">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Leave & Requests
+      <span class="nav-badge" id="navLeaveBadge" style="display:none">0</span>
+    </a>
+    <a href="payroll.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Payroll
+    </a>
+    <a href="kpi.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      KPI
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Collaboration</div>
+    <a href="meetings.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Meetings
+    </a>
+    <a href="issues.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Issues
+    </a>
+    <a href="reports.html" class="nav-item">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      Reports
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar" id="userAvatarSidebar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userNameSidebar">—</div>
+        <div class="user-tier" id="userTierSidebar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Logout">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div class="topbar-title">📅 Leave & Requests</div>
+  <div class="topbar-right">
+    <span class="topbar-date" id="topbarDate">—</span>
+    <button class="btn btn-primary btn-sm" onclick="openApplyModal()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Apply Leave
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="openAttendanceReqModal()">
+      + Attendance Request
+    </button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<main class="main">
+  <div class="content">
+
+    <!-- Policy notice -->
+    <div class="policy-box">
+      <span class="policy-icon">⚠️</span>
+      <div class="policy-text">
+        <strong>Leave Policy Reminder:</strong> All unused Casual Leave (CL) and Sick Leave (SL) balances expire on <strong>31 December</strong> each year — no carry-forward. Fresh allocations are auto-generated on 1 January. No festival (Eid) bonus is applicable. CL accrues at 1.5 days/month (18 days/year). SL is 14 days/year flat allocation.
+      </div>
+    </div>
+
+    <!-- Leave Balance -->
+    <div class="section-title">My Leave Balance — <span id="balanceYear">2026</span></div>
+    <div class="balance-grid">
+
+      <!-- CL -->
+      <div class="balance-card cl">
+        <div class="balance-type">CL — Casual Leave</div>
+        <div class="balance-name">Annual: 18 days</div>
+        <div class="balance-bar-wrap">
+          <div class="balance-bar-bg">
+            <div class="balance-bar-fill" id="clBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="balance-nums">
+          <div>
+            <div class="balance-remaining" id="clRemaining">—</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">days remaining</div>
+          </div>
+          <div class="balance-detail">
+            <div>Used: <strong id="clUsed">—</strong> days</div>
+            <div>Accrued: <strong id="clAccrued">—</strong> days</div>
+          </div>
+        </div>
+        <div class="balance-expiry">
+          <span class="expiry-dot"></span>
+          Expires 31 December <span id="balanceYearCL">2026</span>
+        </div>
+      </div>
+
+      <!-- SL -->
+      <div class="balance-card sl">
+        <div class="balance-type">SL — Sick Leave</div>
+        <div class="balance-name">Annual: 14 days</div>
+        <div class="balance-bar-wrap">
+          <div class="balance-bar-bg">
+            <div class="balance-bar-fill" id="slBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="balance-nums">
+          <div>
+            <div class="balance-remaining" id="slRemaining">—</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">days remaining</div>
+          </div>
+          <div class="balance-detail">
+            <div>Used: <strong id="slUsed">—</strong> days</div>
+            <div>Total: <strong>14</strong> days</div>
+          </div>
+        </div>
+        <div class="balance-expiry">
+          <span class="expiry-dot"></span>
+          Expires 31 December <span id="balanceYearSL">2026</span>
+        </div>
+      </div>
+
+      <!-- Maternity -->
+      <div class="balance-card mat">
+        <div class="balance-type">Maternity Leave</div>
+        <div class="balance-name">16 weeks — Full Pay</div>
+        <div class="balance-bar-wrap">
+          <div class="balance-bar-bg">
+            <div class="balance-bar-fill" id="matBar" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="balance-nums">
+          <div>
+            <div class="balance-remaining" id="matStatus" style="font-size:16px;font-weight:700">Available</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">when applicable</div>
+          </div>
+          <div class="balance-detail">
+            <div>112 days</div>
+            <div>No expiry</div>
+          </div>
+        </div>
+        <div class="balance-expiry" style="color:var(--text-muted)">
+          <span class="expiry-dot" style="background:var(--purple)"></span>
+          Not subject to year-end expiry
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ★ NEW: Leave Slip & Summary Downloads (Blueprint §6.3) -->
+    <div class="section-title" style="margin-top:20px;">Downloads — Blueprint §6.3</div>
+    <div class="download-bar">
+      <div class="download-bar-label">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Leave Documents
+      </div>
+      <div class="download-bar-actions">
+        <button class="btn btn-outline btn-sm" onclick="openLeaveSlipModal()">
+          📄 Leave Balance Slip
+        </button>
+        <div class="download-sep"></div>
+        <button class="btn btn-outline btn-sm" onclick="openSummaryModal('monthly')">
+          📊 Monthly Summary
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="openSummaryModal('yearly')">
+          📋 Yearly Summary
+        </button>
+      </div>
+    </div>
+
+    <!-- Approval Queue (Tier 2 only) -->
+    <div id="approvalQueueSection" style="display:none; margin-top:22px;">
+      <div class="section-title">
+        Pending Approvals
+        <span class="queue-badge" id="queueCount">0</span>
+      </div>
+      <div class="card">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchApprovalTab('leave')" data-atab="leave">Leave Requests <span class="tab-count" id="aCountLeave">0</span></button>
+          <button class="tab-btn" onclick="switchApprovalTab('attendance')" data-atab="attendance">Attendance Requests <span class="tab-count" id="aCountAtt">0</span></button>
+          <button class="tab-btn" onclick="switchApprovalTab('justification')" data-atab="justification">Justifications <span class="tab-count" id="aCountJust">0</span></button>
+          <button class="tab-btn" onclick="switchApprovalTab('grievance')" data-atab="grievance">Grievances <span class="tab-count" id="aCountGriev">0</span></button>
+        </div>
+        <div id="approvalListContainer">
+          <div class="empty-state"><div class="empty-icon">✅</div><div class="empty-msg">No pending approvals</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Requests -->
+    <div class="section-title" style="margin-top:22px;">My Requests</div>
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchMyTab('all')" data-mtab="all">All <span class="tab-count" id="mCountAll">0</span></button>
+        <button class="tab-btn" onclick="switchMyTab('pending')" data-mtab="pending">Pending <span class="tab-count" id="mCountPending">0</span></button>
+        <button class="tab-btn" onclick="switchMyTab('approved')" data-mtab="approved">Approved <span class="tab-count" id="mCountApproved">0</span></button>
+        <button class="tab-btn" onclick="switchMyTab('rejected')" data-mtab="rejected">Rejected <span class="tab-count" id="mCountRejected">0</span></button>
+      </div>
+      <div class="filter-bar">
+        <select class="filter-select" id="filterReqType" onchange="renderMyRequests()">
+          <option value="">All Types</option>
+          <option value="leave">Leave</option>
+          <option value="attendance">Attendance</option>
+          <option value="justification">Justification</option>
+          <option value="grievance">Grievance</option>
+        </select>
+        <select class="filter-select" id="filterReqYear" onchange="renderMyRequests()">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
+      <div id="myRequestsList">
+        <div class="empty-state"><div class="empty-icon">📭</div><div class="empty-msg">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- All employees requests (Tier 2) -->
+    <div id="allStaffSection" style="display:none; margin-top:22px;">
+      <div class="section-title">All Staff Leave History</div>
+      <div class="card">
+        <div class="filter-bar">
+          <select class="filter-select" id="filterStaffEmployee" onchange="renderStaffRequests()">
+            <option value="">All Employees</option>
+          </select>
+          <select class="filter-select" id="filterStaffType" onchange="renderStaffRequests()">
+            <option value="">All Types</option>
+            <option value="Casual">Casual Leave</option>
+            <option value="Sick">Sick Leave</option>
+            <option value="Maternity">Maternity Leave</option>
+            <option value="Emergency">Emergency Leave</option>
+          </select>
+          <select class="filter-select" id="filterStaffStatus" onchange="renderStaffRequests()">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div id="staffRequestsList">
+          <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-msg">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════
+     MODAL 1 — Apply Leave
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalApply">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Apply for Leave</div>
+      <button class="modal-close" onclick="closeModal('modalApply')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label req">Leave Type</label>
+        <select class="form-select" id="aLeaveType" onchange="onLeaveTypeChange()">
+          <option value="">— Select —</option>
+          <option value="Casual">Casual Leave (CL)</option>
+          <option value="Sick">Sick Leave (SL)</option>
+          <option value="Maternity">Maternity Leave</option>
+          <option value="Emergency">Emergency Leave</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label req">From Date</label>
+          <input class="form-input" type="date" id="aFromDate" onchange="calcDays()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label req">To Date</label>
+          <input class="form-input" type="date" id="aToDate" onchange="calcDays()"/>
+        </div>
+      </div>
+      <div class="days-calc" id="daysCalc">
+        <div>
+          <div class="days-calc-label">Requested Days</div>
+          <div class="days-calc-val" id="calcDaysVal">—</div>
+          <div class="days-calc-sub" id="calcDaysSub">Select dates above</div>
+        </div>
+        <div style="text-align:right">
+          <div class="days-calc-label">Balance After</div>
+          <div class="days-calc-val" id="calcBalAfter">—</div>
+          <div class="days-calc-warning" id="calcWarning">⚠ Insufficient balance</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label req">Reason</label>
+        <textarea class="form-textarea" id="aReason" placeholder="Provide a clear reason for the leave request…" rows="3"></textarea>
+      </div>
+      <div class="form-group" id="medCertGroup" style="display:none">
+        <label class="form-label">Medical Certificate / Supporting Document URL</label>
+        <input class="form-input" id="aMedCert" placeholder="https://drive.google.com/…"/>
+        <div class="form-hint">Required for Sick Leave of 3+ consecutive days</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact During Leave</label>
+        <input class="form-input" id="aContact" placeholder="Mobile number or email for urgent contact"/>
+      </div>
+      <div style="background:var(--cream); border-radius:8px; padding:12px 14px; font-size:11.5px; color:var(--text-muted); line-height:1.6;">
+        ℹ️ <strong>Approval:</strong> Leave requests are reviewed by the Country Head (Tier 2). Friday is a weekly holiday — it will not be counted in leave days.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalApply')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLeaveRequest()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Submit Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 2 — Attendance Request
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalAttReq">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Attendance / Justification Request</div>
+      <button class="modal-close" onclick="closeModal('modalAttReq')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label req">Request Type</label>
+        <select class="form-select" id="attReqType" onchange="onAttTypeChange()">
+          <option value="">— Select —</option>
+          <optgroup label="Attendance Requests">
+            <option value="Correction">Attendance Correction</option>
+            <option value="Missing_CheckIn">Missing Check-In</option>
+            <option value="Missing_CheckOut">Missing Check-Out</option>
+            <option value="GPS_Exception">GPS Exception Regularization</option>
+            <option value="Regularization">General Regularization</option>
+          </optgroup>
+          <optgroup label="Justification Requests">
+            <option value="Late_Arrival">Late Arrival Justification</option>
+            <option value="Early_Departure">Early Departure Justification</option>
+            <option value="Field_Visit">Field Visit Justification</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label req">Date</label>
+          <input class="form-input" type="date" id="attReqDate"/>
+        </div>
+        <div class="form-group" id="attTimeGroup" style="display:none">
+          <label class="form-label">Actual Time</label>
+          <input class="form-input" type="time" id="attReqTime"/>
+        </div>
+      </div>
+      <div class="form-group" id="attFieldGroup" style="display:none">
+        <label class="form-label">Field Visit Location</label>
+        <input class="form-input" id="attFieldLoc" placeholder="e.g. Shahporan Upazila Parishad Office"/>
+        <div class="form-hint">Only whitelisted locations are accepted</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label req">Explanation</label>
+        <textarea class="form-textarea" id="attReason" placeholder="Provide a clear, factual explanation…" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supporting Evidence URL</label>
+        <input class="form-input" id="attEvidence" placeholder="Optional — document link, photo etc."/>
+      </div>
+      <div style="background:var(--cream); border-radius:8px; padding:12px 14px; font-size:11.5px; color:var(--text-muted);">
+        ℹ️ All attendance requests are reviewed by the Country Head (Tier 2). If Tier 2 is the affected employee, the request is escalated to Tier 1 (Super Admin, UK).
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalAttReq')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAttRequest()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 3 — Grievance
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalGrievance">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Submit Grievance / Appeal</div>
+      <button class="modal-close" onclick="closeModal('modalGrievance')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grievance-alert">
+        <span class="grievance-icon">⚖️</span>
+        <div class="grievance-text">
+          Grievances are formally reviewed: <strong>Tier 2 within 48 hours</strong>, and if unresolved, <strong>Tier 1 final binding decision within 72 hours</strong>. All stages are permanently audit-logged.
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label req">Subject</label>
+        <select class="form-select" id="grievSubject">
+          <option value="">— Select —</option>
+          <option>KPI Penalty Dispute</option>
+          <option>Payroll Deduction Dispute</option>
+          <option>Attendance Decision Appeal</option>
+          <option>Leave Decision Appeal</option>
+          <option>Disciplinary Action Appeal</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label req">Detailed Description</label>
+        <textarea class="form-textarea" id="grievDesc" placeholder="Describe the issue clearly, including dates, amounts, and your grounds for appeal…" rows="5"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supporting Documents / Evidence URL</label>
+        <input class="form-input" id="grievEvidence" placeholder="Optional"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalGrievance')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitGrievance()">Submit Grievance</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL 4 — Request Detail / Approval
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDetail">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detailModalTitle">Request Detail</div>
+        <div style="margin-top:5px;" id="detailModalBadges"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalDetail')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="detailRows"></div>
+      <div id="detailDecision"></div>
+      <div id="approvalPanel" style="display:none; margin-top:16px;">
+        <div class="form-section" style="margin-top:0; padding-top:14px">Decision</div>
+        <div class="form-group">
+          <label class="form-label">Remarks (optional)</label>
+          <textarea class="form-textarea" id="approvalRemarks" placeholder="Provide reason if rejecting, or any notes…" rows="2"></textarea>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <button class="btn btn-approve" style="flex:1" onclick="processApproval('Approved')">✅ Approve</button>
+          <button class="btn btn-reject" style="flex:1" onclick="processApproval('Rejected')">❌ Reject</button>
+        </div>
+      </div>
+      <div id="cancelPanel" style="display:none; margin-top:14px;">
+        <button class="btn btn-secondary btn-sm" onclick="cancelRequest()">Withdraw Request</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalDetail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ★ NEW MODAL 5 — Leave Balance Slip (Blueprint §6.3)
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalLeaveSlip">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">📄 Leave Balance Slip</div>
+      <button class="modal-close" onclick="closeModal('modalLeaveSlip')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="slip-preview" id="leaveSlipContent">
+        <div class="slip-preview-title">Leave Balance Slip</div>
+        <div class="slip-preview-org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2</div>
+        <div class="slip-row"><span class="slip-label">Employee</span><span class="slip-val" id="slipEmpName">—</span></div>
+        <div class="slip-row"><span class="slip-label">Designation</span><span class="slip-val" id="slipDesig">—</span></div>
+        <div class="slip-row"><span class="slip-label">As of Date</span><span class="slip-val" id="slipDate">—</span></div>
+        <div class="slip-row"><span class="slip-label">Leave Year</span><span class="slip-val" id="slipYear">—</span></div>
+        <div style="margin: 12px 0 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted);">Casual Leave (CL)</div>
+        <div class="slip-row"><span class="slip-label">Annual Entitlement</span><span class="slip-val">18 days</span></div>
+        <div class="slip-row"><span class="slip-label">Accrued to Date</span><span class="slip-val" id="slipCLAccrued">—</span></div>
+        <div class="slip-row"><span class="slip-label">Used</span><span class="slip-val" id="slipCLUsed">—</span></div>
+        <div class="slip-row"><span class="slip-label">Remaining Balance</span>
+          <span class="slip-val"><span class="slip-badge" id="slipCLBadge">—</span></span>
+        </div>
+        <div style="margin: 12px 0 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted);">Sick Leave (SL)</div>
+        <div class="slip-row"><span class="slip-label">Annual Entitlement</span><span class="slip-val">14 days</span></div>
+        <div class="slip-row"><span class="slip-label">Used</span><span class="slip-val" id="slipSLUsed">—</span></div>
+        <div class="slip-row"><span class="slip-label">Remaining Balance</span>
+          <span class="slip-val"><span class="slip-badge" id="slipSLBadge">—</span></span>
+        </div>
+        <div style="margin: 12px 0 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted);">Maternity Leave</div>
+        <div class="slip-row"><span class="slip-label">Entitlement</span><span class="slip-val">16 weeks (112 days) — Full Pay</span></div>
+        <div class="slip-row"><span class="slip-label">Status</span><span class="slip-val" id="slipMatStatus">—</span></div>
+        <div class="slip-row" style="border-bottom:none"><span class="slip-label">Expiry</span><span class="slip-val">Not subject to year-end expiry</span></div>
+        <div class="slip-footer">
+          ⚠ All unused CL and SL balances expire on 31 December. No carry-forward.<br>
+          Generated: <span id="slipGenerated">—</span> | BWAPMS v1.2 — CONFIDENTIAL
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalLeaveSlip')">Close</button>
+      <button class="btn btn-outline" onclick="downloadLeaveSlipCSV()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV
+      </button>
+      <button class="btn btn-primary" onclick="printLeaveSlip()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ★ NEW MODAL 6 — Leave Summary Download (Blueprint §6.3)
+══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalLeaveSummary">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="summaryModalTitle">📊 Monthly Leave Summary</div>
+      <button class="modal-close" onclick="closeModal('modalLeaveSummary')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="summary-period-row">
+        <div id="summaryMonthGroup" class="form-group" style="margin:0;flex:1">
+          <label class="form-label">Month</label>
+          <select class="form-select" id="summaryMonth">
+            <option value="01">January</option><option value="02">February</option>
+            <option value="03">March</option><option value="04">April</option>
+            <option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option>
+            <option value="09">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;flex:1">
+          <label class="form-label">Year</label>
+          <select class="form-select" id="summaryYear">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <div style="align-self:flex-end;padding-bottom:0">
+          <button class="btn btn-primary btn-sm" onclick="loadSummaryData()">Load</button>
+        </div>
+      </div>
+      <div id="summaryContent">
+        <div class="empty-state" style="padding:32px"><div class="empty-icon">📊</div><div class="empty-msg">Select period and click Load</div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalLeaveSummary')">Close</button>
+      <button class="btn btn-outline" onclick="downloadSummaryCSV()" id="btnSummaryCSV" style="display:none">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV
+      </button>
+      <button class="btn btn-primary" onclick="printLeaveSummary()" id="btnSummaryPrint" style="display:none">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:999;background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all 0.25s ease;pointer-events:none;max-width:320px;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══════════════════════════════════════
+   BWAPMS — leave.html
+   Blueprint v1.2 §6 + §17 (Grievance)
+   PATCH: §6.3 Leave Slip & Summary Downloads
+═══════════════════════════════════════ */
+
+const SUPABASE_URL = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+
+// Real Supabase auth client — used ONLY for login-session checks and to read
+// the user's JWT. The hand-rolled `db` REST helper below still does the
+// actual table reads/writes, but now sends the logged-in user's access
+// token instead of the bare anon key, so RLS policies (auth.uid()) work
+// and this page sees the real employee's data instead of demo data.
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+let ACCESS_TOKEN = SUPABASE_KEY; // falls back to anon key until bootstrapSession() runs
+
+const db = {
+  async query(table, params = {}) {
+    let url = `${SUPABASE_URL}/rest/v1/${table}?`;
+    const h = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN}` };
+    if (params.select) url += `select=${params.select}&`;
+    if (params.filter) url += `${params.filter}&`;
+    if (params.order)  url += `order=${params.order}&`;
+    const r = await fetch(url, { headers: h });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async insert(table, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async update(table, id, idField, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${idField}=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+};
+
+/* ── Session (real Supabase auth — no more demo fallback) ──
+ * bootstrapSession() runs before init() and:
+ *  1. Confirms a real Supabase login session exists (redirects to
+ *     index.html if not — same as every other page in the app).
+ *  2. Stores the user's access token so `db` sends authenticated requests.
+ *  3. Loads the employee's real row from employee_master and builds SESSION.
+ */
+let SESSION = null;
+
+async function bootstrapSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return false; }
+
+  ACCESS_TOKEN = session.access_token;
+
+  const { data: myRow, error } = await sb
+    .from('employee_master')
+    .select('employee_id, full_name, designation, tier')
+    .eq('auth_user_id', session.user.id)
+    .single();
+
+  if (error || !myRow) {
+    await sb.auth.signOut();
+    alert('আপনার অ্যাকাউন্ট সিস্টেমে নেই বা নিষ্ক্রিয়। Administrator-এর সাথে যোগাযোগ করুন।');
+    window.location.href = 'index.html';
+    return false;
+  }
+
+  const initials = (myRow.full_name || '').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || 'U';
+  SESSION = {
+    employee_id: myRow.employee_id,
+    name: myRow.full_name,
+    designation: myRow.designation,
+    tier: myRow.tier,
+    initials,
+  };
+  sessionStorage.setItem('bwapms_session', JSON.stringify(SESSION));
+  return true;
+}
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ * (REST helper version — no supabase-js auth client on this page.)
+ */
+async function registerSession() {
+  if (!SESSION || !SESSION.employee_id || SESSION.employee_id === 'demo-001') return;
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/user_sessions?on_conflict=employee_id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        employee_id: SESSION.employee_id,
+        session_token: mySessionToken,
+        last_seen_at: new Date().toISOString(),
+      })
+    });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const rows = await db.query('user_sessions', {
+        select: 'session_token',
+        filter: `employee_id=eq.${SESSION.employee_id}`,
+      });
+      const row = rows && rows[0];
+      if (row && row.session_token && row.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (row) {
+        // heartbeat — keep last_seen_at fresh
+        await db.update('user_sessions', SESSION.employee_id, 'employee_id', { last_seen_at: new Date().toISOString() }).catch(() => {});
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  sessionStorage.removeItem('bwapms_session');
+  localStorage.removeItem('bwapms_device_token');
+  try { await sb.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+
+/* ── State ── */
+let MY_REQUESTS   = [];
+let ALL_REQUESTS  = [];
+let EMPLOYEES     = [];
+let CURRENT_REQ   = null;
+let ACTIVE_MY_TAB = 'all';
+let ACTIVE_A_TAB  = 'leave';
+let BALANCES      = { CL: { total: 0, used: 0 }, SL: { total: 14, used: 0 }, Maternity: { available: true } };
+let SUMMARY_DATA  = [];   // ★ for summary modal
+let SUMMARY_MODE  = 'monthly'; // ★ 'monthly' | 'yearly'
+
+const $ = id => document.getElementById(id);
+
+function showToast(msg, ok = true) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.background = ok ? 'var(--navy)' : 'var(--red)';
+  t.style.transform = 'translateY(0)'; t.style.opacity = '1';
+  setTimeout(() => { t.style.transform = 'translateY(80px)'; t.style.opacity = '0'; }, 3200);
+}
+
+/* ── Init ── */
+async function init() {
+  const now = new Date();
+  $('topbarDate').textContent = now.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  startIdleWatcher();
+  await registerSession();
+  const yr = now.getFullYear();
+  $('balanceYear').textContent    = yr;
+  $('balanceYearCL').textContent  = yr;
+  $('balanceYearSL').textContent  = yr;
+
+  // Pre-select current month in summary modal
+  $('summaryMonth').value = String(now.getMonth() + 1).padStart(2,'0');
+  $('summaryYear').value  = String(yr);
+
+  $('sidebarUserName').textContent  = SESSION.name;
+  $('sidebarDesig').textContent     = SESSION.designation;
+  $('userNameSidebar').textContent  = SESSION.name;
+  $('userTierSidebar').textContent  = 'Tier ' + SESSION.tier;
+  $('userAvatarSidebar').textContent= SESSION.initials || SESSION.name[0];
+
+  const tLabels = { 1:'TIER 1 — SUPER ADMIN', 2:'TIER 2 — COUNTRY HEAD', 3:'TIER 3 — SENIOR STAFF', 4:'TIER 4 — STAFF' };
+  const tClass  = { 1:'t1', 2:'t2', 3:'t3', 4:'t4' };
+  $('sidebarTierBadge').textContent = tLabels[SESSION.tier] || '';
+  $('sidebarTierBadge').className   = 'tier-badge ' + (tClass[SESSION.tier] || '');
+  $('navDash').href = `dashboard-tier${SESSION.tier}.html`;
+
+  if (SESSION.tier <= 2) {
+    $('approvalQueueSection').style.display = 'block';
+    $('allStaffSection').style.display = 'block';
+  }
+
+  await loadEmployees();
+  await loadBalances();
+  await loadRequests();
+}
+
+/* ── Load employees ── */
+async function loadEmployees() {
+  try {
+    EMPLOYEES = await db.query('employee_master', { select: 'employee_id,full_name,tier,designation', filter: 'is_active=eq.true' });
+  } catch {
+    EMPLOYEES = [
+      { employee_id:'emp-001', full_name:'Kamrul Hasan',   tier:2, designation:'Country Head' },
+      { employee_id:'emp-002', full_name:'Nasrin Akter',   tier:3, designation:'Sr. Programme Officer' },
+      { employee_id:'emp-003', full_name:'Rafiqul Islam',  tier:3, designation:'Sr. Field Officer' },
+      { employee_id:'emp-004', full_name:'Mimi Begum',     tier:4, designation:'Programme Officer' },
+      { employee_id:'emp-005', full_name:'Jahangir Ali',   tier:4, designation:'Data Entry Officer' },
+      { employee_id:'emp-006', full_name:'Salma Khatun',   tier:4, designation:'Field Officer' },
+    ];
+  }
+  const sel = $('filterStaffEmployee');
+  if (sel) {
+    EMPLOYEES.filter(e=>e.tier>=2).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id; opt.textContent = e.full_name;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+/* ── CL accrual ── */
+function calcAccruedCL() {
+  const now = new Date();
+  const monthsElapsed = now.getMonth() + 1;
+  return Math.min(18, Math.floor(monthsElapsed * 1.5 * 10) / 10);
+}
+
+/* ── Load balances ── */
+async function loadBalances() {
+  const accrued = calcAccruedCL();
+  try {
+    const rows = await db.query('leave_balance', {
+      select: 'leave_type,total_allocated,used,balance',
+      filter: `employee_id=eq.${SESSION.employee_id}&year=eq.${new Date().getFullYear()}`
+    });
+    rows.forEach(r => {
+      if (r.leave_type === 'Casual')    { BALANCES.CL  = { total: r.total_allocated, used: r.used, accrued }; }
+      if (r.leave_type === 'Sick')      { BALANCES.SL  = { total: r.total_allocated, used: r.used }; }
+      if (r.leave_type === 'Maternity') { BALANCES.Maternity = { available: r.used === 0 }; }
+    });
+  } catch {
+    BALANCES = {
+      CL: { total: 18, used: 4.5, accrued },
+      SL: { total: 14, used: 2 },
+      Maternity: { available: true }
+    };
+  }
+  renderBalances();
+}
+
+function renderBalances() {
+  const { CL, SL } = BALANCES;
+  const clRemain = Math.max(0, (CL.accrued||0) - (CL.used||0));
+  const slRemain = Math.max(0, (SL.total||14) - (SL.used||0));
+
+  $('clRemaining').textContent = clRemain.toFixed(1);
+  $('clRemaining').classList.toggle('low', clRemain < 3);
+  $('clUsed').textContent    = (CL.used||0).toFixed(1);
+  $('clAccrued').textContent = (CL.accrued||0).toFixed(1);
+  $('clBar').style.width     = Math.round(((CL.accrued||0)-(CL.used||0))/(CL.total||18)*100) + '%';
+
+  $('slRemaining').textContent = slRemain.toFixed(0);
+  $('slRemaining').classList.toggle('low', slRemain < 3);
+  $('slUsed').textContent      = (SL.used||0).toFixed(0);
+  $('slBar').style.width       = Math.round(slRemain/(SL.total||14)*100) + '%';
+}
+
+/* ── Load requests ── */
+async function loadRequests() {
+  try {
+    MY_REQUESTS = await db.query('leave_request', {
+      select: '*',
+      filter: `employee_id=eq.${SESSION.employee_id}`,
+      order:  'created_at.desc'
+    });
+    if (SESSION.tier <= 2) {
+      ALL_REQUESTS = await db.query('leave_request', { select: '*', order: 'created_at.desc' });
+    }
+  } catch {
+    MY_REQUESTS = [
+      { request_id:'req-001', employee_id: SESSION.employee_id, request_type:'leave', leave_type:'Casual', from_date:'2026-06-10', to_date:'2026-06-11', days_requested:2, reason:'Family function', status:'Approved', approved_by:'emp-001', approved_at:'2026-06-08T10:00:00Z', remarks:'Approved. Please ensure handover before leaving.', created_at:'2026-06-07T09:00:00Z' },
+      { request_id:'req-002', employee_id: SESSION.employee_id, request_type:'leave', leave_type:'Sick', from_date:'2026-05-20', to_date:'2026-05-20', days_requested:1, reason:'Fever and cold', status:'Approved', approved_by:'emp-001', approved_at:'2026-05-20T11:00:00Z', remarks:'', created_at:'2026-05-20T08:30:00Z' },
+      { request_id:'req-003', employee_id: SESSION.employee_id, request_type:'attendance', att_type:'Late_Arrival', date:'2026-06-23', reason:'Road jam due to hartal', status:'Pending', created_at:'2026-06-23T10:45:00Z' },
+      { request_id:'req-004', employee_id: SESSION.employee_id, request_type:'leave', leave_type:'Casual', from_date:'2026-07-05', to_date:'2026-07-07', days_requested:3, reason:'Personal travel', status:'Pending', created_at:'2026-07-01T09:00:00Z' },
+    ];
+    if (SESSION.tier <= 2) {
+      ALL_REQUESTS = [
+        ...MY_REQUESTS,
+        { request_id:'req-005', employee_id:'emp-004', request_type:'leave', leave_type:'Sick', from_date:'2026-06-25', to_date:'2026-06-25', days_requested:1, reason:'Doctor visit', status:'Pending', created_at:'2026-06-24T17:00:00Z' },
+        { request_id:'req-006', employee_id:'emp-005', request_type:'attendance', att_type:'Missing_CheckOut', date:'2026-06-22', reason:'Left early due to family emergency', status:'Pending', created_at:'2026-06-22T20:00:00Z' },
+        { request_id:'req-007', employee_id:'emp-006', request_type:'justification', att_type:'Late_Arrival', date:'2026-06-24', reason:'Bus breakdown on way to office', status:'Pending', created_at:'2026-06-24T10:30:00Z' },
+      ];
+    }
+  }
+  renderMyRequests();
+  if (SESSION.tier <= 2) { renderApprovalQueue(); renderStaffRequests(); updateQueueBadge(); }
+  updateMyTabCounts();
+}
+
+/* ── My requests ── */
+function updateMyTabCounts() {
+  $('mCountAll').textContent     = MY_REQUESTS.length;
+  $('mCountPending').textContent = MY_REQUESTS.filter(r=>r.status==='Pending').length;
+  $('mCountApproved').textContent= MY_REQUESTS.filter(r=>r.status==='Approved').length;
+  $('mCountRejected').textContent= MY_REQUESTS.filter(r=>r.status==='Rejected').length;
+  const pending = MY_REQUESTS.filter(r=>r.status==='Pending').length;
+  const nb = $('navLeaveBadge');
+  if (pending) { nb.textContent = pending; nb.style.display = ''; }
+}
+
+function switchMyTab(tab) {
+  ACTIVE_MY_TAB = tab;
+  document.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === tab));
+  renderMyRequests();
+}
+
+function renderMyRequests() {
+  let reqs = [...MY_REQUESTS];
+  if (ACTIVE_MY_TAB === 'pending')  reqs = reqs.filter(r=>r.status==='Pending');
+  if (ACTIVE_MY_TAB === 'approved') reqs = reqs.filter(r=>r.status==='Approved');
+  if (ACTIVE_MY_TAB === 'rejected') reqs = reqs.filter(r=>r.status==='Rejected');
+  const tf = $('filterReqType').value;
+  if (tf) reqs = reqs.filter(r=>r.request_type===tf);
+  const cont = $('myRequestsList');
+  if (!reqs.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-msg">No requests found</div><div class="empty-sub">Try a different filter or submit a new request.</div></div>`;
+    return;
+  }
+  cont.innerHTML = reqs.map(r => buildReqRow(r, false)).join('');
+}
+
+function buildReqRow(r, isApprovalQueue) {
+  const isLeave = r.request_type === 'leave';
+  const typeKey = isLeave ? (r.leave_type||'').toLowerCase().slice(0,2) : (r.request_type==='attendance'?'att':'just');
+  const icons   = { ca:'📅', si:'🤒', ma:'🤱', em:'🚨', att:'🕐', just:'📝', gr:'⚖️' };
+  const icon    = icons[typeKey] || icons[r.request_type] || '📄';
+  const iconClass = { ca:'cl', si:'sl', ma:'mat', em:'em', att:'att', just:'just', gr:'att' }[typeKey] || 'just';
+  const title   = isLeave ? `${r.leave_type} Leave` : (r.att_type||r.request_type||'').replace(/_/g,' ');
+  const dateLine= isLeave
+    ? `${fmtDate(r.from_date)}${r.from_date!==r.to_date?' → '+fmtDate(r.to_date):''} (${r.days_requested||'?'} day${r.days_requested!==1?'s':''})`
+    : `Date: ${fmtDate(r.date||r.from_date)}`;
+  const empName = getEmpName(r.employee_id);
+  return `<div class="req-item" onclick="openDetail('${r.request_id}')">
+    <div class="req-icon ${iconClass}">${icon}</div>
+    <div class="req-body">
+      <div class="req-title">${escHtml(title)}</div>
+      <div class="req-meta">
+        ${isApprovalQueue ? `<span>👤 ${escHtml(empName)}</span>` : ''}
+        <span>${dateLine}</span>
+        <span style="color:var(--text-light);font-size:10.5px">${fmtDT(r.created_at)}</span>
+      </div>
+    </div>
+    <div class="req-right">
+      <span class="pill ${r.status.toLowerCase()}">${r.status}</span>
+      ${isApprovalQueue ? `<div class="approval-row"><button class="btn btn-approve btn-sm" onclick="quickApprove(event,'${r.request_id}')">✅</button><button class="btn btn-reject btn-sm" onclick="quickReject(event,'${r.request_id}')">❌</button></div>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ── Approval queue ── */
+function updateQueueBadge() {
+  const pending = ALL_REQUESTS.filter(r => r.status==='Pending' && r.employee_id !== SESSION.employee_id).length;
+  $('queueCount').textContent = pending;
+  $('aCountLeave').textContent = ALL_REQUESTS.filter(r=>r.status==='Pending'&&r.request_type==='leave'&&r.employee_id!==SESSION.employee_id).length;
+  $('aCountAtt').textContent   = ALL_REQUESTS.filter(r=>r.status==='Pending'&&r.request_type==='attendance'&&r.employee_id!==SESSION.employee_id).length;
+  $('aCountJust').textContent  = ALL_REQUESTS.filter(r=>r.status==='Pending'&&r.request_type==='justification'&&r.employee_id!==SESSION.employee_id).length;
+  $('aCountGriev').textContent = ALL_REQUESTS.filter(r=>r.status==='Pending'&&r.request_type==='grievance'&&r.employee_id!==SESSION.employee_id).length;
+}
+
+function switchApprovalTab(tab) {
+  ACTIVE_A_TAB = tab;
+  document.querySelectorAll('[data-atab]').forEach(b => b.classList.toggle('active', b.dataset.atab === tab));
+  renderApprovalQueue();
+}
+
+function renderApprovalQueue() {
+  let reqs = ALL_REQUESTS.filter(r => r.status==='Pending' && r.employee_id !== SESSION.employee_id);
+  if (ACTIVE_A_TAB !== 'all') reqs = reqs.filter(r => r.request_type === ACTIVE_A_TAB);
+  const cont = $('approvalListContainer');
+  if (!reqs.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-msg">No pending ${ACTIVE_A_TAB} requests</div></div>`;
+    return;
+  }
+  cont.innerHTML = reqs.map(r => buildReqRow(r, true)).join('');
+}
+
+function renderStaffRequests() {
+  let reqs = ALL_REQUESTS;
+  const ef = $('filterStaffEmployee').value;
+  const tf = $('filterStaffType').value;
+  const sf = $('filterStaffStatus').value;
+  if (ef) reqs = reqs.filter(r=>r.employee_id===ef);
+  if (tf) reqs = reqs.filter(r=>r.leave_type===tf);
+  if (sf) reqs = reqs.filter(r=>r.status===sf);
+  const cont = $('staffRequestsList');
+  if (!reqs.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-msg">No records found</div></div>`;
+    return;
+  }
+  cont.innerHTML = reqs.map(r => buildReqRow(r, false)).join('');
+}
+
+/* ── Quick approve/reject ── */
+async function quickApprove(e, id) {
+  e.stopPropagation();
+  await updateRequestStatus(id, 'Approved', 'Approved via quick action.');
+}
+async function quickReject(e, id) {
+  e.stopPropagation();
+  const reason = prompt('Reason for rejection:');
+  if (reason === null) return;
+  await updateRequestStatus(id, 'Rejected', reason || 'Rejected.');
+}
+
+/* ── Detail modal ── */
+function openDetail(id) {
+  const r = [...MY_REQUESTS, ...ALL_REQUESTS].find(x => x.request_id === id);
+  if (!r) return;
+  CURRENT_REQ = r;
+  const isLeave = r.request_type === 'leave';
+  $('detailModalTitle').textContent = isLeave ? `${r.leave_type} Leave Request` : (r.att_type||r.request_type||'').replace(/_/g,' ');
+  $('detailModalBadges').innerHTML  = `<span class="pill ${r.status.toLowerCase()}">${r.status}</span>`;
+  if (isLeave && r.leave_type) $('detailModalBadges').innerHTML += ` <span class="pill ${r.leave_type.toLowerCase().slice(0,2)}">${r.leave_type}</span>`;
+
+  const rows = [
+    isLeave ? ['Dates', `${fmtDate(r.from_date)} → ${fmtDate(r.to_date)}`] : ['Date', fmtDate(r.date||r.from_date)],
+    isLeave ? ['Days Requested', `${r.days_requested||'?'} day(s)`] : ['Request Type', (r.att_type||'').replace(/_/g,' ')],
+    ['Submitted By', getEmpName(r.employee_id)],
+    ['Submitted On', fmtDT(r.created_at)],
+    ['Reason', r.reason || '—'],
+    r.med_cert     ? ['Medical Certificate', `<a href="${r.med_cert}" target="_blank">View Document ↗</a>`] : null,
+    r.evidence_url ? ['Evidence', `<a href="${r.evidence_url}" target="_blank">View ↗</a>`] : null,
+  ].filter(Boolean);
+
+  $('detailRows').innerHTML = rows.map(([k,v]) =>
+    `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${escHtml(String(v)).replace('&lt;a ','<a ').replace('&lt;/a&gt;','</a>').replace('href=&quot;','href="').replace('&quot; target=','\" target=').replace('&quot;&gt;','\">')}</span></div>`
+  ).join('');
+
+  let decHtml = '';
+  if (r.status === 'Approved') {
+    decHtml = `<div class="decision-box approved"><div class="decision-label">✅ Approved</div><div class="decision-text">By ${getEmpName(r.approved_by)} on ${fmtDT(r.approved_at)}${r.remarks?'<br>Remarks: '+escHtml(r.remarks):''}</div></div>`;
+  } else if (r.status === 'Rejected') {
+    decHtml = `<div class="decision-box rejected"><div class="decision-label">❌ Rejected</div><div class="decision-text">By ${getEmpName(r.approved_by)} on ${fmtDT(r.approved_at)}${r.remarks?'<br>Reason: '+escHtml(r.remarks):''}</div></div>`;
+  } else {
+    decHtml = `<div class="decision-box pending"><div class="decision-label">⏳ Awaiting Decision</div><div class="decision-text">Pending review by ${SESSION.tier <= 2 ? 'you (Country Head)' : 'Country Head (Tier 2)'}.</div></div>`;
+  }
+  $('detailDecision').innerHTML = decHtml;
+
+  const canApprove = SESSION.tier <= 2 && r.employee_id !== SESSION.employee_id && r.status === 'Pending';
+  $('approvalPanel').style.display = canApprove ? 'block' : 'none';
+  if (canApprove) $('approvalRemarks').value = '';
+
+  const canCancel = r.employee_id === SESSION.employee_id && r.status === 'Pending';
+  $('cancelPanel').style.display = canCancel ? 'block' : 'none';
+
+  openModal('modalDetail');
+}
+
+async function processApproval(decision) {
+  if (!CURRENT_REQ) return;
+  const remarks = $('approvalRemarks').value.trim();
+  if (decision === 'Rejected' && !remarks) { showToast('Please provide a reason for rejection.', false); return; }
+  await updateRequestStatus(CURRENT_REQ.request_id, decision, remarks);
+  closeModal('modalDetail');
+}
+
+async function updateRequestStatus(id, status, remarks) {
+  const data = { status, approved_by: SESSION.employee_id, approved_at: new Date().toISOString(), remarks };
+  try {
+    await db.update('leave_request', id, 'request_id', data);
+    showToast(`✅ Request ${status.toLowerCase()}.`);
+  } catch {
+    showToast(`✅ Request ${status.toLowerCase()} (demo mode).`);
+  }
+  const upd = r => { if (r.request_id === id) { r.status = status; r.approved_by = SESSION.employee_id; r.approved_at = data.approved_at; r.remarks = remarks; } return r; };
+  MY_REQUESTS  = MY_REQUESTS.map(upd);
+  ALL_REQUESTS = ALL_REQUESTS.map(upd);
+  renderMyRequests(); updateMyTabCounts();
+  if (SESSION.tier <= 2) { renderApprovalQueue(); renderStaffRequests(); updateQueueBadge(); }
+}
+
+async function cancelRequest() {
+  if (!CURRENT_REQ) return;
+  await updateRequestStatus(CURRENT_REQ.request_id, 'Cancelled', 'Withdrawn by applicant.');
+  closeModal('modalDetail');
+}
+
+/* ── Leave application ── */
+function onLeaveTypeChange() {
+  const t = $('aLeaveType').value;
+  $('medCertGroup').style.display = (t === 'Sick') ? 'block' : 'none';
+  calcDays();
+}
+
+function calcDays() {
+  const from = $('aFromDate').value;
+  const to   = $('aToDate').value;
+  const type = $('aLeaveType').value;
+  if (!from || !to) return;
+  if (new Date(to) < new Date(from)) { $('calcDaysVal').textContent = '!'; $('calcDaysSub').textContent = 'To date before From date'; return; }
+  let days = 0, cur = new Date(from), end = new Date(to);
+  while (cur <= end) { if (cur.getDay() !== 5) days++; cur.setDate(cur.getDate()+1); }
+  $('calcDaysVal').textContent = days;
+  $('calcDaysSub').textContent = `Working days (Fridays excluded)`;
+  let balance = 0;
+  if (type === 'Casual') balance = Math.max(0, (BALANCES.CL.accrued||0) - (BALANCES.CL.used||0));
+  if (type === 'Sick')   balance = Math.max(0, (BALANCES.SL.total||14) - (BALANCES.SL.used||0));
+  const balAfter = balance - days;
+  $('calcBalAfter').textContent = type === 'Maternity' || type === 'Emergency' ? '—' : balAfter.toFixed(1);
+  const warn = $('calcWarning');
+  if ((type === 'Casual' || type === 'Sick') && balAfter < 0) {
+    warn.style.display = 'block';
+    warn.textContent   = `⚠ Insufficient balance (need ${days}, have ${balance.toFixed(1)})`;
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
+async function submitLeaveRequest() {
+  const type   = $('aLeaveType').value;
+  const from   = $('aFromDate').value;
+  const to     = $('aToDate').value;
+  const reason = $('aReason').value.trim();
+  if (!type || !from || !to || !reason) { showToast('Please fill all required fields.', false); return; }
+  if (new Date(to) < new Date(from)) { showToast('To date cannot be before From date.', false); return; }
+  let days = 0, cur = new Date(from), end = new Date(to);
+  while (cur <= end) { if (cur.getDay() !== 5) days++; cur.setDate(cur.getDate()+1); }
+  if (type === 'Casual') {
+    const bal = Math.max(0, (BALANCES.CL.accrued||0) - (BALANCES.CL.used||0));
+    if (days > bal) { showToast(`Insufficient CL balance. You have ${bal.toFixed(1)} days remaining.`, false); return; }
+  }
+  if (type === 'Sick') {
+    const bal = Math.max(0, (BALANCES.SL.total||14) - (BALANCES.SL.used||0));
+    if (days > bal) { showToast(`Insufficient SL balance. You have ${bal} days remaining.`, false); return; }
+  }
+  const req = {
+    employee_id: SESSION.employee_id, request_type: 'leave', leave_type: type,
+    from_date: from, to_date: to, days_requested: days, reason,
+    med_cert: $('aMedCert').value.trim() || null,
+    contact_during: $('aContact').value.trim() || null,
+    status: 'Pending', is_active: true, created_at: new Date().toISOString()
+  };
+  try {
+    const res = await db.insert('leave_request', req);
+    MY_REQUESTS.unshift(res[0] || { ...req, request_id: 'req-' + Date.now() });
+    showToast('✅ Leave request submitted. Awaiting Country Head approval.');
+  } catch {
+    MY_REQUESTS.unshift({ ...req, request_id: 'req-' + Date.now() });
+    showToast('✅ Leave request submitted (demo mode).');
+  }
+  closeModal('modalApply');
+  renderMyRequests(); updateMyTabCounts();
+}
+
+/* ── Attendance request ── */
+function onAttTypeChange() {
+  const t = $('attReqType').value;
+  $('attTimeGroup').style.display  = ['Missing_CheckIn','Missing_CheckOut','Late_Arrival','Early_Departure','Correction'].includes(t) ? 'block' : 'none';
+  $('attFieldGroup').style.display = t === 'Field_Visit' ? 'block' : 'none';
+}
+
+async function submitAttRequest() {
+  const type   = $('attReqType').value;
+  const date   = $('attReqDate').value;
+  const reason = $('attReason').value.trim();
+  if (!type || !date || !reason) { showToast('Please fill all required fields.', false); return; }
+  const escalated = SESSION.tier === 2;
+  const req = {
+    employee_id: SESSION.employee_id,
+    request_type: type.includes('Late')||type.includes('Departure')||type.includes('Field') ? 'justification' : 'attendance',
+    att_type: type, date, actual_time: $('attReqTime').value || null,
+    field_location: $('attFieldLoc').value.trim() || null, reason,
+    evidence_url: $('attEvidence').value.trim() || null,
+    escalated_to_tier1: escalated, status: 'Pending', is_active: true,
+    created_at: new Date().toISOString()
+  };
+  try {
+    const res = await db.insert('leave_request', req);
+    MY_REQUESTS.unshift(res[0] || { ...req, request_id: 'req-' + Date.now() });
+    showToast(escalated ? '✅ Request submitted — escalated to Tier 1 (UK) as per policy.' : '✅ Request submitted. Awaiting Country Head review.');
+  } catch {
+    MY_REQUESTS.unshift({ ...req, request_id: 'req-' + Date.now() });
+    showToast('✅ Request submitted (demo mode).');
+  }
+  closeModal('modalAttReq');
+  renderMyRequests(); updateMyTabCounts();
+}
+
+/* ── Grievance ── */
+async function submitGrievance() {
+  const subject = $('grievSubject').value;
+  const desc    = $('grievDesc').value.trim();
+  if (!subject || !desc) { showToast('Subject and description are required.', false); return; }
+  const req = {
+    employee_id: SESSION.employee_id, request_type: 'grievance', att_type: subject,
+    reason: desc, evidence_url: $('grievEvidence').value.trim() || null,
+    status: 'Pending', is_active: true, created_at: new Date().toISOString()
+  };
+  try {
+    const res = await db.insert('leave_request', req);
+    MY_REQUESTS.unshift(res[0] || { ...req, request_id: 'req-' + Date.now() });
+    showToast('✅ Grievance submitted. Tier 2 will respond within 48 hours.');
+  } catch {
+    MY_REQUESTS.unshift({ ...req, request_id: 'req-' + Date.now() });
+    showToast('✅ Grievance submitted (demo mode).');
+  }
+  closeModal('modalGrievance');
+  renderMyRequests(); updateMyTabCounts();
+}
+
+/* ══════════════════════════════════════════════════════
+   ★ NEW — Leave Balance Slip (Blueprint §6.3)
+══════════════════════════════════════════════════════ */
+function openLeaveSlipModal() {
+  const now = new Date();
+  const yr  = now.getFullYear();
+  const { CL, SL, Maternity } = BALANCES;
+  const clRemain = Math.max(0, (CL.accrued||0) - (CL.used||0));
+  const slRemain = Math.max(0, (SL.total||14) - (SL.used||0));
+
+  $('slipEmpName').textContent  = SESSION.name;
+  $('slipDesig').textContent    = SESSION.designation;
+  $('slipDate').textContent     = now.toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  $('slipYear').textContent     = yr;
+  $('slipCLAccrued').textContent= (CL.accrued||0).toFixed(1) + ' days (of 18)';
+  $('slipCLUsed').textContent   = (CL.used||0).toFixed(1) + ' days';
+  $('slipSLUsed').textContent   = (SL.used||0).toFixed(0) + ' days';
+  $('slipGenerated').textContent= now.toLocaleString('en-GB');
+
+  // CL badge
+  const clBadge = $('slipCLBadge');
+  clBadge.textContent = clRemain.toFixed(1) + ' days';
+  clBadge.className   = 'slip-badge ' + (clRemain < 3 ? 'low' : 'ok');
+
+  // SL badge
+  const slBadge = $('slipSLBadge');
+  slBadge.textContent = slRemain.toFixed(0) + ' days';
+  slBadge.className   = 'slip-badge ' + (slRemain < 3 ? 'low' : 'ok');
+
+  $('slipMatStatus').textContent = Maternity.available ? 'Available (not yet utilised)' : 'Utilised';
+
+  openModal('modalLeaveSlip');
+}
+
+function printLeaveSlip() {
+  const now = new Date();
+  const yr  = now.getFullYear();
+  const { CL, SL, Maternity } = BALANCES;
+  const clRemain = Math.max(0, (CL.accrued||0) - (CL.used||0));
+  const slRemain = Math.max(0, (SL.total||14) - (SL.used||0));
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Leave Balance Slip — ${SESSION.name}</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;padding:48px;color:#1a2640;max-width:640px;margin:0 auto;}
+    .org-header{margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #0f1f3d;}
+    .org-name{font-size:18px;font-weight:800;color:#0f1f3d;margin-bottom:3px;}
+    .org-sub{font-size:12px;color:#64748b;}
+    h2{font-size:20px;font-weight:700;color:#0f1f3d;margin:0 0 6px;}
+    .doc-meta{font-size:12px;color:#64748b;margin-bottom:24px;}
+    .section-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#64748b;margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0;}
+    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px;}
+    .row:last-child{border-bottom:none;}
+    .lbl{color:#64748b;font-weight:600;}
+    .val{font-weight:700;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:700;}
+    .ok{background:#e8f5ee;color:#1a7a4a;}
+    .low{background:#fef2f2;color:#dc2626;}
+    .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <div class="org-header">
+    <div class="org-name">BRPHI Bangladesh Country Office</div>
+    <div class="org-sub">GramGP Programme | Rahim Tower, Subhanighat, Sylhet | BWAPMS v1.2</div>
+  </div>
+  <h2>Leave Balance Slip</h2>
+  <div class="doc-meta">As of: ${now.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})} | Leave Year: ${yr}</div>
+  <div class="section-head">Employee Details</div>
+  <div class="row"><span class="lbl">Full Name</span><span class="val">${escHtml(SESSION.name)}</span></div>
+  <div class="row"><span class="lbl">Designation</span><span class="val">${escHtml(SESSION.designation)}</span></div>
+  <div class="section-head">Casual Leave (CL)</div>
+  <div class="row"><span class="lbl">Annual Entitlement</span><span class="val">18 days</span></div>
+  <div class="row"><span class="lbl">Accrued to Date</span><span class="val">${(CL.accrued||0).toFixed(1)} days</span></div>
+  <div class="row"><span class="lbl">Used</span><span class="val">${(CL.used||0).toFixed(1)} days</span></div>
+  <div class="row"><span class="lbl">Remaining Balance</span><span class="val"><span class="badge ${clRemain<3?'low':'ok'}">${clRemain.toFixed(1)} days</span></span></div>
+  <div class="section-head">Sick Leave (SL)</div>
+  <div class="row"><span class="lbl">Annual Entitlement</span><span class="val">14 days</span></div>
+  <div class="row"><span class="lbl">Used</span><span class="val">${(SL.used||0).toFixed(0)} days</span></div>
+  <div class="row"><span class="lbl">Remaining Balance</span><span class="val"><span class="badge ${slRemain<3?'low':'ok'}">${slRemain.toFixed(0)} days</span></span></div>
+  <div class="section-head">Maternity Leave</div>
+  <div class="row"><span class="lbl">Entitlement</span><span class="val">16 weeks (112 days) — Full Pay</span></div>
+  <div class="row"><span class="lbl">Status</span><span class="val">${Maternity.available ? 'Available (not yet utilised)' : 'Utilised'}</span></div>
+  <div class="row"><span class="lbl">Expiry</span><span class="val">Not subject to year-end expiry</span></div>
+  <div class="footer">
+    ⚠ All unused CL and SL balances expire on 31 December ${yr}. No carry-forward provision.<br>
+    Generated: ${now.toLocaleString('en-GB')} | BWAPMS v1.2 — CONFIDENTIAL — FOR AUTHORISED PERSONNEL ONLY
+  </div>
+  <br><button onclick="window.print()" style="margin-top:16px;padding:10px 22px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;">🖨 Print / Save as PDF</button>
+  </body></html>`);
+  w.document.close();
+}
+
+function downloadLeaveSlipCSV() {
+  const now = new Date();
+  const yr  = now.getFullYear();
+  const { CL, SL, Maternity } = BALANCES;
+  const clRemain = Math.max(0, (CL.accrued||0) - (CL.used||0));
+  const slRemain = Math.max(0, (SL.total||14) - (SL.used||0));
+
+  const rows = [
+    ['Leave Balance Slip — BWAPMS v1.2'],
+    ['Employee', SESSION.name],
+    ['Designation', SESSION.designation],
+    ['As of Date', now.toLocaleDateString('en-GB')],
+    ['Leave Year', yr],
+    [''],
+    ['Leave Type', 'Entitlement', 'Accrued', 'Used', 'Remaining'],
+    ['Casual Leave (CL)', '18 days', (CL.accrued||0).toFixed(1)+' days', (CL.used||0).toFixed(1)+' days', clRemain.toFixed(1)+' days'],
+    ['Sick Leave (SL)', '14 days', '14 days', (SL.used||0).toFixed(0)+' days', slRemain.toFixed(0)+' days'],
+    ['Maternity Leave', '112 days (16 wks)', 'N/A', Maternity.available?'0 days':'Utilised', Maternity.available?'Available':'—'],
+    [''],
+    ['Note', 'CL and SL expire 31 December '+yr+'. No carry-forward.'],
+    ['Generated', now.toLocaleString('en-GB')],
+  ];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href = url;
+  a.download = `leave_balance_slip_${SESSION.employee_id}_${now.toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ CSV downloaded.');
+}
+
+/* ══════════════════════════════════════════════════════
+   ★ NEW — Monthly / Yearly Leave Summary (Blueprint §6.3)
+══════════════════════════════════════════════════════ */
+function openSummaryModal(mode) {
+  SUMMARY_MODE = mode;
+  $('summaryModalTitle').textContent = mode === 'yearly' ? '📋 Yearly Leave Summary' : '📊 Monthly Leave Summary';
+  $('summaryMonthGroup').style.display = mode === 'yearly' ? 'none' : '';
+  $('summaryContent').innerHTML = `<div class="empty-state" style="padding:32px"><div class="empty-icon">${mode==='yearly'?'📋':'📊'}</div><div class="empty-msg">Select period and click Load</div></div>`;
+  $('btnSummaryCSV').style.display   = 'none';
+  $('btnSummaryPrint').style.display = 'none';
+  openModal('modalLeaveSummary');
+}
+
+async function loadSummaryData() {
+  const yr  = $('summaryYear').value;
+  const mo  = $('summaryMonth').value;
+  $('summaryContent').innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">⏳</div><div class="empty-msg">Loading…</div></div>`;
+
+  let fromDate, toDate, periodLabel;
+  if (SUMMARY_MODE === 'monthly') {
+    fromDate = `${yr}-${mo}-01`;
+    const lastDay = new Date(parseInt(yr), parseInt(mo), 0).getDate();
+    toDate   = `${yr}-${mo}-${String(lastDay).padStart(2,'0')}`;
+    const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    periodLabel = `${mNames[parseInt(mo)-1]} ${yr}`;
+  } else {
+    fromDate = `${yr}-01-01`;
+    toDate   = `${yr}-12-31`;
+    periodLabel = `Year ${yr}`;
+  }
+
+  let reqs;
+  try {
+    reqs = await db.query('leave_request', {
+      select: 'leave_type,from_date,to_date,days_requested,status,reason,approved_at',
+      filter: `employee_id=eq.${SESSION.employee_id}&request_type=eq.leave&from_date=gte.${fromDate}&from_date=lte.${toDate}`,
+      order:  'from_date.asc'
+    });
+  } catch {
+    // Demo: filter from MY_REQUESTS
+    reqs = MY_REQUESTS.filter(r =>
+      r.request_type === 'leave' &&
+      r.from_date >= fromDate && r.from_date <= toDate
+    );
+  }
+
+  SUMMARY_DATA = reqs || [];
+  renderSummaryContent(periodLabel);
+}
+
+function renderSummaryContent(periodLabel) {
+  const reqs = SUMMARY_DATA;
+
+  // Aggregate by type
+  const agg = {};
+  reqs.forEach(r => {
+    const t = r.leave_type || 'Unknown';
+    if (!agg[t]) agg[t] = { approved:0, pending:0, rejected:0, total:0 };
+    const d = r.days_requested || 0;
+    agg[t].total += d;
+    if (r.status === 'Approved')  agg[t].approved  += d;
+    if (r.status === 'Pending')   agg[t].pending   += d;
+    if (r.status === 'Rejected')  agg[t].rejected  += d;
+  });
+
+  const totalApproved = Object.values(agg).reduce((s,v)=>s+v.approved,0);
+  const totalPending  = Object.values(agg).reduce((s,v)=>s+v.pending,0);
+
+  if (!reqs.length) {
+    $('summaryContent').innerHTML = `<div class="empty-state" style="padding:32px"><div class="empty-icon">📭</div><div class="empty-msg">No leave records for ${periodLabel}</div></div>`;
+    $('btnSummaryCSV').style.display   = 'none';
+    $('btnSummaryPrint').style.display = 'none';
+    return;
+  }
+
+  const typeColors = { Casual:'var(--blue)', Sick:'var(--green)', Maternity:'var(--purple)', Emergency:'var(--red)' };
+
+  let html = `
+  <div style="background:var(--cream);border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Period</div>
+      <div style="font-size:15px;font-weight:800;color:var(--navy);">${periodLabel}</div>
+    </div>
+    <div style="display:flex;gap:16px;">
+      <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">${totalApproved}</div><div style="font-size:10.5px;color:var(--text-muted)">Days Approved</div></div>
+      <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--yellow)">${totalPending}</div><div style="font-size:10.5px;color:var(--text-muted)">Days Pending</div></div>
+      <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--navy)">${reqs.length}</div><div style="font-size:10.5px;color:var(--text-muted)">Requests</div></div>
+    </div>
+  </div>`;
+
+  // By leave type summary
+  if (Object.keys(agg).length) {
+    html += `<div style="margin-bottom:14px;">`;
+    Object.entries(agg).forEach(([type, data]) => {
+      const color = typeColors[type] || 'var(--text-muted)';
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <div style="flex:1;font-size:13px;font-weight:600;color:var(--text-main);">${type} Leave</div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="color:var(--green);font-weight:700;">${data.approved}d approved</span>
+          ${data.pending?`<span style="color:var(--yellow);font-weight:700;margin-left:8px;">${data.pending}d pending</span>`:''}
+          ${data.rejected?`<span style="color:var(--red);font-weight:700;margin-left:8px;">${data.rejected}d rejected</span>`:''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Request list table
+  html += `<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:8px;">Request Details</div>
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+    <thead><tr style="background:var(--cream);">
+      <th style="text-align:left;padding:8px 10px;font-size:10.5px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">Type</th>
+      <th style="text-align:left;padding:8px 10px;font-size:10.5px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">From</th>
+      <th style="text-align:left;padding:8px 10px;font-size:10.5px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">To</th>
+      <th style="text-align:center;padding:8px 10px;font-size:10.5px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">Days</th>
+      <th style="text-align:left;padding:8px 10px;font-size:10.5px;color:var(--text-muted);font-weight:700;border-bottom:1px solid var(--border);">Status</th>
+    </tr></thead>
+    <tbody>
+    ${reqs.map(r=>`<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);">${r.leave_type||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text-muted);">${fmtDate(r.from_date)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text-muted);">${fmtDate(r.to_date)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;">${r.days_requested||'?'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--border);"><span class="pill ${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+
+  $('summaryContent').innerHTML = html;
+  $('btnSummaryCSV').style.display   = 'inline-flex';
+  $('btnSummaryPrint').style.display = 'inline-flex';
+}
+
+function downloadSummaryCSV() {
+  const yr  = $('summaryYear').value;
+  const mo  = $('summaryMonth').value;
+  const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const periodLabel = SUMMARY_MODE === 'yearly' ? `Year ${yr}` : `${mNames[parseInt(mo)-1]} ${yr}`;
+
+  const headers = ['Leave Type','From Date','To Date','Days Requested','Status','Reason'];
+  const rows = [
+    [`Leave Summary — ${periodLabel} — ${SESSION.name} — BWAPMS v1.2`],
+    headers,
+    ...SUMMARY_DATA.map(r => [
+      r.leave_type||'—', r.from_date||'—', r.to_date||'—',
+      r.days_requested||0, r.status||'—', r.reason||'—'
+    ]),
+    [],
+    ['Generated', new Date().toLocaleString('en-GB')],
+  ];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href = url;
+  a.download = `leave_summary_${SESSION.employee_id}_${SUMMARY_MODE}_${yr}${SUMMARY_MODE==='monthly'?'-'+mo:''}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ CSV downloaded.');
+}
+
+function printLeaveSummary() {
+  const yr  = $('summaryYear').value;
+  const mo  = $('summaryMonth').value;
+  const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const periodLabel = SUMMARY_MODE === 'yearly' ? `Year ${yr}` : `${mNames[parseInt(mo)-1]} ${yr}`;
+  const totalApproved = SUMMARY_DATA.filter(r=>r.status==='Approved').reduce((s,r)=>s+(r.days_requested||0),0);
+  const totalPending  = SUMMARY_DATA.filter(r=>r.status==='Pending').reduce((s,r)=>s+(r.days_requested||0),0);
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Leave Summary — ${periodLabel} — ${SESSION.name}</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;padding:48px;color:#1a2640;max-width:700px;margin:0 auto;}
+    .hdr{margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #0f1f3d;}
+    .org{font-size:16px;font-weight:800;color:#0f1f3d;margin-bottom:2px;}
+    .org-sub{font-size:11px;color:#64748b;}
+    h2{font-size:19px;font-weight:700;margin:0 0 4px;}
+    .meta{font-size:12px;color:#64748b;margin-bottom:20px;}
+    .stats{display:flex;gap:32px;margin-bottom:24px;padding:16px;background:#f5f3ee;border-radius:8px;}
+    .stat{text-align:center;}.stat-v{font-size:24px;font-weight:800;}.stat-l{font-size:11px;color:#64748b;}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{background:#0f1f3d;color:#fff;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;}
+    td{padding:9px 12px;border-bottom:1px solid #e2e8f0;}
+    tr:last-child td{border-bottom:none;}
+    .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;}
+    .approved{background:#e8f5ee;color:#1a7a4a;}.pending{background:#fffbeb;color:#b45309;}.rejected{background:#fef2f2;color:#dc2626;}
+    .footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <div class="hdr">
+    <div class="org">BRPHI Bangladesh Country Office</div>
+    <div class="org-sub">GramGP Programme | BWAPMS v1.2</div>
+  </div>
+  <h2>${SUMMARY_MODE === 'yearly' ? 'Yearly' : 'Monthly'} Leave Summary</h2>
+  <div class="meta">Employee: <strong>${escHtml(SESSION.name)}</strong> | Period: <strong>${periodLabel}</strong></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-v" style="color:#1a7a4a">${totalApproved}</div><div class="stat-l">Days Approved</div></div>
+    <div class="stat"><div class="stat-v" style="color:#f59e0b">${totalPending}</div><div class="stat-l">Days Pending</div></div>
+    <div class="stat"><div class="stat-v">${SUMMARY_DATA.length}</div><div class="stat-l">Total Requests</div></div>
+  </div>
+  <table>
+    <tr><th>Leave Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th></tr>
+    ${SUMMARY_DATA.map(r=>`<tr>
+      <td>${r.leave_type||'—'}</td>
+      <td>${r.from_date||'—'}</td>
+      <td>${r.to_date||'—'}</td>
+      <td style="font-weight:700">${r.days_requested||'?'}</td>
+      <td><span class="pill ${(r.status||'').toLowerCase()}">${r.status||'—'}</span></td>
+    </tr>`).join('')}
+  </table>
+  <div class="footer">Generated: ${new Date().toLocaleString('en-GB')} | BWAPMS v1.2 — CONFIDENTIAL</div>
+  <br><button onclick="window.print()" style="margin-top:16px;padding:10px 22px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;">🖨 Print / Save as PDF</button>
+  </body></html>`);
+  w.document.close();
+}
+
+/* ── Helpers ── */
+function openAttendanceReqModal() { openModal('modalAttReq'); }
+function openApplyModal() {
+  $('aLeaveType').value=''; $('aFromDate').value=''; $('aToDate').value='';
+  $('aReason').value=''; $('aMedCert').value=''; $('aContact').value='';
+  $('calcDaysVal').textContent='—'; $('calcBalAfter').textContent='—';
+  $('medCertGroup').style.display='none'; $('calcWarning').style.display='none';
+  openModal('modalApply');
+}
+
+function getEmpName(id) {
+  if (!id) return '—';
+  if (id === SESSION.employee_id) return SESSION.name;
+  const e = EMPLOYEES.find(em=>em.employee_id===id);
+  return e ? e.full_name : id.slice(0,8)+'…';
+}
+
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+const fmtDT   = d => d ? new Date(d).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+const escHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const openModal  = id => $(id).classList.remove('hidden');
+const closeModal = id => $(id).classList.add('hidden');
+
+async function logout() { sessionStorage.removeItem('bwapms_session'); localStorage.removeItem('bwapms_device_token'); try { await sb.auth.signOut(); } catch (e) {} window.location.href = 'index.html'; }
+
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target===o) o.classList.add('hidden'); }));
+
+(async () => {
+  const ok = await bootstrapSession();
+  if (ok) await init().catch(console.error);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BWAPMS — উপস্থিতি (Attendance)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:        #0f1f3d;
+  --navy-mid:    #162d52;
+  --green:       #1a7a4a;
+  --green-light: #22a05e;
+  --green-bg:    #e8f5ee;
+  --cream:       #f5f3ee;
+  --red:         #c0392b;
+  --red-bg:      #fdf0ee;
+  --amber:       #b45309;
+  --amber-bg:    #fffbeb;
+  --blue:        #1d4ed8;
+  --blue-bg:     #eff6ff;
+  --border:      #d8dfe9;
+  --text-main:   #1a2640;
+  --text-muted:  #5a6a80;
+  --text-light:  #8fa0b8;
+  --white:       #ffffff;
+  --radius:      12px;
+  --font:        'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+html, body { min-height: 100vh; font-family: var(--font); background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+/* ── Topbar ── */
+.topbar {
+  background: var(--navy);
+  padding: 0 28px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-logo { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+.topbar-sub  { font-size: 12px; color: rgba(255,255,255,0.45); font-weight: 500; }
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px;
+  padding: 7px 14px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.15);
+  transition: all 0.15s;
+}
+.back-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+/* ── Offline banner ── */
+.offline-banner {
+  background: #92400e; color: #fff;
+  padding: 10px 28px; font-size: 13px; font-weight: 600;
+  display: none; align-items: center; gap: 10px;
+  letter-spacing: 0.02em;
+}
+.offline-banner.show { display: flex; }
+.offline-dot { width: 8px; height: 8px; background: #fcd34d; border-radius: 50%; animation: blink 1s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Sync Status Badge (v1.3 §1.3) ── */
+.sync-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700;
+  margin-bottom: 14px; transition: background 0.2s, color 0.2s;
+}
+.sync-badge .sync-icon { font-size: 12px; line-height: 1; }
+.sync-badge.synced  { background: var(--green-dim, #e8f5ee); color: var(--green, #1a7a4a); }
+.sync-badge.pending { background: #fffbeb; color: #b45309; }
+.sync-badge.offline { background: #fef2f2; color: #dc2626; }
+
+/* ── Layout ── */
+.page { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── Rules Panel ── */
+.rules-panel {
+  background: var(--navy);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.rules-header {
+  padding: 16px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.rules-header-left { display: flex; align-items: center; gap: 10px; }
+.rules-title { font-size: 14px; font-weight: 700; color: #fff; }
+.rules-badge {
+  background: var(--green); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  padding: 3px 9px; border-radius: 4px; text-transform: uppercase;
+}
+.rules-toggle { color: rgba(255,255,255,0.5); font-size: 18px; transition: transform 0.2s; }
+.rules-toggle.open { transform: rotate(180deg); }
+.rules-body { display: none; padding: 0 22px 20px; }
+.rules-body.show { display: block; }
+
+.rule-section { margin-bottom: 18px; }
+.rule-section:last-child { margin-bottom: 0; }
+.rule-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--green-light); margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.rule-item {
+  display: flex; gap: 10px; margin-bottom: 7px; align-items: flex-start;
+}
+.rule-dot {
+  width: 5px; height: 5px; background: var(--green-light); border-radius: 50%;
+  flex-shrink: 0; margin-top: 6px;
+}
+.rule-text { font-size: 12.5px; color: rgba(255,255,255,0.72); line-height: 1.55; }
+.rule-text b { color: rgba(255,255,255,0.95); }
+.rule-highlight {
+  background: rgba(26,122,74,0.25); border-left: 3px solid var(--green-light);
+  border-radius: 4px; padding: 8px 12px; margin-top: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5;
+}
+.rule-warning {
+  background: rgba(180,83,9,0.25); border-left: 3px solid #f59e0b;
+  border-radius: 4px; padding: 8px 12px; margin-top: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5;
+}
+.law-tag {
+  display: inline-block; background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55); font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 3px; margin-left: 6px;
+  vertical-align: middle; letter-spacing: 0.04em;
+}
+.rules-fulllink {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 14px; padding: 11px 14px;
+  background: rgba(34,160,94,0.14); border: 1px solid rgba(34,160,94,0.35);
+  border-radius: 8px; text-decoration: none;
+  transition: background 0.15s;
+}
+.rules-fulllink:hover { background: rgba(34,160,94,0.22); }
+.rules-fulllink-text { font-size: 12.5px; font-weight: 600; color: #fff; }
+.rules-fulllink-sub  { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+.rules-fulllink-arrow{ color: var(--green-light); font-size: 16px; flex-shrink: 0; }
+
+/* ── Card ── */
+.card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 24px; margin-bottom: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+.card-title {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* ── Clock ── */
+.clock-block { text-align: center; padding: 8px 0 4px; }
+.clock-time { font-size: 48px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; line-height: 1; }
+.clock-date { font-size: 14px; color: var(--text-muted); margin-top: 6px; }
+
+/* ── Status pill ── */
+.status-wrap { text-align: center; margin: 16px 0 0; }
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 18px; border-radius: 999px; font-size: 13px; font-weight: 700;
+}
+.pill-present  { background: var(--green-bg); color: #155a33; }
+.pill-late     { background: var(--amber-bg); color: var(--amber); }
+.pill-absent   { background: var(--red-bg); color: var(--red); }
+.pill-none     { background: #eef0f5; color: var(--text-muted); }
+.pill-leave    { background: var(--blue-bg); color: var(--blue); }
+.pill-exception{ background: #fdf0ee; color: #9a3412; }
+.pill-holiday  { background: #f5f3ff; color: #6d28d9; }
+.pill-exempt   { background: #f0fdf4; color: #166534; }
+.pill-dot { width: 7px; height: 7px; border-radius: 50%; }
+.pill-present .pill-dot  { background: #155a33; }
+.pill-late    .pill-dot  { background: var(--amber); }
+.pill-absent  .pill-dot  { background: var(--red); }
+.pill-none    .pill-dot  { background: var(--text-muted); }
+
+/* ── Deduction preview ── */
+.deduction-preview {
+  background: var(--red-bg); border: 1px solid rgba(192,57,43,0.18);
+  border-radius: 10px; padding: 14px 18px; margin-top: 14px; display: none;
+}
+.deduction-preview.show { display: block; }
+.ded-title { font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.ded-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+.ded-label { color: var(--text-muted); }
+.ded-value { font-weight: 700; color: var(--red); }
+.ded-note  { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+
+/* ── Buttons ── */
+.btn-row { display: flex; gap: 12px; margin-top: 20px; }
+.btn {
+  flex: 1; padding: 15px; border-radius: 10px; border: none;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font); transition: all 0.15s;
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-checkin  { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(26,122,74,0.28); }
+.btn-checkin:hover:not(:disabled)  { background: var(--green-light); }
+.btn-checkout { background: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(15,31,61,0.22); }
+.btn-checkout:hover:not(:disabled) { background: var(--navy-mid); }
+
+/* ── GPS info box ── */
+.gps-box {
+  margin-top: 16px; padding: 14px; background: #f7f9fc;
+  border-radius: 10px; border: 1px solid var(--border);
+  font-size: 13px; color: var(--text-muted); line-height: 1.7;
+}
+.gps-box b { color: var(--text-main); }
+.gps-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.gps-icon { flex-shrink: 0; }
+
+.attempt-bar { margin-top: 10px; }
+.attempt-label { font-size: 12px; color: var(--amber); font-weight: 600; margin-bottom: 6px; }
+.attempt-dots { display: flex; gap: 6px; }
+.adot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.adot.used { background: var(--amber); }
+
+/* ── Message box ── */
+.msg-box {
+  margin-top: 14px; padding: 14px 16px; border-radius: 10px;
+  font-size: 13.5px; line-height: 1.55; display: none;
+}
+.msg-box.show { display: block; }
+.msg-success { background: var(--green-bg); color: #155a33; border: 1px solid #bbf7d0; }
+.msg-error   { background: var(--red-bg);   color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+.msg-warn    { background: var(--amber-bg); color: var(--amber); border: 1px solid #fde68a; }
+.msg-info    { background: var(--blue-bg);  color: var(--blue); border: 1px solid #bfdbfe; }
+
+/* ── Spinner ── */
+.spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── History tabs ── */
+.tab-row { display: flex; gap: 4px; margin-bottom: 18px; background: var(--cream); border-radius: 8px; padding: 4px; }
+.tab-btn {
+  flex: 1; padding: 8px; font-size: 13px; font-weight: 600;
+  border: none; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text-muted);
+  font-family: var(--font); transition: all 0.15s;
+}
+.tab-btn.active { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* ── Table ── */
+.att-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.att-table th {
+  text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted);
+  padding: 8px 10px; background: var(--cream); border-bottom: 1px solid var(--border);
+}
+.att-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); }
+.att-table tr:last-child td { border-bottom: none; }
+.att-table tr:hover td { background: #fafafa; }
+
+/* ── Status badges in table ── */
+.s-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+}
+.s-present  { background: var(--green-bg); color: #155a33; }
+.s-late     { background: var(--amber-bg); color: var(--amber); }
+.s-absent   { background: var(--red-bg); color: var(--red); }
+.s-leave    { background: var(--blue-bg); color: var(--blue); }
+.s-holiday  { background: #f5f3ff; color: #6d28d9; }
+.s-exception{ background: #fdf0ee; color: #9a3412; }
+.s-exempt   { background: #f0fdf4; color: #166534; }
+.s-weekend  { background: #f3f4f6; color: #6b7280; }
+
+/* ── Summary cards ── */
+.summary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.sum-card { background: var(--white); border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.sum-num { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+.sum-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+.sum-card.c-late   .sum-num { color: var(--amber); }
+.sum-card.c-absent .sum-num { color: var(--red); }
+.sum-card.c-ok     .sum-num { color: var(--green); }
+
+/* ── Download row ── */
+.download-row {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+  padding-top: 14px; border-top: 1px solid var(--border);
+}
+.dl-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--white); color: var(--text-main); font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: var(--font); transition: all 0.15s;
+}
+.dl-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.dl-btn svg { flex-shrink: 0; }
+
+/* ── Tier 1 exempt notice ── */
+.exempt-notice {
+  background: var(--navy); border-radius: var(--radius); padding: 36px;
+  text-align: center; display: none;
+}
+.exempt-notice.show { display: block; }
+.exempt-icon { font-size: 40px; margin-bottom: 14px; }
+.exempt-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.exempt-text { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 32px 0; color: var(--text-light); font-size: 14px; }
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  .summary-grid { grid-template-columns: repeat(2,1fr); }
+  .btn-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="topbar-logo">BWAPMS</div>
+      <div class="topbar-sub">উপস্থিতি ব্যবস্থাপনা</div>
+    </div>
+  </div>
+  <a href="#" class="back-btn" id="backLink">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Dashboard
+  </a>
+</div>
+
+<!-- Offline Banner -->
+<div class="offline-banner" id="offlineBanner">
+  <div class="offline-dot"></div>
+  ⚠ অফলাইন মোড — ইন্টারনেট সংযোগ নেই। Check-in ডিভাইসে সংরক্ষিত হবে এবং নেট এলে স্বয়ংক্রিয়ভাবে sync হবে।
+  <span style="margin-left:auto;font-size:11px;opacity:0.8;">[OFFLINE — CACHED]</span>
+</div>
+
+<div class="page">
+
+  <!-- Tier 1 Exempt Notice (hidden by default) -->
+  <div class="exempt-notice" id="tier1Exempt">
+    <div class="exempt-icon">🛡️</div>
+    <div class="exempt-title">Attendance Tracking প্রযোজ্য নয়</div>
+    <div class="exempt-text">Super Admin (Tier 1) হিসেবে আপনি Attendance, Check-In/Check-Out ট্র্যাকিং থেকে সম্পূর্ণ অব্যাহতিপ্রাপ্ত।<br>Blueprint Section 2.1 এবং Section 5.1 অনুযায়ী।</div>
+  </div>
+
+  <!-- Main content (hidden for Tier 1) -->
+  <div id="mainContent">
+
+    <!-- ══ CLOCK & STATUS ══ -->
+    <div class="card">
+      <div class="clock-block">
+        <div class="clock-time" id="clockDisplay">--:--:--</div>
+        <div class="clock-date" id="dateDisplay">—</div>
+      </div>
+      <div class="status-wrap">
+        <div class="status-pill pill-none" id="statusPill">
+          <div class="pill-dot"></div>
+          <span id="statusText">আজকের স্ট্যাটাস লোড হচ্ছে...</span>
+        </div>
+      </div>
+
+      <!-- Late deduction preview -->
+      <div class="deduction-preview" id="dedPreview">
+        <div class="ded-title">⚠ আনুমানিক বেতন কর্তন</div>
+        <div class="ded-row"><span class="ded-label">দেরির পরিমাণ (১০:০০ AM থেকে)</span><span class="ded-value" id="dedMinutes">—</span></div>
+        <div class="ded-row"><span class="ded-label">আনুমানিক কর্তন</span><span class="ded-value" id="dedAmount">—</span></div>
+        <div class="ded-note">* চূড়ান্ত হিসাব Payroll Processing-এ হবে। মাসিক বেতনের উপর ভিত্তি করে সমানুপাতিক কর্তন।</div>
+      </div>
+    </div>
+
+    <!-- ══ CHECK-IN / CHECK-OUT ══ -->
+    <div class="card" id="checkinCard">
+      <div class="card-title">Check-In / Check-Out</div>
+
+      <!-- Offline Sync Status Badge (v1.3 §1.3) -->
+      <div class="sync-badge synced" id="syncBadge">
+        <span class="sync-icon">🟢</span><span id="syncBadgeText">Synced</span>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label" for="checkinRemarks" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em;">মন্তব্য (ঐচ্ছিক)</label>
+        <textarea id="checkinRemarks" rows="2" placeholder="যেমন: ফিল্ড ভিজিটের কারণ, বিশেষ পরিস্থিতি ইত্যাদি (ঐচ্ছিক)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-checkin"  id="btnCheckIn"  onclick="handleCheckIn()">
+          📍 Check-In
+        </button>
+        <button class="btn btn-checkout" id="btnCheckOut" onclick="handleCheckOut()" disabled>
+          🏁 Check-Out
+        </button>
+      </div>
+
+      <!-- GPS attempt indicator -->
+      <div class="attempt-bar" id="attemptBar" style="display:none;">
+        <div class="attempt-label" id="attemptLabel">GPS Accuracy চেষ্টা: 0 / 3</div>
+        <div class="attempt-dots">
+          <div class="adot" id="adot1"></div>
+          <div class="adot" id="adot2"></div>
+          <div class="adot" id="adot3"></div>
+        </div>
+      </div>
+
+      <div class="gps-box" id="gpsBox">
+        <div class="gps-row">
+          <span class="gps-icon">📡</span>
+          <span>Check-In বা Check-Out বাটনে চাপুন। ব্রাউজার Location Permission চাইলে <b>Allow</b> করুন।</span>
+        </div>
+      </div>
+
+      <div class="msg-box" id="msgBox"></div>
+    </div>
+
+    <!-- ══ MONTHLY SUMMARY ══ -->
+    <div id="summarySection">
+      <div class="summary-grid" id="summaryGrid">
+        <div class="sum-card c-ok">
+          <div class="sum-num" id="sumPresent">—</div>
+          <div class="sum-label">উপস্থিত</div>
+        </div>
+        <div class="sum-card c-late">
+          <div class="sum-num" id="sumLate">—</div>
+          <div class="sum-label">লেট</div>
+        </div>
+        <div class="sum-card c-absent">
+          <div class="sum-num" id="sumAbsent">—</div>
+          <div class="sum-label">অনুপস্থিত</div>
+        </div>
+        <div class="sum-card">
+          <div class="sum-num" id="sumLeave">—</div>
+          <div class="sum-label">ছুটি</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY ══ -->
+    <div class="card">
+      <div class="card-title">উপস্থিতির ইতিহাস</div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('week', this)">শেষ ৭ দিন</button>
+        <button class="tab-btn" id="customTabBtn" onclick="switchTab('custom', this)">📅 Custom</button>
+      </div>
+
+      <div id="customRangeRow" style="display:none; gap:10px; align-items:flex-end; flex-wrap:wrap; margin:10px 0 4px;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label for="customFromDate" style="font-size:11px; color:#667; font-weight:600;">From</label>
+          <input type="date" id="customFromDate" min="2025-01-01" style="padding:7px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label for="customToDate" style="font-size:11px; color:#667; font-weight:600;">To</label>
+          <input type="date" id="customToDate" style="padding:7px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+        </div>
+        <button class="dl-btn" onclick="applyCustomRange()">Apply</button>
+      </div>
+
+      <div id="historyTableWrap">
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>তারিখ</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>দেরি</th>
+              <th>স্ট্যাটাস</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="5" class="empty">লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Download buttons -->
+      <div class="download-row">
+        <button class="dl-btn" onclick="downloadSlip('pdf')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Attendance Slip (PDF)
+        </button>
+        <button class="dl-btn" onclick="downloadReport('csv')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          CSV
+        </button>
+        <button class="dl-btn" onclick="downloadReport('excel')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Excel
+        </button>
+        <button class="dl-btn" onclick="downloadReport('pdf')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Report (PDF)
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /page -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIG & CONSTANTS (Blueprint Section 5.3–5.6)
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Blueprint Section 5.3 / 5.4
+const OFFICE_START_H     = 10; // 10:00 AM — Payroll boundary & deduction start
+const OFFICE_START_M     = 0;
+const GRACE_END_H        = 10; // 10:10 AM — Late threshold
+const GRACE_END_M        = 10;
+const AUTO_ABSENT_H      = 12; // 12:00 PM — Auto-absent trigger
+const AUTO_ABSENT_M      = 0;
+const OFFICE_END_H       = 18; // 6:00 PM — Payroll boundary end
+const MISSING_COUT_H     = 20; // 8:00 PM — Missing checkout flag
+const GPS_ACCURACY_LIMIT = 100;
+const MAX_GPS_ATTEMPTS   = 3;
+const WORKING_MINS_DAY   = 480; // 8 hours × 60
+
+// State
+let myEmployeeId   = null;
+let myTier         = null;
+let myGrossSalary  = null;
+let myName         = '';
+let whitelistedLocs= [];
+let gpsAttemptCount= 0;
+let todayAtt       = null;
+let currentTab     = 'week';
+let offlineCache   = JSON.parse(localStorage.getItem('bwapms_offline_cache') || '[]');
+
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ */
+async function registerSession() {
+  // Reuse the same device/tab token across page navigations within this tab
+  // (full page reloads used to call safeUUID() fresh every time, which made
+  // every internal page navigation overwrite user_sessions and force-logout
+  // the very page the user just came from). Only generate a new token when
+  // this tab has never had one — sessionStorage is per-tab, so other tabs /
+  // devices still correctly trigger the single-active-session logout.
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await db.from('user_sessions').upsert({
+      employee_id: myEmployeeId,
+      session_token: mySessionToken,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: 'employee_id' });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const { data } = await db.from('user_sessions')
+        .select('session_token')
+        .eq('employee_id', myEmployeeId)
+        .maybeSingle();
+      if (data && data.session_token && data.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (data) {
+        // heartbeat — keep last_seen_at fresh
+        try {
+          await db.from('user_sessions').update({ last_seen_at: new Date().toISOString() })
+            .eq('employee_id', myEmployeeId).eq('session_token', mySessionToken);
+        } catch (e2) { /* network hiccup on heartbeat — non-fatal */ }
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  localStorage.removeItem('bwapms_device_token');
+  try { await db.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  startClock();
+  monitorOffline();
+  await loadProfile();
+  startIdleWatcher();
+  await registerSession();
+
+  if (myTier === 1) {
+    document.getElementById('tier1Exempt').classList.add('show');
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('checkinCard').style.display = 'none';
+    return;
+  }
+
+  await loadWhitelistedLocs();
+  await loadTodayAttendance();
+  await loadHistory('week');
+  await loadMonthlySummary();
+  trySyncOfflineCache();
+});
+
+// ══════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = String(h % 12 || 12).padStart(2,'0');
+    document.getElementById('clockDisplay').textContent =
+      `${h12}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+    document.getElementById('dateDisplay').textContent =
+      now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    // Auto-absent check (12:00 PM) — show warning
+    if (h === AUTO_ABSENT_H && m === AUTO_ABSENT_M && !todayAtt) {
+      showMsg('error', '⚠ দুপুর ১২:০০ বাজে গেছে। Check-In না থাকায় আজকের জন্য <b>Absent</b> রেকর্ড হবে।');
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════════════
+// OFFLINE MONITOR
+// ══════════════════════════════════════════════════════
+function monitorOffline() {
+  const banner = document.getElementById('offlineBanner');
+  window.addEventListener('offline', () => { banner.classList.add('show'); updateSyncBadge(); });
+  window.addEventListener('online',  () => { banner.classList.remove('show'); trySyncOfflineCache(); });
+  if (!navigator.onLine) banner.classList.add('show');
+  updateSyncBadge();
+}
+
+// ══════════════════════════════════════════════════════
+// SYNC STATUS BADGE (v1.3 §1.3)
+// ══════════════════════════════════════════════════════
+function updateSyncBadge() {
+  const badge = document.getElementById('syncBadge');
+  const text  = document.getElementById('syncBadgeText');
+  if (!badge || !text) return;
+
+  if (!navigator.onLine) {
+    badge.className = 'sync-badge offline';
+    badge.querySelector('.sync-icon').textContent = '🔴';
+    text.textContent = 'Offline';
+  } else if (offlineCache.length > 0) {
+    badge.className = 'sync-badge pending';
+    badge.querySelector('.sync-icon').textContent = '🟡';
+    text.textContent = `Pending Sync (${offlineCache.length}টা)`;
+  } else {
+    badge.className = 'sync-badge synced';
+    badge.querySelector('.sync-icon').textContent = '🟢';
+    text.textContent = 'Synced';
+  }
+}
+
+async function trySyncOfflineCache() {
+  if (!navigator.onLine || offlineCache.length === 0 || !myEmployeeId) { updateSyncBadge(); return; }
+  for (const entry of offlineCache) {
+    try {
+      if (entry.type === 'checkin') {
+        await db.from('attendance').upsert({
+          ...entry.data,
+          offline_sync_flag: true,
+          synced_at: new Date().toISOString(),
+        }, { onConflict: 'employee_id,attendance_date' });
+        await db.from('gps_log').insert({ ...entry.gpsData, offline_cached: true, synced_at: new Date().toISOString() });
+        await db.from('audit_logs').insert({
+          user_id: myEmployeeId,
+          action: 'Offline_Sync_CheckIn', module: 'Attendance',
+          risk_score: 2, risk_level: 'Low',
+          new_value: JSON.stringify(entry.data),
+        });
+      }
+    } catch(e) { console.error('Sync failed:', e); }
+  }
+  offlineCache = [];
+  localStorage.setItem('bwapms_offline_cache', '[]');
+  updateSyncBadge();
+  showMsg('info', '✅ অফলাইনে সংরক্ষিত ডেটা সফলভাবে Sync হয়েছে।');
+  await loadTodayAttendance();
+  await loadHistory(currentTab);
+}
+
+// ══════════════════════════════════════════════════════
+// PROFILE LOAD
+// ══════════════════════════════════════════════════════
+async function loadProfile() {
+  const uid = (await db.auth.getUser()).data.user?.id;
+  if (!uid) return;
+  const { data } = await db.from('employee_master')
+    .select('employee_id, tier, full_name, monthly_gross_salary')
+    .eq('auth_user_id', uid).single();
+  if (!data) return;
+  myEmployeeId  = data.employee_id;
+  myTier        = data.tier;
+  myName        = data.full_name || '';
+  myGrossSalary = data.monthly_gross_salary || null;
+  document.getElementById('backLink').href = `dashboard-tier${myTier}.html`;
+}
+
+async function loadWhitelistedLocs() {
+  const { data } = await db.from('whitelisted_locations')
+    .select('location_id, name, category, gps_lat, gps_lng, radius_metres')
+    .eq('is_active', true);
+  whitelistedLocs = data || [];
+}
+
+// ══════════════════════════════════════════════════════
+// TODAY'S ATTENDANCE STATE
+// ══════════════════════════════════════════════════════
+async function loadTodayAttendance() {
+  if (!myEmployeeId) return;
+  const today = new Date().toISOString().slice(0,10);
+  const { data } = await db.from('attendance')
+    .select('*')
+    .eq('employee_id', myEmployeeId)
+    .eq('attendance_date', today)
+    .maybeSingle();
+  todayAtt = data;
+  renderTodayState(data);
+}
+
+function renderTodayState(att) {
+  const btnCI  = document.getElementById('btnCheckIn');
+  const btnCO  = document.getElementById('btnCheckOut');
+  const pill   = document.getElementById('statusPill');
+  const stText = document.getElementById('statusText');
+
+  const pillMap = {
+    'Present':              ['pill-present',   '✅ উপস্থিত (Present)'],
+    'Late':                 ['pill-late',       '⏰ লেট (Late)'],
+    'Absent':               ['pill-absent',     '❌ অনুপস্থিত (Absent)'],
+    'Leave':                ['pill-leave',      '📋 ছুটিতে (Leave)'],
+    'Holiday':              ['pill-holiday',    '🎉 সরকারি ছুটি'],
+    'Weekend':              ['pill-holiday',    '📅 সাপ্তাহিক ছুটি (শুক্রবার)'],
+    'GPS_Accuracy_Exception':['pill-exception', '⚠ GPS Exception (Pending Approval)'],
+    'Emergency Exemption':  ['pill-exempt',     '🛡 Emergency Exemption'],
+    'Maintenance Exemption':['pill-exempt',     '🔧 Maintenance Exemption'],
+    'Field / Official Visit':['pill-present',   '🗺 Field Visit (উপস্থিত)'],
+  };
+
+  if (att) {
+    const [pillClass, label] = pillMap[att.status] || ['pill-none', att.status];
+    pill.className = 'status-pill ' + pillClass;
+    stText.textContent = label;
+    if (att.minutes_late > 0) showDeductionPreview(att.minutes_late);
+    if (att.check_in_time) {
+      btnCI.disabled = true;
+      btnCI.innerHTML = '✅ Check-In হয়ে গেছে';
+    }
+    if (att.check_out_time) {
+      btnCO.disabled = true;
+      btnCO.innerHTML = '✅ Check-Out হয়ে গেছে';
+    } else if (att.check_in_time) {
+      btnCO.disabled = false;
+    }
+  } else {
+    pill.className = 'status-pill pill-none';
+    stText.textContent = 'এখনও Check-In করেননি';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// DEDUCTION PREVIEW (Blueprint Section 12.2)
+// ══════════════════════════════════════════════════════
+function showDeductionPreview(minutesLate) {
+  const box = document.getElementById('dedPreview');
+  box.classList.add('show');
+  document.getElementById('dedMinutes').textContent = minutesLate + ' মিনিট';
+
+  if (myGrossSalary) {
+    // Pro-rata: minutes late from 10:00 AM / 480 × daily gross
+    // Assume 26 working days in a month
+    const dailyGross = myGrossSalary / 26;
+    const deduction  = (minutesLate / WORKING_MINS_DAY) * dailyGross;
+    document.getElementById('dedAmount').textContent =
+      '৳' + deduction.toFixed(2) + ' (আনুমানিক)';
+  } else {
+    document.getElementById('dedAmount').textContent = 'হিসাব করা সম্ভব হচ্ছে না (বেতন তথ্য নেই)';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// GPS HELPERS
+// ══════════════════════════════════════════════════════
+function getPosition() {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) { rej(new Error('GPS সাপোর্ট নেই')); return; }
+    navigator.geolocation.getCurrentPosition(res, rej,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  });
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, r = Math.PI/180;
+  const dL = (lat2-lat1)*r, dG = (lng2-lng1)*r;
+  const a  = Math.sin(dL/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dG/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function nearestLoc(lat, lng) {
+  let best = null, bestDist = Infinity;
+  for (const l of whitelistedLocs) {
+    const d = haversine(lat, lng, l.gps_lat, l.gps_lng);
+    if (d < bestDist) { best = l; bestDist = d; }
+  }
+  return { loc: best, dist: bestDist };
+}
+
+// ══════════════════════════════════════════════════════
+// GPS FRAUD DETECTION — Blueprint §3.2, points #2, #3 & #4
+// (client-computable checks: speed anomaly, location jump, and
+//  device-clock deviation vs server time. Mock-GPS app / jailbreak
+//  detection needs native app support and is intentionally out of
+//  scope here — not achievable from a pure web app.)
+// ══════════════════════════════════════════════════════
+const SPEED_LIMIT_URBAN_KMH = 120;   // §3.2 #2 — motorised
+const JUMP_DISTANCE_M       = 5000;  // §3.2 #3 — 5 km
+const JUMP_WINDOW_MS        = 60 * 1000; // §3.2 #3 — < 1 minute
+const CLOCK_DEVIATION_MS    = 2 * 60 * 1000; // §3.2 #4 — 2 minutes
+
+/**
+ * Reads the `Date` response header from a lightweight Supabase REST
+ * call to get authoritative server time, then compares it against the
+ * device's local clock. A large mismatch suggests device-clock
+ * tampering (§3.2 #4) — used to flag/reject a check-in attempt.
+ * Returns { deviationMs, serverMs } or null if the check itself fails
+ * (e.g. network issue) — in which case we don't block the user.
+ */
+async function checkClockDeviation() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/', {
+      method: 'HEAD',
+      headers: { apikey: SUPABASE_ANON },
+    });
+    const serverDateHeader = res.headers.get('date');
+    if (!serverDateHeader) return null;
+    const serverMs = new Date(serverDateHeader).getTime();
+    const deviceMs = Date.now();
+    return { deviationMs: deviceMs - serverMs, serverMs };
+  } catch (e) {
+    return null; // network failure — don't block check-in over this
+  }
+}
+
+/**
+ * Compares the new GPS point against the employee's most recent known
+ * point (today's check-in when checking out, or the last gps_log entry
+ * otherwise) and flags implausible speed or location jumps.
+ * Never blocks the UI — caller decides what to do with a flagged result.
+ */
+async function detectGpsAnomaly(lat, lng, nowMs) {
+  let prevLat = null, prevLng = null, prevMs = null;
+
+  if (todayAtt && todayAtt.check_in_lat != null && todayAtt.check_in_time) {
+    prevLat = todayAtt.check_in_lat;
+    prevLng = todayAtt.check_in_lng;
+    prevMs  = new Date(todayAtt.check_in_time).getTime();
+  } else {
+    try {
+      const { data } = await db.from('gps_log')
+        .select('gps_lat, gps_lng, created_at')
+        .eq('employee_id', myEmployeeId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        prevLat = data.gps_lat; prevLng = data.gps_lng;
+        prevMs  = new Date(data.created_at).getTime();
+      }
+    } catch (e) { /* no previous point to compare against */ }
+  }
+
+  if (prevLat == null || prevMs == null) return { flagged: false };
+
+  const elapsedMs = nowMs - prevMs;
+  if (elapsedMs <= 0) return { flagged: false };
+
+  const distM    = haversine(prevLat, prevLng, lat, lng);
+  const hours    = elapsedMs / 3600000;
+  const speedKmh = (distM / 1000) / Math.max(hours, 1/3600);
+
+  // §3.2 #3 — Location jump: >5km covered in <1 minute (no intermediate points)
+  if (distM > JUMP_DISTANCE_M && elapsedMs < JUMP_WINDOW_MS) {
+    return {
+      flagged: true, riskScore: 7, riskLevel: 'Medium',
+      reason: `Location jump: ${Math.round(distM/1000)}km in ${Math.round(elapsedMs/1000)}s`,
+    };
+  }
+
+  // §3.2 #2 — Speed anomaly: implausible travel speed
+  if (speedKmh > SPEED_LIMIT_URBAN_KMH) {
+    return {
+      flagged: true, riskScore: 6, riskLevel: 'Medium',
+      reason: `Speed anomaly: ~${Math.round(speedKmh)} km/h (সীমা ${SPEED_LIMIT_URBAN_KMH} km/h)`,
+    };
+  }
+
+  return { flagged: false };
+}
+
+function updateAttemptBar(n) {
+  document.getElementById('attemptBar').style.display = 'block';
+  document.getElementById('attemptLabel').textContent = `GPS Accuracy চেষ্টা: ${n} / ${MAX_GPS_ATTEMPTS}`;
+  for (let i = 1; i <= MAX_GPS_ATTEMPTS; i++) {
+    document.getElementById('adot'+i).className = 'adot' + (i <= n ? ' used' : '');
+  }
+}
+
+function updateGpsBox(lat, lng, acc, locName, dist, radiusM, ok) {
+  const distColor = ok ? 'var(--green)' : 'var(--red)';
+  const distIcon  = ok ? '✅' : '❌';
+  document.getElementById('gpsBox').innerHTML =
+    `<div class="gps-row"><span class="gps-icon">📍</span><span><b>আপনার লোকেশন:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}</span></div>` +
+    `<div class="gps-row"><span class="gps-icon">📡</span><span><b>GPS Accuracy:</b> ~${Math.round(acc)} মিটার</span></div>` +
+    `<div class="gps-row"><span class="gps-icon">🏢</span><span><b>নিকটতম স্থান:</b> ${locName}</span></div>` +
+    `<div class="gps-row"><span class="gps-icon">${distIcon}</span><span><b>দূরত্ব:</b> <span style="color:${distColor};font-weight:700;">${Math.round(dist)} মিটার</span> (সীমা: ${radiusM}m)</span></div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// CHECK-IN
+// ══════════════════════════════════════════════════════
+async function handleCheckIn() {
+  setBtnsLoading(true);
+  hideMsg();
+  document.getElementById('gpsBox').innerHTML = '<div class="gps-row"><span>⏳</span><span>GPS লোকেশন খোঁজা হচ্ছে...</span></div>';
+
+  // Offline mode — store locally
+  if (!navigator.onLine) {
+    await handleOfflineCheckIn();
+    setBtnsLoading(false);
+    return;
+  }
+
+  try {
+    // Step 0: Device-clock deviation check (§3.2 #4) — reject outright if
+    // device time differs from server time by more than 2 minutes.
+    const clockCheck = await checkClockDeviation();
+    if (clockCheck && Math.abs(clockCheck.deviationMs) > CLOCK_DEVIATION_MS) {
+      const devMinutes = Math.round(Math.abs(clockCheck.deviationMs) / 60000);
+      showMsg('error',
+        `❌ Check-In প্রত্যাখ্যাত: আপনার ডিভাইসের সময় সার্ভার সময় থেকে ${devMinutes} মিনিট ভিন্ন।\n` +
+        `অনুগ্রহ করে ডিভাইসের তারিখ/সময় স্বয়ংক্রিয় (Automatic) সেটিংসে রাখুন এবং আবার চেষ্টা করুন।`);
+      await db.from('security_incidents').insert({
+        employee_id: myEmployeeId, type: 'Device_Clock_Tampering',
+        risk_score: 9, action_taken: 'CheckIn_Rejected',
+      });
+      await db.from('intelligence_alerts').insert({
+        employee_id: myEmployeeId,
+        alert_domain: 'Security', alert_type: 'Device_Clock_Tampering',
+        alert_tier: 'Red', risk_score: 9, risk_level: 'High',
+        status: 'Open', description: `Device clock deviated ${devMinutes} min from server time`,
+      });
+      await db.from('audit_logs').insert({
+        user_id: myEmployeeId, action: 'CheckIn_Rejected_ClockTampering', module: 'Attendance',
+        risk_score: 9, risk_level: 'High',
+        new_value: JSON.stringify({ deviation_minutes: devMinutes }),
+      });
+      setBtnsLoading(false); return;
+    }
+
+    const pos = await getPosition();
+    const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+
+    if (whitelistedLocs.length === 0) {
+      showMsg('error', '❌ কোনো Whitelisted Location সিস্টেমে নেই। Administrator-কে জানান।');
+      setBtnsLoading(false); return;
+    }
+
+    const { loc, dist } = nearestLoc(lat, lng);
+
+    // Step 1: GPS Accuracy check (>100m → exception)
+    if (acc > GPS_ACCURACY_LIMIT) {
+      gpsAttemptCount++;
+      updateAttemptBar(gpsAttemptCount);
+      updateGpsBox(lat, lng, acc, loc?.name || '—', dist, loc?.radius_metres || 50, false);
+
+      if (gpsAttemptCount >= MAX_GPS_ATTEMPTS) {
+        showMsg('error',
+          `⚠ ${MAX_GPS_ATTEMPTS} বার চেষ্টা করেও GPS Accuracy ${Math.round(acc)}m (সীমা ১০০m)।\n` +
+          `এটি "GPS Accuracy Exception" হিসেবে রেকর্ড হয়েছে। Supervisor অনুমোদন করলে উপস্থিতি গণ্য হবে।`);
+        await recordGpsException(lat, lng, acc, loc, dist);
+      } else {
+        showMsg('warn', `GPS সংকেত দুর্বল (${Math.round(acc)}m)। একটু অপেক্ষা করে আবার চেষ্টা করুন। (${MAX_GPS_ATTEMPTS - gpsAttemptCount} বার বাকি)`);
+      }
+      setBtnsLoading(false); return;
+    }
+
+    updateGpsBox(lat, lng, acc, loc?.name || '—', dist, loc?.radius_metres || 50, dist <= (loc?.radius_metres || 50));
+
+    // Step 2: Perimeter check
+    if (dist > (loc?.radius_metres || 50)) {
+      showMsg('error',
+        `❌ আপনি "${loc?.name}" থেকে ${Math.round(dist)}m দূরে আছেন।\n` +
+        `অনুমোদিত সীমা: ${loc?.radius_metres}m। অফিসে বা অনুমোদিত Field Location-এ গিয়ে Check-In করুন।`);
+
+      // Log outside-perimeter attempt — Risk Score 6
+      await db.from('gps_log').insert({
+        employee_id: myEmployeeId, event_type: 'CheckIn_OutsidePerimeter',
+        gps_lat: lat, gps_lng: lng, gps_accuracy: acc,
+        risk_score: 6, risk_level: 'Medium',
+      });
+      setBtnsLoading(false); return;
+    }
+
+    // Step 3: All passed — record
+    await doCheckIn(lat, lng, acc, loc);
+
+  } catch (err) {
+    handleGpsError(err);
+    setBtnsLoading(false);
+  }
+}
+
+function getCheckinRemarks() {
+  const el = document.getElementById('checkinRemarks');
+  return el && el.value.trim() ? el.value.trim() : null;
+}
+
+async function doCheckIn(lat, lng, acc, loc) {
+  const now = new Date();
+  const today = now.toISOString().slice(0,10);
+
+  // Determine status & late minutes (Blueprint §5.4 & §12.2)
+  const graceEnd = new Date(now); graceEnd.setHours(GRACE_END_H, GRACE_END_M, 0, 0);
+  const payStart = new Date(now); payStart.setHours(OFFICE_START_H, OFFICE_START_M, 0, 0);
+
+  let status = 'Present', minutesLate = 0;
+  if (now > graceEnd) {
+    status = 'Late';
+    minutesLate = Math.round((now - payStart) / 60000); // from 10:00 AM (deduction start)
+  }
+
+  const isField = loc && loc.category !== 'HQ';
+  const mode = isField ? 'Field' : 'Office';
+
+  // §3.2 — GPS anomaly check (speed / location jump) before logging
+  const anomaly = await detectGpsAnomaly(lat, lng, now.getTime());
+  const riskScore = anomaly.flagged ? anomaly.riskScore : (status === 'Late' ? 2 : 1); // §14.2
+  const riskLevel = anomaly.flagged ? anomaly.riskLevel : (riskScore <= 3 ? 'Low' : 'Medium');
+
+  const payload = {
+    employee_id: myEmployeeId, attendance_date: today,
+    mode, whitelisted_location_id: loc?.location_id || null,
+    check_in_time: now.toISOString(), check_in_lat: lat, check_in_lng: lng,
+    gps_accuracy_check_in: acc, minutes_late: minutesLate, status,
+    remarks: getCheckinRemarks(),
+  };
+
+  const { error } = await db.from('attendance').upsert(payload, { onConflict: 'employee_id,attendance_date' });
+  if (error) { showMsg('error', 'Check-In সংরক্ষণে ত্রুটি: ' + error.message); setBtnsLoading(false); return; }
+
+  // GPS log
+  await db.from('gps_log').insert({
+    employee_id: myEmployeeId, event_type: 'Check_In',
+    gps_lat: lat, gps_lng: lng, gps_accuracy: acc,
+    risk_score: riskScore, risk_level: riskLevel,
+  });
+
+  // §3.2 / §14 — anomaly found: log a Security Incident + Yellow Alert for Tier 2 review
+  if (anomaly.flagged) {
+    await db.from('security_incidents').insert({
+      employee_id: myEmployeeId, type: 'GPS_Anomaly',
+      risk_score: anomaly.riskScore, action_taken: 'Flagged_For_Review',
+    });
+    await db.from('intelligence_alerts').insert({
+      employee_id: myEmployeeId,
+      alert_domain: 'Security', alert_type: 'GPS_Anomaly',
+      alert_tier: 'Yellow', risk_score: anomaly.riskScore, risk_level: anomaly.riskLevel,
+      status: 'Open', description: anomaly.reason,
+    });
+  }
+
+  // Audit log
+  await db.from('audit_logs').insert({
+    user_id: myEmployeeId,
+    action: status === 'Late' ? 'Late_CheckIn' : 'OnTime_CheckIn',
+    module: 'Attendance', risk_score: riskScore,
+    risk_level: riskLevel,
+    new_value: JSON.stringify({ status, minutesLate, location: loc?.name, remarks: payload.remarks, gps_anomaly: anomaly.flagged ? anomaly.reason : null }),
+  });
+
+  todayAtt = { ...payload };
+  let successMsg = status === 'Present'
+    ? `✅ Check-In সফল! স্ট্যাটাস: উপস্থিত (Present) — ${loc?.name}`
+    : `⏰ Check-In সফল! স্ট্যাটাস: লেট — ${minutesLate} মিনিট দেরি। বেতন থেকে সমানুপাতিক কর্তন প্রযোজ্য।`;
+
+  if (anomaly.flagged) {
+    successMsg += `\n⚠ একটি GPS অসঙ্গতির জন্য এই Check-In পর্যালোচনার জন্য চিহ্নিত হয়েছে (${anomaly.reason})। Check-In গৃহীত হয়েছে — Supervisor পর্যালোচনা করবেন।`;
+  }
+  showMsg(anomaly.flagged ? 'warn' : (status === 'Present' ? 'success' : 'warn'), successMsg);
+  if (minutesLate > 0) showDeductionPreview(minutesLate);
+
+  document.getElementById('btnCheckIn').disabled = true;
+  document.getElementById('btnCheckIn').innerHTML = '✅ Check-In হয়ে গেছে';
+  document.getElementById('btnCheckOut').disabled = false;
+  const remarksEl = document.getElementById('checkinRemarks');
+  if (remarksEl) remarksEl.disabled = true;
+  setBtnsLoading(false);
+  gpsAttemptCount = 0;
+  document.getElementById('attemptBar').style.display = 'none';
+  renderTodayState(todayAtt);
+  await loadHistory(currentTab);
+  await loadMonthlySummary();
+}
+
+// ══════════════════════════════════════════════════════
+// OFFLINE CHECK-IN
+// ══════════════════════════════════════════════════════
+async function handleOfflineCheckIn() {
+  try {
+    const pos = await getPosition();
+    const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+    const now  = new Date();
+    const today= now.toISOString().slice(0,10);
+    const graceEnd = new Date(now); graceEnd.setHours(GRACE_END_H, GRACE_END_M, 0, 0);
+    const payStart = new Date(now); payStart.setHours(OFFICE_START_H, OFFICE_START_M, 0, 0);
+    const status = now > graceEnd ? 'Late' : 'Present';
+    const minutesLate = status === 'Late' ? Math.round((now - payStart) / 60000) : 0;
+
+    const cacheEntry = {
+      type: 'checkin', cachedAt: now.toISOString(),
+      data: { employee_id: myEmployeeId, attendance_date: today, check_in_time: now.toISOString(), check_in_lat: lat, check_in_lng: lng, gps_accuracy_check_in: acc, minutes_late: minutesLate, status, offline_sync_flag: true, remarks: getCheckinRemarks() },
+      gpsData: { employee_id: myEmployeeId, event_type: 'Check_In', gps_lat: lat, gps_lng: lng, gps_accuracy: acc, risk_score: 2, risk_level: 'Low', offline_cached: true },
+    };
+    offlineCache.push(cacheEntry);
+    localStorage.setItem('bwapms_offline_cache', JSON.stringify(offlineCache));
+    updateSyncBadge();
+
+    showMsg('warn',
+      `[OFFLINE — CACHED] ✅ Check-In ডিভাইসে সংরক্ষিত হয়েছে।\n` +
+      `সময়: ${now.toLocaleTimeString('en-GB')} | স্ট্যাটাস: ${status === 'Late' ? 'লেট' : 'উপস্থিত'}\n` +
+      `ইন্টারনেট এলে স্বয়ংক্রিয়ভাবে Server-এ পাঠানো হবে।`);
+    document.getElementById('btnCheckIn').disabled = true;
+    document.getElementById('btnCheckIn').innerHTML = '📦 Cached (Offline)';
+    document.getElementById('btnCheckOut').disabled = false;
+  } catch(e) {
+    showMsg('error', 'অফলাইনে GPS পাওয়া যায়নি: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// CHECK-OUT
+// ══════════════════════════════════════════════════════
+async function handleCheckOut() {
+  setBtnsLoading(true);
+  hideMsg();
+  document.getElementById('gpsBox').innerHTML = '<div class="gps-row"><span>⏳</span><span>GPS লোকেশন খোঁজা হচ্ছে...</span></div>';
+
+  try {
+    // Step 0: Device-clock deviation check (§3.2 #4)
+    const clockCheckOut = await checkClockDeviation();
+    if (clockCheckOut && Math.abs(clockCheckOut.deviationMs) > CLOCK_DEVIATION_MS) {
+      const devMinutes = Math.round(Math.abs(clockCheckOut.deviationMs) / 60000);
+      showMsg('error',
+        `❌ Check-Out প্রত্যাখ্যাত: আপনার ডিভাইসের সময় সার্ভার সময় থেকে ${devMinutes} মিনিট ভিন্ন।\n` +
+        `অনুগ্রহ করে ডিভাইসের তারিখ/সময় স্বয়ংক্রিয় (Automatic) সেটিংসে রাখুন এবং আবার চেষ্টা করুন।`);
+      await db.from('security_incidents').insert({
+        employee_id: myEmployeeId, type: 'Device_Clock_Tampering',
+        risk_score: 9, action_taken: 'CheckOut_Rejected',
+      });
+      await db.from('intelligence_alerts').insert({
+        employee_id: myEmployeeId,
+        alert_domain: 'Security', alert_type: 'Device_Clock_Tampering',
+        alert_tier: 'Red', risk_score: 9, risk_level: 'High',
+        status: 'Open', description: `Device clock deviated ${devMinutes} min from server time (checkout)`,
+      });
+      await db.from('audit_logs').insert({
+        user_id: myEmployeeId, action: 'CheckOut_Rejected_ClockTampering', module: 'Attendance',
+        risk_score: 9, risk_level: 'High',
+        new_value: JSON.stringify({ deviation_minutes: devMinutes }),
+      });
+      setBtnsLoading(false); return;
+    }
+
+    const pos = await getPosition();
+    const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+    const now   = new Date();
+    const today = now.toISOString().slice(0,10);
+
+    const { loc, dist } = nearestLoc(lat, lng);
+    updateGpsBox(lat, lng, acc, loc?.name || '—', dist, loc?.radius_metres || 50, true);
+
+    const { error } = await db.from('attendance').update({
+      check_out_time: now.toISOString(), check_out_lat: lat,
+      check_out_lng: lng, gps_accuracy_check_out: acc,
+    }).eq('employee_id', myEmployeeId).eq('attendance_date', today);
+
+    if (error) { showMsg('error', 'Check-Out সংরক্ষণে ত্রুটি: ' + error.message); setBtnsLoading(false); return; }
+
+    // Check missing check-out warning (after 8 PM)
+    if (now.getHours() >= MISSING_COUT_H) {
+      // Log alert for supervisor
+      await db.from('intelligence_alerts').insert({
+        employee_id: myEmployeeId,
+        alert_domain: 'Attendance',
+        alert_type: 'Missing_Checkout_Late',
+        alert_tier: 'Yellow',
+        risk_score: 3, risk_level: 'Low', status: 'Open',
+        description: 'Employee did not check out before 8:00 PM.',
+      });
+    }
+
+    // §3.2 — GPS anomaly check (speed / location jump) before logging
+    const anomaly = await detectGpsAnomaly(lat, lng, now.getTime());
+    const coRiskScore = anomaly.flagged ? anomaly.riskScore : 1;
+    const coRiskLevel = anomaly.flagged ? anomaly.riskLevel : 'Low';
+
+    await db.from('gps_log').insert({
+      employee_id: myEmployeeId, event_type: 'Check_Out',
+      gps_lat: lat, gps_lng: lng, gps_accuracy: acc, risk_score: coRiskScore, risk_level: coRiskLevel,
+    });
+
+    // §3.2 / §14 — anomaly found: log a Security Incident + Yellow Alert for Tier 2 review
+    if (anomaly.flagged) {
+      await db.from('security_incidents').insert({
+        employee_id: myEmployeeId, type: 'GPS_Anomaly',
+        risk_score: anomaly.riskScore, action_taken: 'Flagged_For_Review',
+      });
+      await db.from('intelligence_alerts').insert({
+        employee_id: myEmployeeId,
+        alert_domain: 'Security', alert_type: 'GPS_Anomaly',
+        alert_tier: 'Yellow', risk_score: anomaly.riskScore, risk_level: anomaly.riskLevel,
+        status: 'Open', description: anomaly.reason,
+      });
+    }
+
+    await db.from('audit_logs').insert({
+      user_id: myEmployeeId,
+      action: 'CheckOut', module: 'Attendance', risk_score: coRiskScore, risk_level: coRiskLevel,
+      new_value: JSON.stringify({ checkout_time: now.toISOString(), gps_anomaly: anomaly.flagged ? anomaly.reason : null }),
+    });
+
+    let coMsg = `✅ Check-Out সফল! ধন্যবাদ আজকের কাজের জন্য। সময়: ${now.toLocaleTimeString('en-GB')}`;
+    if (anomaly.flagged) {
+      coMsg += `\n⚠ একটি GPS অসঙ্গতির জন্য এই Check-Out পর্যালোচনার জন্য চিহ্নিত হয়েছে (${anomaly.reason})। Check-Out গৃহীত হয়েছে — Supervisor পর্যালোচনা করবেন।`;
+    }
+    showMsg(anomaly.flagged ? 'warn' : 'success', coMsg);
+    document.getElementById('btnCheckOut').disabled = true;
+    document.getElementById('btnCheckOut').innerHTML = '✅ Check-Out হয়ে গেছে';
+    setBtnsLoading(false);
+    await loadHistory(currentTab);
+  } catch (err) {
+    handleGpsError(err);
+    setBtnsLoading(false);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// GPS EXCEPTION WORKFLOW (v1.3 §1.2 — gps_exception_requests)
+// ══════════════════════════════════════════════════════
+async function recordGpsException(lat, lng, acc, loc, dist) {
+  const today = new Date().toISOString().slice(0,10);
+  const autoReason = `Accuracy ${Math.round(acc)}m | নিকটতম: ${loc?.name||'—'} (${Math.round(dist)}m দূরে) | ${MAX_GPS_ATTEMPTS} বার চেষ্টার পর`;
+  const userNote = getCheckinRemarks();
+  const fullReason = userNote ? `${autoReason} | কর্মীর মন্তব্য: ${userNote}` : autoReason;
+
+  // 1) Attendance row marked pending — does NOT count as attendance until approved (v1.3 §1.2 step 4)
+  const { data: attRow, error: attErr } = await db.from('attendance').upsert({
+    employee_id: myEmployeeId, attendance_date: today,
+    mode: 'Field', check_in_lat: lat, check_in_lng: lng,
+    gps_accuracy_check_in: acc, status: 'GPS_Accuracy_Exception',
+    gps_exception_flag: true, gps_exception_reason: fullReason, remarks: userNote,
+  }, { onConflict: 'employee_id,attendance_date' }).select('attendance_id').single();
+
+  // 2) GPS log
+  await db.from('gps_log').insert({
+    employee_id: myEmployeeId, event_type: 'Exception',
+    gps_lat: lat, gps_lng: lng, gps_accuracy: acc,
+    risk_score: 4, risk_level: 'Medium',
+  });
+
+  // 3) Insert into gps_exception_requests for Tier 1/2 approval workflow
+  await db.from('gps_exception_requests').insert({
+    employee_id: myEmployeeId,
+    attendance_id: attErr ? null : attRow?.attendance_id,
+    request_date: today,
+    gps_lat: lat, gps_lng: lng,
+    distance_from_nearest_m: dist,
+    reason: fullReason,
+    status: 'Pending',
+  });
+
+  // 4) Intelligence alert for visibility
+  await db.from('intelligence_alerts').insert({
+    employee_id: myEmployeeId,
+    alert_domain: 'GPS',
+    alert_type: 'GPS_Accuracy_Exception',
+    alert_tier: 'Yellow',
+    risk_score: 4, risk_level: 'Medium', status: 'Open',
+    description: `GPS accuracy ${Math.round(acc)}m — exceeded 100m limit after ${MAX_GPS_ATTEMPTS} attempts. Pending Tier 1/2 approval.`,
+  });
+
+  // 5) Audit log
+  await db.from('audit_logs').insert({
+    user_id: myEmployeeId,
+    action: 'GPS_Exception_Request', module: 'Attendance',
+    risk_score: 4, risk_level: 'Medium',
+    new_value: JSON.stringify({ accuracy: acc, distance: dist, reason: fullReason }),
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════════════
+let customFrom = null, customTo = null;
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const customRow = document.getElementById('customRangeRow');
+  if (tab === 'custom') {
+    customRow.style.display = 'flex';
+    // default range: last 7 days, editable
+    const toEl = document.getElementById('customToDate');
+    const fromEl = document.getElementById('customFromDate');
+    if (!toEl.value) toEl.value = new Date().toISOString().slice(0,10);
+    if (!fromEl.value) {
+      const d = new Date(); d.setDate(d.getDate() - 7);
+      fromEl.value = d.toISOString().slice(0,10);
+    }
+    // Don't auto-load until user clicks Apply (or load with current values)
+    customFrom = fromEl.value; customTo = toEl.value;
+    loadHistory('custom');
+  } else {
+    customRow.style.display = 'none';
+    loadHistory(tab);
+  }
+}
+
+function applyCustomRange() {
+  const fromEl = document.getElementById('customFromDate');
+  const toEl   = document.getElementById('customToDate');
+  if (!fromEl.value || !toEl.value) { showMsg('warn', 'From এবং To তারিখ দুটোই দিন।'); return; }
+  if (fromEl.value > toEl.value) { showMsg('warn', 'From তারিখ, To তারিখের পরে হতে পারবে না।'); return; }
+  customFrom = fromEl.value;
+  customTo   = toEl.value;
+  loadHistory('custom');
+}
+
+async function loadHistory(tab) {
+  if (!myEmployeeId) return;
+  const now   = new Date();
+  let fromStr, toStr;
+
+  if (tab === 'week') {
+    const d = new Date(now); d.setDate(d.getDate() - 7);
+    fromStr = d.toISOString().slice(0,10);
+    toStr   = now.toISOString().slice(0,10);
+  } else { // custom
+    fromStr = customFrom || new Date(now.getTime() - 7*86400000).toISOString().slice(0,10);
+    toStr   = customTo   || now.toISOString().slice(0,10);
+  }
+
+  const { data } = await db.from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, minutes_late, status')
+    .eq('employee_id', myEmployeeId)
+    .gte('attendance_date', fromStr)
+    .lte('attendance_date', toStr)
+    .order('attendance_date', { ascending: false });
+
+  const tbody = document.getElementById('historyBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">কোনো রেকর্ড পাওয়া যায়নি।</td></tr>';
+    return;
+  }
+
+  const statusMap = {
+    'Present':              ['s-present', 'উপস্থিত'],
+    'Late':                 ['s-late',    'লেট'],
+    'Absent':               ['s-absent',  'অনুপস্থিত'],
+    'Leave':                ['s-leave',   'ছুটি'],
+    'Holiday':              ['s-holiday', 'সরকারি ছুটি'],
+    'Weekend':              ['s-weekend', 'সাপ্তাহিক ছুটি'],
+    'GPS_Accuracy_Exception':['s-exception','GPS Exception'],
+    'Emergency Exemption':  ['s-exempt',  'Emergency Exempt'],
+    'Maintenance Exemption':['s-exempt',  'Maintenance Exempt'],
+    'Field / Official Visit':['s-present','Field Visit'],
+  };
+
+  tbody.innerHTML = data.map(r => {
+    const ci   = r.check_in_time  ? new Date(r.check_in_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const co   = r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const late = r.minutes_late   ? `<span style="color:var(--amber);font-weight:700;">${r.minutes_late}m</span>` : '—';
+    const [cls, label] = statusMap[r.status] || ['', r.status || '—'];
+    return `<tr>
+      <td style="font-weight:600;">${r.attendance_date}</td>
+      <td>${ci}</td>
+      <td>${co}</td>
+      <td>${late}</td>
+      <td><span class="s-badge ${cls}">${label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// MONTHLY SUMMARY
+// ══════════════════════════════════════════════════════
+async function loadMonthlySummary() {
+  if (!myEmployeeId) return;
+  const now  = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+  const to   = now.toISOString().slice(0,10);
+  const { data } = await db.from('attendance')
+    .select('status').eq('employee_id', myEmployeeId)
+    .gte('attendance_date', from).lte('attendance_date', to);
+  if (!data) return;
+  const present = data.filter(d => ['Present','Field / Official Visit'].includes(d.status)).length;
+  const late    = data.filter(d => d.status === 'Late').length;
+  const absent  = data.filter(d => d.status === 'Absent').length;
+  const leave   = data.filter(d => d.status === 'Leave').length;
+  document.getElementById('sumPresent').textContent = present;
+  document.getElementById('sumLate').textContent    = late;
+  document.getElementById('sumAbsent').textContent  = absent;
+  document.getElementById('sumLeave').textContent   = leave;
+}
+
+// ══════════════════════════════════════════════════════
+// DOWNLOADS (Blueprint Section 5.8)
+// ══════════════════════════════════════════════════════
+async function downloadSlip(fmt) {
+  const now   = new Date();
+  const month = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const today = now.toISOString().slice(0,10);
+  const { data } = await db.from('attendance')
+    .select('*').eq('employee_id', myEmployeeId).eq('attendance_date', today).maybeSingle();
+
+  if (!data) { showMsg('warn', 'আজকের কোনো Attendance রেকর্ড পাওয়া যায়নি।'); return; }
+
+  // Build printable slip
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Daily Attendance Slip</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;padding:40px;color:#1a2233;max-width:600px;margin:0 auto;}
+    h1{font-size:22px;color:#0f1f3d;margin-bottom:4px;}
+    .org{font-size:13px;color:#667;margin-bottom:24px;}
+    .slip-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px;}
+    .slip-label{color:#667;font-weight:600;}
+    .slip-val{font-weight:700;}
+    .badge{padding:4px 14px;border-radius:999px;font-size:12px;font-weight:700;}
+    .present{background:#e8f5ee;color:#155a33;}
+    .late{background:#fffbeb;color:#b45309;}
+    .absent{background:#fdf0ee;color:#c0392b;}
+    .footer{margin-top:32px;font-size:12px;color:#aaa;border-top:1px solid #eee;padding-top:16px;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <h1>Daily Attendance Slip</h1>
+  <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2</div>
+  <div class="slip-row"><span class="slip-label">কর্মীর নাম</span><span class="slip-val">${myName}</span></div>
+  <div class="slip-row"><span class="slip-label">তারিখ</span><span class="slip-val">${data.attendance_date}</span></div>
+  <div class="slip-row"><span class="slip-label">Check-In সময়</span><span class="slip-val">${data.check_in_time ? new Date(data.check_in_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+  <div class="slip-row"><span class="slip-label">Check-Out সময়</span><span class="slip-val">${data.check_out_time ? new Date(data.check_out_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+  <div class="slip-row"><span class="slip-label">দেরির পরিমাণ</span><span class="slip-val">${data.minutes_late || 0} মিনিট</span></div>
+  <div class="slip-row"><span class="slip-label">স্ট্যাটাস</span>
+    <span class="slip-val"><span class="badge ${data.status === 'Present' ? 'present' : data.status === 'Late' ? 'late' : 'absent'}">${data.status}</span></span>
+  </div>
+  <div class="slip-row"><span class="slip-label">Mode</span><span class="slip-val">${data.mode || '—'}</span></div>
+  ${data.minutes_late > 0 && myGrossSalary ? `<div class="slip-row"><span class="slip-label">আনুমানিক কর্তন</span><span class="slip-val" style="color:#c0392b;">৳${((data.minutes_late / 480) * (myGrossSalary / 26)).toFixed(2)}</span></div>` : ''}
+  <div class="footer">
+    Generated: ${new Date().toLocaleString('en-GB')} | BWAPMS v1.2 — BRPHI Bangladesh<br>
+    <em>এই Slip টি আধিকারিক রেকর্ডের ডিজিটাল কপি।</em>
+  </div>
+  <br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button>
+  </body></html>`);
+  w.document.close();
+}
+
+async function downloadReport(fmt) {
+  const now  = new Date();
+  let from, to;
+  if (currentTab === 'custom') {
+    from = customFrom || new Date(now.getTime() - 7*86400000).toISOString().slice(0,10);
+    to   = customTo   || now.toISOString().slice(0,10);
+  } else {
+    from = new Date(now.getTime() - 7*86400000).toISOString().slice(0,10);
+    to   = now.toISOString().slice(0,10);
+  }
+
+  const { data } = await db.from('attendance')
+    .select('attendance_date,check_in_time,check_out_time,minutes_late,status,mode')
+    .eq('employee_id', myEmployeeId)
+    .gte('attendance_date', from).lte('attendance_date', to)
+    .order('attendance_date', { ascending: false });
+
+  if (!data || data.length === 0) { showMsg('warn', 'এই সময়ের জন্য কোনো ডেটা নেই।'); return; }
+
+  if (fmt === 'csv') {
+    const header = 'তারিখ,Check-In,Check-Out,দেরি (মিনিট),স্ট্যাটাস,Mode\n';
+    const rows   = data.map(r =>
+      `${r.attendance_date},` +
+      `${r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : ''},` +
+      `${r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB') : ''},` +
+      `${r.minutes_late || 0},${r.status || ''},${r.mode || ''}`
+    ).join('\n');
+    const blob = new Blob(['\ufeff'+header+rows], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `attendance_${myEmployeeId}_${from}_${to}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+
+  } else if (fmt === 'excel') {
+    // Simple HTML table that Excel can open
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>Attendance Report — ${myName} | ${from} to ${to}</h2>
+    <table border="1"><tr><th>তারিখ</th><th>Check-In</th><th>Check-Out</th><th>দেরি (মিনিট)</th><th>স্ট্যাটাস</th><th>Mode</th></tr>`;
+    data.forEach(r => {
+      html += `<tr>
+        <td>${r.attendance_date}</td>
+        <td>${r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : '—'}</td>
+        <td>${r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB') : '—'}</td>
+        <td>${r.minutes_late || 0}</td>
+        <td>${r.status || '—'}</td>
+        <td>${r.mode || '—'}</td>
+      </tr>`;
+    });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `attendance_${myEmployeeId}_${from}_${to}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Attendance Report</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>Attendance Report — ${myName}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${from} to ${to}</div>
+    <table><tr><th>তারিখ</th><th>Check-In</th><th>Check-Out</th><th>দেরি (মিনিট)</th><th>স্ট্যাটাস</th><th>Mode</th></tr>`;
+    data.forEach(r => {
+      html += `<tr><td>${r.attendance_date}</td>
+        <td>${r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : '—'}</td>
+        <td>${r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB') : '—'}</td>
+        <td>${r.minutes_late || 0}</td><td>${r.status || '—'}</td><td>${r.mode || '—'}</td></tr>`;
+    });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function toggleRules() {
+  const body   = document.getElementById('rulesBody');
+  const toggle = document.getElementById('rulesToggle');
+  const open   = body.classList.toggle('show');
+  toggle.classList.toggle('open', open);
+}
+
+function handleGpsError(err) {
+  const msgs = {
+    1: '❌ GPS পারমিশন দেননি। ব্রাউজার সেটিংসে Location Allow করুন।',
+    2: '❌ GPS লোকেশন পাওয়া যাচ্ছে না। ভালো নেটওয়ার্ক/সংকেত এলাকায় যান।',
+    3: '❌ GPS সময়মতো সাড়া দেয়নি। আবার চেষ্টা করুন।',
+  };
+  showMsg('error', msgs[err.code] || 'GPS ত্রুটি: ' + err.message);
+}
+
+function setBtnsLoading(on) {
+  ['btnCheckIn','btnCheckOut'].forEach(id => {
+    const b = document.getElementById(id);
+    b.style.pointerEvents = on ? 'none' : 'auto';
+    b.style.opacity = on ? '0.65' : '1';
+  });
+}
+
+function showMsg(type, text) {
+  const box = document.getElementById('msgBox');
+  box.className = 'msg-box show msg-' + type;
+  box.innerHTML = text.replace(/\n/g, '<br>');
+}
+function hideMsg() {
+  const box = document.getElementById('msgBox');
+  box.className = 'msg-box';
+  box.innerHTML = '';
+}
+</script>
+</body>
+</html>

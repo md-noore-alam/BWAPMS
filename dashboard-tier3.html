@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BWAPMS — Senior Staff Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:       #0f1f3d;
+      --navy-dark:  #081630;
+      --navy-mid:   #162d52;
+      --green:      #1a7a4a;
+      --green-light:#22a05e;
+      --green-dim:  #e8f5ee;
+      --yellow:     #f59e0b;
+      --yellow-bg:  #fffbeb;
+      --red:        #dc2626;
+      --red-bg:     #fef2f2;
+      --blue:       #2563eb;
+      --blue-bg:    #eff6ff;
+      --cream:      #f5f3ee;
+      --white:      #ffffff;
+      --border:     #e2e8f0;
+      --text-main:  #1a2640;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --sidebar-w:  220px;
+      --topbar-h:   60px;
+      --radius:     10px;
+      --shadow:     0 1px 4px rgba(0,0,0,0.08);
+    }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--navy); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+    .sidebar-logo { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
+    .sidebar-sys { padding: 8px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-sys-name { font-size: 12.5px; font-weight: 700; color: #fff; }
+    .sidebar-sys-sub  { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .nav-section { padding: 14px 10px 4px; }
+    .nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-item.active { background: var(--green); color: #fff; }
+    .nav-item svg { flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: rgba(255,255,255,0.15); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 12px; }
+    .nav-badge.alert { background: var(--yellow); color: #000; }
+    .sidebar-bottom { margin-top: auto; padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-tier { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); padding: 4px; transition: color 0.15s; border-radius: 4px; }
+    .btn-logout:hover { color: #fff; }
+
+    /* ── Topbar ──────────────────────────────────────────── */
+    .topbar { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; z-index: 90; box-shadow: var(--shadow); }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .topbar-date { font-size: 13px; color: var(--text-muted); }
+
+    /* Notification Bell */
+    .notif-bell { position: relative; cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.15s; }
+    .notif-bell:hover { background: var(--cream); }
+    .notif-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid #fff; display: none; }
+    .notif-dot.show { display: block; }
+    .notif-dropdown { display: none; position: absolute; top: 44px; right: 0; width: 320px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 200; }
+    .notif-dropdown.open { display: block; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .notif-header span { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .notif-header button { font-size: 11px; color: var(--green); background: none; border: none; cursor: pointer; font-weight: 600; }
+    .notif-item { padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: var(--cream); }
+    .notif-item.unread { background: var(--blue-bg); }
+    .notif-item-title { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .notif-item-msg { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .notif-time { font-size: 10.5px; color: var(--text-light); margin-top: 3px; }
+    .notif-empty { padding: 24px; text-align: center; color: var(--text-light); font-size: 13px; }
+
+    /* ── Main ────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; }
+    .content { padding: 24px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 24px; }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Stat Cards ──────────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stats-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.red .stat-value { color: var(--red); }
+    .stat-card.purple .stat-value { color: #7c3aed; }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+    .card-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+    .badge-green  { background: var(--green-dim); color: var(--green); }
+    .badge-yellow { background: var(--yellow-bg); color: #b45309; }
+    .badge-blue   { background: var(--blue-bg);   color: var(--blue); }
+    .badge-gray   { background: var(--cream);     color: var(--text-muted); }
+    .badge-red    { background: var(--red-bg);     color: var(--red); }
+    .badge-purple { background: #f3e8ff;           color: #7c3aed; }
+    .card-body { padding: 16px 18px; }
+    .card-footer { padding: 10px 18px; background: var(--cream); border-top: 1px solid var(--border); }
+
+    /* ── Two / Three col layouts ─────────────────────────── */
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ── Pills ───────────────────────────────────────────── */
+    .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+    .pill.present  { background: var(--green-dim); color: var(--green); }
+    .pill.late     { background: var(--yellow-bg); color: #b45309; }
+    .pill.absent   { background: var(--red-bg);    color: var(--red); }
+    .pill.leave    { background: var(--blue-bg);   color: var(--blue); }
+    .pill.pending  { background: var(--cream);     color: var(--text-muted); }
+    .pill.field    { background: #f3e8ff;           color: #7c3aed; }
+
+    /* ── Today status card ───────────────────────────────── */
+    .today-card { background: var(--navy); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .today-left h2 { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+    .today-status { font-size: 22px; font-weight: 800; color: #fff; }
+    .today-time { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    .btn-checkin-big { background: var(--green); color: #fff; border: none; border-radius: 9px; padding: 12px 22px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; text-decoration: none; display: inline-block; }
+    .btn-checkin-big:hover { background: var(--green-light); }
+
+    /* ── Task items ──────────────────────────────────────── */
+    .task-item { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .task-item:last-child { border-bottom: none; }
+    .task-priority { width: 4px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+    .priority-critical { background: var(--red); }
+    .priority-high     { background: var(--yellow); }
+    .priority-medium   { background: var(--blue); }
+    .priority-low      { background: var(--green); }
+    .task-info { flex: 1; }
+    .task-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .task-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-sm { padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-secondary { background: var(--cream); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger { background: var(--red-bg); color: var(--red); }
+    .btn-full { width: 100%; padding: 10px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; border: none; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { background: var(--green-light); }
+
+    /* ── KPI bars ────────────────────────────────────────── */
+    .kpi-item { margin-bottom: 14px; }
+    .kpi-item:last-child { margin-bottom: 0; }
+    .kpi-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .kpi-name { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .kpi-score { font-size: 12.5px; font-weight: 800; }
+    .kpi-bar-bg { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .kpi-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .kpi-bar-fill.ex   { background: var(--green); }
+    .kpi-bar-fill.good { background: #3b82f6; }
+    .kpi-bar-fill.mid  { background: var(--yellow); }
+    .kpi-bar-fill.low  { background: var(--red); }
+
+    /* ── Attendance history table ────────────────────────── */
+    .att-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .att-table th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 12px; background: var(--cream); border-bottom: 1px solid var(--border); }
+    .att-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .att-table tr:last-child td { border-bottom: none; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 12px; background: var(--cream); border-bottom: 1px solid var(--border); }
+    .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #fafafa; }
+
+    /* ── Leave balance ───────────────────────────────────── */
+    .leave-row { display: flex; gap: 12px; }
+    .leave-box { flex: 1; background: var(--cream); border-radius: 9px; padding: 14px 16px; text-align: center; }
+    .leave-type { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .leave-days { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .leave-label { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+    /* ── Form elements ───────────────────────────────────── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-main); margin-bottom: 5px; display: block; }
+    .form-label .req { color: var(--red); }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px;
+      font-size: 13px; font-family: inherit; color: var(--text-main); background: var(--white);
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--green); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── Modal ───────────────────────────────────────────── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--white); border-radius: 12px; padding: 28px; max-width: 520px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); line-height: 1; }
+    .modal-close:hover { color: var(--text-main); }
+    .modal-msg { display: none; padding: 10px 14px; border-radius: 7px; font-size: 13px; font-weight: 600; margin-top: 12px; }
+
+    /* ── Help Request items ──────────────────────────────── */
+    .help-item { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .help-item:last-child { border-bottom: none; }
+    .help-item-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .help-item-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .help-item-desc { font-size: 12.5px; color: var(--text-main); margin-top: 6px; padding: 8px 10px; background: var(--cream); border-radius: 6px; }
+
+    /* ── Team member row ─────────────────────────────────── */
+    .team-row { padding: 11px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .team-row:last-child { border-bottom: none; }
+    .team-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--navy-mid); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .team-info { flex: 1; }
+    .team-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .team-role { font-size: 11.5px; color: var(--text-muted); }
+
+    /* ── Loading ─────────────────────────────────────────── */
+    #loadingOverlay { position: fixed; inset: 0; background: var(--navy); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 14px; }
+    .loading-logo { font-size: 32px; font-weight: 800; color: #fff; }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-text { font-size: 13px; color: rgba(255,255,255,0.5); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { padding: 28px 18px; text-align: center; color: var(--text-light); font-size: 13px; }
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* ── Announcement, Holiday, Rules cards ── */
+    .nav-badge-rules { margin-left: auto; background: var(--yellow); color: #000; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 12px; display: none; }
+    .nav-badge-rules.show { display: inline-block; }
+    .ann-item { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+    .ann-item:last-child { border-bottom: none; }
+    .ann-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: var(--cream); }
+    .ann-title { font-size: 13.5px; font-weight: 700; color: var(--text-main); }
+    .ann-body { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+    .ann-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+    .holiday-item { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+    .holiday-item:last-child { border-bottom: none; }
+    .holiday-date-box { width: 44px; height: 44px; border-radius: 8px; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 12px; }
+    .holiday-date-day { font-size: 15px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .holiday-date-mon { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .holiday-name { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
+    .holiday-type { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .rule-card-item { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .rule-card-item:last-child { border-bottom: none; }
+    .rule-card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .rule-card-cat { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--blue-bg, #eff6ff); color: var(--blue, #2563eb); margin-bottom: 6px; }
+    .rule-card-body { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+    .lang-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+    .lang-toggle button { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .lang-toggle button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px)  { .two-col { grid-template-columns: 1fr; } .three-col { grid-template-columns: 1fr; } }
+    @media (max-width: 640px)  { .sidebar { transform: translateX(-100%); } .main { margin-left: 0; } .topbar { left: 0; } }
+  </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+  <div class="loading-logo">BWAPMS</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading Senior Staff Dashboard...</div>
+</div>
+
+<!-- ── Sidebar ─────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div style="background:rgba(255,255,255,0.9);border-radius:5px;padding:2px 7px;font-size:13px;font-weight:800;color:var(--navy);">GramGP</div>
+  </div>
+  <div class="sidebar-sys">
+    <div class="sidebar-sys-name">BWAPMS</div>
+    <div class="sidebar-sys-sub">Bangladesh Workforce & Programme Management</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item active" onclick="showSection('dashboard', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">My Work</div>
+    <a class="nav-item" onclick="showSection('mytasks', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      My Tasks
+      <span class="nav-badge" id="myTaskBadgeNav">—</span>
+    </a>
+    <a class="nav-item" onclick="showSection('report', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Daily Report
+    </a>
+    <a class="nav-item" onclick="showSection('attendance', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      My Attendance
+    </a>
+    <a class="nav-item" onclick="showSection('leave', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      Leave
+    </a>
+    <a class="nav-item" onclick="showSection('kpi', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      My KPI
+    </a>
+    <a class="nav-item" onclick="showSection('meetings', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Meetings
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Team Management</div>
+    <a class="nav-item" onclick="showSection('teamtasks', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Assign Tasks
+      <span class="nav-badge" id="teamTaskBadgeNav">—</span>
+    </a>
+    <a class="nav-item" onclick="showSection('helprequests', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Help Requests
+      <span class="nav-badge alert" id="helpBadgeNav" style="display:none;">!</span>
+    </a>
+    <a class="nav-item" onclick="showSection('teamkpi', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Team KPI
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">General</div>
+    <a class="nav-item" onclick="showSection('announcements', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a2 2 0 01-3.2 2.4L3 14"/></svg>
+      Announcements
+    </a>
+    <a class="nav-item" onclick="showSection('holidays', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Holiday Calendar
+    </a>
+    <a class="nav-item" onclick="showSection('rules', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      Rules & Regulations
+      <span class="nav-badge-rules" id="rulesBadge"></span>
+    </a>
+    <a class="nav-item" onclick="showSection('salary', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Salary Slip
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebarAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Loading...</div>
+        <div class="user-tier">Tier 3 — Senior Staff</div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()" title="Logout">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Topbar ──────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-title" id="topbarTitle">Dashboard</div>
+  <div class="topbar-right">
+    <div class="topbar-date" id="topbarDate"></div>
+
+    <!-- Notification Bell -->
+    <div class="notif-bell" onclick="toggleNotif()" id="notifBellWrap">
+      <svg width="18" height="18" fill="none" stroke="var(--navy)" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="notif-dot" id="notifDot"></div>
+      <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-header"><span>Notifications</span><button onclick="markAllRead(event)">Mark all read</button></div>
+        <div id="notifList"><div class="notif-empty">No notifications</div></div>
+      </div>
+    </div>
+
+    <button onclick="openCheckin()" class="btn-checkin-big" style="padding:8px 16px;font-size:13px;">📍 Check-In/Out</button>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ────────────────────────────────────────── -->
+<div class="main">
+<div class="content">
+
+<!-- ════════════════ DASHBOARD ════════════════ -->
+<div id="sec-dashboard">
+  <p class="section-title">Today's Overview</p>
+
+  <!-- Today Status Card -->
+  <div class="today-card" style="margin-bottom:20px;">
+    <div class="today-left">
+      <h2>Today's Status</h2>
+      <div class="today-status" id="todayStatus">Loading...</div>
+      <div class="today-time" id="todayTime">—</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:6px;">Thursday, <span id="todayDate2">—</span></div>
+      <button onclick="openCheckin()" class="btn-checkin-big">📍 Check-In / Out</button>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card blue">
+      <div class="stat-label">My Pending Tasks</div>
+      <div class="stat-value" id="dashMyPending">—</div>
+      <div class="stat-sub">assigned to me</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">Team Tasks Active</div>
+      <div class="stat-value" id="dashTeamActive">—</div>
+      <div class="stat-sub">Tier 4 in progress</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value" id="dashOverdue">—</div>
+      <div class="stat-sub">past due date</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">My KPI Score</div>
+      <div class="stat-value" id="dashKpi">—</div>
+      <div class="stat-sub" id="dashKpiBand">this month</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:16px;">
+    <!-- My Active Tasks Quick View -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">My Active Tasks</div>
+        <a onclick="showSection('mytasks',null)" style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600;">View All →</a>
+      </div>
+      <div id="dashMyTaskList"><div class="empty-state">Loading...</div></div>
+    </div>
+
+    <!-- Team Tasks Quick View -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Tier 4 Team Tasks</div>
+        <a onclick="showSection('teamtasks',null)" style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600;">Manage →</a>
+      </div>
+      <div id="dashTeamTaskList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Help Requests + Notifications quick view -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Pending Help Requests</div>
+        <span class="card-badge badge-yellow" id="dashHelpCount">0</span>
+      </div>
+      <div id="dashHelpList"><div class="empty-state">No pending help requests.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Leave Balance</div>
+        <span class="card-badge badge-green">Current</span>
+      </div>
+      <div class="card-body">
+        <div class="leave-row">
+          <div class="leave-box">
+            <div class="leave-type">Casual Leave</div>
+            <div class="leave-days" id="clBalance">—</div>
+            <div class="leave-label">days remaining</div>
+          </div>
+          <div class="leave-box">
+            <div class="leave-type">Sick Leave</div>
+            <div class="leave-days" id="slBalance">—</div>
+            <div class="leave-label">days remaining</div>
+          </div>
+          <div class="leave-box">
+            <div class="leave-type">Used (CL)</div>
+            <div class="leave-days" id="clUsed">—</div>
+            <div class="leave-label">days used</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MY TASKS ════════════════ -->
+<div id="sec-mytasks" style="display:none;">
+  <p class="section-title">My Tasks</p>
+  <div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card blue"><div class="stat-label">Pending</div><div class="stat-value" id="mtStatPending">—</div><div class="stat-sub">not started</div></div>
+    <div class="stat-card yellow"><div class="stat-label">In Progress</div><div class="stat-value" id="mtStatInProgress">—</div><div class="stat-sub">active</div></div>
+    <div class="stat-card green"><div class="stat-label">Completed</div><div class="stat-value" id="mtStatCompleted">—</div><div class="stat-sub">this month</div></div>
+    <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value" id="mtStatOverdue">—</div><div class="stat-sub">past deadline</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <div class="card-title">Active Tasks</div>
+      <span class="card-badge badge-blue" id="mtActiveBadge">—</span>
+    </div>
+    <div id="mtActiveList"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Completed (Last 30 Days)</div>
+      <span class="card-badge badge-green" id="mtCompletedBadge">—</span>
+    </div>
+    <div id="mtCompletedList"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- My Task Modals -->
+<div class="modal-overlay" id="modalStartTask">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">▶ Start Task</div><button class="modal-close" onclick="closeModal('modalStartTask')">✕</button></div>
+    <div id="startTaskInfo" style="padding:12px 14px;background:var(--cream);border-radius:8px;margin-bottom:16px;font-size:13px;"></div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Task শুরু করলে "In Progress" status-এ যাবে এবং পরের task শুরু করার আগে এটা সম্পন্ন করতে হবে (sequential lock)।</p>
+    <button id="btnConfirmStart" class="btn-full btn-green" onclick="confirmStartTask()">✅ Start Task</button>
+    <div class="modal-msg" id="startMsg"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalProgress">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">📊 Progress Update</div><button class="modal-close" onclick="closeModal('modalProgress')">✕</button></div>
+    <div id="progressTaskInfo" style="padding:12px 14px;background:var(--cream);border-radius:8px;margin-bottom:16px;font-size:13px;"></div>
+    <div class="form-group">
+      <label class="form-label">Progress: <span id="progressPercentVal" style="color:var(--green);font-size:14px;">50%</span></label>
+      <input type="range" id="progressPercent" min="0" max="100" value="50" style="width:100%;cursor:pointer;" oninput="document.getElementById('progressPercentVal').textContent=this.value+'%'">
+    </div>
+    <div class="form-group"><label class="form-label">কাজের বিবরণ <span class="req">*</span></label><textarea class="form-textarea" id="progressWorkDone" placeholder="আজকে কী কী করলেন..."></textarea></div>
+    <div class="form-group"><label class="form-label">চ্যালেঞ্জ / বাধা <span class="req">*</span></label><textarea class="form-textarea" id="progressChallenges" placeholder="কোনো সমস্যা হচ্ছে?"></textarea></div>
+    <div class="form-group"><label class="form-label">সাহায্য দরকার?</label><textarea class="form-textarea" id="progressSupport" style="min-height:60px;" placeholder="Optional"></textarea></div>
+    <button id="btnSubmitProgress" class="btn-full btn-green" onclick="submitProgressUpdate()">📤 Submit Update</button>
+    <div class="modal-msg" id="progressMsg"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalComplete">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">✅ Complete Task</div><button class="modal-close" onclick="closeModal('modalComplete')">✕</button></div>
+    <div id="completeTaskInfo" style="padding:12px 14px;background:var(--cream);border-radius:8px;margin-bottom:16px;font-size:13px;"></div>
+    <div class="form-group"><label class="form-label">সম্পন্ন কাজের বিবরণ <span class="req">*</span></label><textarea class="form-textarea" id="completeNote" placeholder="কী কী সম্পন্ন হলো..."></textarea></div>
+    <div class="form-group"><label class="form-label">Evidence URL <span id="evidenceRequired" style="color:var(--red);display:none;">(Critical-এর জন্য বাধ্যতামূলক)</span></label><input type="url" class="form-input" id="completeEvidence" placeholder="https://..."></div>
+    <button id="btnSubmitComplete" class="btn-full btn-green" onclick="submitTaskComplete()">✅ Mark as Completed</button>
+    <div class="modal-msg" id="completeMsg"></div>
+  </div>
+</div>
+
+<!-- ════════════════ DAILY REPORT ════════════════ -->
+<div id="sec-report" style="display:none;">
+  <p class="section-title">Daily Report</p>
+  <div class="card" style="max-width:680px;">
+    <div class="card-header">
+      <div class="card-title">📋 Today's Daily Report</div>
+      <span class="card-badge badge-gray" id="reportDateBadge">—</span>
+    </div>
+    <div class="card-body">
+      <div id="reportAlreadySubmitted" style="display:none;padding:12px 14px;background:var(--green-dim);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--green);font-weight:600;">✅ আজকের রিপোর্ট ইতিমধ্যে submit হয়েছে। প্রয়োজনে আবার submit করুন।</div>
+      <div class="form-group"><label class="form-label">Completed Tasks <span class="req">*</span></label><textarea class="form-textarea" id="rCompleted" placeholder="আজকে কোন কোন task সম্পন্ন হলো..."></textarea></div>
+      <div class="form-group"><label class="form-label">Pending Tasks <span class="req">*</span></label><textarea class="form-textarea" id="rPending" placeholder="কোন task এখনো বাকি..."></textarea></div>
+      <div class="form-group"><label class="form-label">Key Achievements <span class="req">*</span></label><textarea class="form-textarea" id="rAchievements" placeholder="আজকের উল্লেখযোগ্য অর্জন..."></textarea></div>
+      <div class="form-group"><label class="form-label">Problems Faced <span class="req">*</span></label><textarea class="form-textarea" id="rProblems" placeholder="কোনো সমস্যা হয়েছে?"></textarea></div>
+      <div class="form-group"><label class="form-label">Team Status Summary</label><textarea class="form-textarea" id="rTeamStatus" placeholder="Tier 4 টিমের আজকের অবস্থা সংক্ষেপে..."></textarea></div>
+      <div class="form-group"><label class="form-label">Support Needed</label><textarea class="form-textarea" style="min-height:60px;" id="rSupport" placeholder="Tier 2 থেকে কোনো সাহায্য দরকার?"></textarea></div>
+      <div class="form-group"><label class="form-label">Tomorrow's Plan <span class="req">*</span></label><textarea class="form-textarea" id="rTomorrow" placeholder="আগামীকালের পরিকল্পনা..."></textarea></div>
+      <div class="form-group"><label class="form-label">Priority Activities <span class="req">*</span></label><textarea class="form-textarea" id="rPriority" placeholder="আগামীকালের অগ্রাধিকার কাজগুলো..."></textarea></div>
+      <button class="btn-full btn-green" id="reportSubmitBtn" onclick="submitDailyReport()">Submit Daily Report</button>
+      <div class="modal-msg" id="reportMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ ATTENDANCE ════════════════ -->
+<div id="sec-attendance" style="display:none;">
+  <p class="section-title">My Attendance History</p>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Last 30 Days</div>
+      <span class="card-badge badge-gray" id="attSummaryBadge">—</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="att-table">
+        <thead><tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Late (min)</th><th>Remarks</th></tr></thead>
+        <tbody id="attHistoryBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ LEAVE ════════════════ -->
+<div id="sec-leave" style="display:none;">
+  <p class="section-title">Leave Management</p>
+  <div class="two-col" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Leave Balance</div><span class="card-badge badge-green">2026</span></div>
+      <div class="card-body">
+        <div class="leave-row" style="margin-bottom:12px;">
+          <div class="leave-box"><div class="leave-type">Casual Leave</div><div class="leave-days" id="lvClBalance">—</div><div class="leave-label">days remaining</div></div>
+          <div class="leave-box"><div class="leave-type">Sick Leave</div><div class="leave-days" id="lvSlBalance">—</div><div class="leave-label">days remaining</div></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-muted);background:var(--cream);padding:10px 12px;border-radius:7px;">
+          Casual Leave: 1.5 days/month (18/year) — expires 31 Dec.<br>
+          Sick Leave: 14 days/year — expires 31 Dec.<br>
+          Leave approval: Tier 2 (Country Head BD)
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Apply for Leave</div></div>
+      <div class="card-body">
+        <div class="form-group"><label class="form-label">Leave Type <span class="req">*</span></label><select class="form-select" id="leaveType"><option value="">Select...</option><option>Casual Leave</option><option>Sick Leave</option><option>Maternity Leave</option></select></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">From <span class="req">*</span></label><input type="date" class="form-input" id="leaveFrom"></div>
+          <div class="form-group"><label class="form-label">To <span class="req">*</span></label><input type="date" class="form-input" id="leaveTo"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Reason <span class="req">*</span></label><textarea class="form-textarea" style="min-height:70px;" id="leaveReason" placeholder="Leave-এর কারণ লিখুন..."></textarea></div>
+        <button class="btn-full btn-green" onclick="submitLeaveRequest()">Submit Leave Request</button>
+        <div class="modal-msg" id="leaveMsg"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Leave History</div><span class="card-badge badge-gray" id="leaveHistBadge">—</span></div>
+    <div style="overflow-x:auto;"><table class="att-table"><thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Applied</th></tr></thead><tbody id="leaveHistBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- ════════════════ KPI ════════════════ -->
+<div id="sec-kpi" style="display:none;">
+  <p class="section-title">My KPI & Performance</p>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">KPI Score Breakdown</div>
+        <span class="card-badge badge-blue" id="kpiMonthBadge">—</span>
+      </div>
+      <div class="card-body">
+        <div style="text-align:center;padding:16px 0 20px;">
+          <div style="font-size:52px;font-weight:800;color:var(--navy);line-height:1;" id="kpiTotalScore">—</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px;" id="kpiBandLabel">—</div>
+        </div>
+        <div id="kpiComponents"><div class="empty-state">No KPI data yet.</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title">Productivity Per Hour</div><span class="card-badge badge-gray">Informational</span></div>
+        <div class="card-body">
+          <div style="font-size:32px;font-weight:800;color:var(--blue);text-align:center;padding:10px 0;" id="kpiPPH">—</div>
+          <div style="font-size:12px;color:var(--text-muted);text-align:center;">points / hour (non-scoring metric)</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">KPI History</div></div>
+        <div id="kpiHistory"><div class="empty-state">No history yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MEETINGS ════════════════ -->
+<div id="sec-meetings" style="display:none;">
+  <p class="section-title">Meetings & Action Items</p>
+  <div class="stats-grid-3" style="margin-bottom:20px;">
+    <div class="stat-card blue"><div class="stat-label">Upcoming</div><div class="stat-value" id="mtgUpcoming">—</div><div class="stat-sub">scheduled meetings</div></div>
+    <div class="stat-card yellow"><div class="stat-label">Action Items</div><div class="stat-value" id="mtgActionPending">—</div><div class="stat-sub">pending resolution</div></div>
+    <div class="stat-card green"><div class="stat-label">Completed</div><div class="stat-value" id="mtgDone">—</div><div class="stat-sub">this month</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">My Meetings</div><span class="card-badge badge-blue" id="mtgListBadge">—</span></div>
+    <div id="mtgList"><div class="empty-state">Loading...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">My Action Items</div><span class="card-badge badge-yellow" id="actionListBadge">—</span></div>
+    <div id="actionList"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ TEAM TASKS (Assign to Tier 4) ════════════════ -->
+<div id="sec-teamtasks" style="display:none;">
+  <p class="section-title">Tier 4 Team Tasks</p>
+
+  <div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card blue"><div class="stat-label">Pending</div><div class="stat-value" id="ttStatPending">—</div><div class="stat-sub">not started</div></div>
+    <div class="stat-card yellow"><div class="stat-label">In Progress</div><div class="stat-value" id="ttStatInProgress">—</div><div class="stat-sub">active</div></div>
+    <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value" id="ttStatOverdue">—</div><div class="stat-sub">past deadline</div></div>
+    <div class="stat-card green"><div class="stat-label">Completed</div><div class="stat-value" id="ttStatCompleted">—</div><div class="stat-sub">this month</div></div>
+  </div>
+
+  <!-- Assign New Task -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header"><div class="card-title">Assign New Task to Tier 4</div></div>
+    <div class="card-body">
+      <div style="background:var(--blue-bg);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--blue);margin-bottom:16px;font-weight:600;">
+        ℹ️ Tier 3 can only assign tasks to Tier 4 Staff. Tasks cannot be assigned upward to Tier 1 or Tier 2.
+      </div>
+
+      <!-- Tier 4 not yet recruited notice -->
+      <div id="tier4NotRecruited" style="background:var(--yellow-bg);border-radius:8px;padding:12px 16px;font-size:13px;color:#92400e;margin-bottom:16px;display:none;">
+        ⚠️ <strong>Tier 4 Staff not yet recruited.</strong> Task assignment will be available once Tier 4 employees are onboarded. Please inform Tier 2 (Country Head BD) to add staff profiles.
+      </div>
+
+      <div class="form-group"><label class="form-label">Assign To (Tier 4) <span class="req">*</span></label><select class="form-select" id="assignTo"><option value="">Loading Tier 4 staff...</option></select></div>
+      <div class="form-group"><label class="form-label">Task Title <span class="req">*</span></label><input type="text" class="form-input" id="taskTitle" placeholder="Task-এর শিরোনাম..."></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="taskDesc" placeholder="Task-এর বিস্তারিত বিবরণ..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Priority <span class="req">*</span></label><select class="form-select" id="taskPriority"><option value="">Select...</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+        <div class="form-group"><label class="form-label">Due Date <span class="req">*</span></label><input type="date" class="form-input" id="taskDueDate"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Task Type</label><select class="form-select" id="taskType"><option value="Manual">Manual</option><option value="Auto-Generated">Auto-Generated</option><option value="Collaborative">Collaborative</option></select></div>
+        <div class="form-group"><label class="form-label">Performance Impact Score (1–10)</label><input type="number" class="form-input" id="taskImpact" min="1" max="10" value="5" placeholder="1–10"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Deadline Extension Reason</label><input type="text" class="form-input" id="taskDeadlineNote" placeholder="প্রযোজ্য হলে..."></div>
+      <button class="btn-full btn-green" onclick="assignTask()">Assign Task to Tier 4</button>
+      <div class="modal-msg" id="assignTaskMsg"></div>
+    </div>
+  </div>
+
+  <!-- Team Task Monitor -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Team Task Monitor</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="ttFilterStatus" class="form-select" style="font-size:12px;padding:5px 8px;width:auto;" onchange="loadTeamTasks()">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed On Time">Completed On Time</option>
+          <option value="Completed Late">Completed Late</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+        <span class="card-badge badge-blue" id="ttListBadge">—</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="teamTaskTable">
+        <thead><tr><th>Task</th><th>Assigned To</th><th>Priority</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="ttListBody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Deadline Adjust Modal -->
+<div class="modal-overlay" id="modalAdjustDeadline">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header"><div class="modal-title">📅 Adjust Deadline</div><button class="modal-close" onclick="closeModal('modalAdjustDeadline')">✕</button></div>
+    <div id="adjustTaskInfo" style="padding:10px 12px;background:var(--cream);border-radius:7px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="form-group"><label class="form-label">New Due Date <span class="req">*</span></label><input type="date" class="form-input" id="newDueDate"></div>
+    <div class="form-group"><label class="form-label">Reason for Adjustment <span class="req">*</span></label><textarea class="form-textarea" style="min-height:60px;" id="adjustReason" placeholder="কেন deadline পরিবর্তন করা হচ্ছে?"></textarea></div>
+    <button class="btn-full btn-green" onclick="submitDeadlineAdjust()">Update Deadline</button>
+    <div class="modal-msg" id="adjustMsg"></div>
+  </div>
+</div>
+
+<!-- ════════════════ HELP REQUESTS ════════════════ -->
+<div id="sec-helprequests" style="display:none;">
+  <p class="section-title">Team Help Requests</p>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Pending Requests</div><span class="card-badge badge-yellow" id="helpPendingBadge">—</span></div>
+      <div id="helpPendingList"><div class="empty-state">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Resolved Requests</div><span class="card-badge badge-green" id="helpResolvedBadge">—</span></div>
+      <div id="helpResolvedList"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Respond Modal -->
+<div class="modal-overlay" id="modalHelpRespond">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-header"><div class="modal-title">💬 Respond to Help Request</div><button class="modal-close" onclick="closeModal('modalHelpRespond')">✕</button></div>
+    <div id="helpRespondInfo" style="padding:10px 12px;background:var(--cream);border-radius:7px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="form-group"><label class="form-label">Response / Resolution <span class="req">*</span></label><textarea class="form-textarea" id="helpResponseText" placeholder="সমস্যার সমাধান বা পরামর্শ লিখুন..."></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn-full btn-green" onclick="respondHelp('Accepted')">✅ Accept & Resolve</button>
+      <button class="btn-full" style="background:var(--red-bg);color:var(--red);" onclick="respondHelp('Rejected')">✕ Cannot Help</button>
+    </div>
+    <div class="modal-msg" id="helpRespondMsg"></div>
+  </div>
+</div>
+
+<!-- ════════════════ TEAM KPI ════════════════ -->
+<div id="sec-teamkpi" style="display:none;">
+  <p class="section-title">Tier 4 Team KPI Summary</p>
+
+  <!-- Tier 4 not recruited notice -->
+  <div id="teamKpiNotRecruited" style="background:var(--yellow-bg);border:1px solid #fde68a;border-radius:10px;padding:20px 24px;margin-bottom:20px;display:none;">
+    <div style="font-size:15px;font-weight:700;color:#92400e;margin-bottom:8px;">⚠️ Tier 4 Staff Not Yet Recruited</div>
+    <div style="font-size:13px;color:#78350f;">Team KPI monitoring will be available once Tier 4 employees are onboarded. Please contact Tier 2 (Country Head BD) to set up staff profiles.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Team Performance Overview</div><span class="card-badge badge-blue" id="teamKpiBadge">Current Month</span></div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Staff Name</th><th>Attendance</th><th>Task Perf.</th><th>Reporting</th><th>Total KPI</th><th>Band</th></tr></thead>
+        <tbody id="teamKpiBody"><tr><td colspan="6" class="empty-state">Loading team KPI...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ ANNOUNCEMENTS ════════════════ -->
+<div id="sec-announcements" style="display:none;">
+  <p class="section-title">Announcements & Notices</p>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Announcements</div><span class="card-badge badge-gray" id="annCountBadge">—</span></div>
+    <div id="annList"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ HOLIDAY CALENDAR ════════════════ -->
+<div id="sec-holidays" style="display:none;">
+  <p class="section-title">Holiday Calendar — <span id="holidayYearLabel"></span></p>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Holidays</div><span class="card-badge badge-gray" id="holidayCountBadge">—</span></div>
+    <div id="holidayList"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ RULES & REGULATIONS ════════════════ -->
+<div id="sec-rules" style="display:none;">
+  <p class="section-title">Rules & Regulations</p>
+  <div class="lang-toggle">
+    <button id="ruleLangBn" class="active" onclick="setRuleLang('bn')">বাংলা</button>
+    <button id="ruleLangEn" onclick="setRuleLang('en')">English</button>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">All Rules</div><span class="card-badge badge-gray" id="rulesCountBadge">—</span></div>
+    <div id="rulesList"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ════════════════ SALARY SLIP ════════════════ -->
+<div id="sec-salary" style="display:none;">
+  <p class="section-title">Salary Slip</p>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div>
+        <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Select Month</label>
+        <input type="month" id="salaryMonth" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" />
+      </div>
+      <button onclick="loadSalarySlip()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:18px;">Load Slip</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Salary Slip</div></div>
+    <div id="salarySlipBody" style="padding:20px;"><div class="empty-state">একটি মাস সিলেক্ট করে "Load Slip" চাপুন।</div></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Supabase Init ───────────────────────────────────────────────
+const SUPABASE_URL     = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let myEmployeeId = null;
+let myName       = '';
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ */
+async function registerSession() {
+  if (!myEmployeeId) return;
+  // Reuse the same device/tab token across page navigations within this tab
+  // (full page reloads used to call safeUUID() fresh every time, which made
+  // every internal page navigation overwrite user_sessions and force-logout
+  // the very page the user just came from). Only generate a new token when
+  // this tab has never had one — sessionStorage is per-tab, so other tabs /
+  // devices still correctly trigger the single-active-session logout.
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await db.from('user_sessions').upsert({
+      employee_id: myEmployeeId,
+      session_token: mySessionToken,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: 'employee_id' });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const { data } = await db.from('user_sessions')
+        .select('session_token')
+        .eq('employee_id', myEmployeeId)
+        .maybeSingle();
+      if (data && data.session_token && data.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (data) {
+        // heartbeat — keep last_seen_at fresh
+        try {
+          await db.from('user_sessions').update({ last_seen_at: new Date().toISOString() })
+            .eq('employee_id', myEmployeeId).eq('session_token', mySessionToken);
+        } catch (e2) { /* network hiccup on heartbeat — non-fatal */ }
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  localStorage.removeItem('bwapms_device_token');
+  try { await db.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+let allMyTasks   = [];
+let currentTaskId   = null;
+let currentTaskObj  = null;
+let currentHelpId   = null;
+let currentAdjustId = null;
+
+// ── Date helpers ────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function monthStart() {
+  const d = new Date(); d.setDate(1);
+  return d.toISOString().split('T')[0];
+}
+function thirtyDaysAgo() {
+  const d = new Date(); d.setDate(d.getDate() - 30);
+  return d.toISOString().split('T')[0];
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+function fmtTime(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Init ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Set topbar date
+  const now = new Date();
+  const ds = now.toLocaleDateString('en-GB', {weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('topbarDate').textContent = ds;
+  document.getElementById('todayDate2').textContent = now.toLocaleDateString('en-GB', {day:'2-digit',month:'long'});
+  document.getElementById('reportDateBadge').textContent = todayStr();
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) { window.location.href = 'index.html'; return; }
+
+  // Get employee profile
+  const { data: emp } = await db
+    .from('employee_master')
+    .select('employee_id, full_name, tier, is_active')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  if (!emp || emp.tier !== 3 || !emp.is_active) {
+    alert('Access denied. This dashboard is for Tier 3 Senior Staff only.');
+    await db.auth.signOut();
+    window.location.href = 'index.html';
+    return;
+  }
+
+  myEmployeeId = emp.employee_id;
+  myName       = emp.full_name;
+  startIdleWatcher();
+  await registerSession();
+  document.getElementById('sidebarName').textContent = myName;
+  document.getElementById('sidebarAvatar').textContent = myName.charAt(0).toUpperCase();
+
+  // Load all dashboard data
+  await Promise.all([
+    loadTodayAttendance(),
+    loadDashboardStats(),
+    loadLeaveBalance(),
+    loadTier4Staff(),
+    loadNotifications(),
+    loadRulesBadge(),
+  ]);
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+
+  // Deep-link support: ?section=rules opens that section directly
+  // (used by attendance.html's "View Full Rules & Regulations" link)
+  const deepLinkSection = new URLSearchParams(window.location.search).get('section');
+  if (deepLinkSection) showSection(deepLinkSection);
+});
+
+// ── Today's Attendance ──────────────────────────────────────────
+async function loadTodayAttendance() {
+  const { data } = await db
+    .from('attendance')
+    .select('status, check_in_time, check_out_time')
+    .eq('employee_id', myEmployeeId)
+    .eq('attendance_date', todayStr())
+    .maybeSingle();
+
+  const statusEl = document.getElementById('todayStatus');
+  const timeEl   = document.getElementById('todayTime');
+
+  if (!data) {
+    statusEl.textContent = 'Not Checked In';
+    timeEl.textContent   = 'আজ এখনো check-in হয়নি';
+    return;
+  }
+  const pillColors = { 'Present':'#22a05e','Late':'#f59e0b','Absent':'#dc2626','Leave':'#2563eb' };
+  statusEl.textContent = data.status;
+  statusEl.style.color = pillColors[data.status] || '#fff';
+  timeEl.textContent = 'In: ' + fmtTime(data.check_in_time) + (data.check_out_time ? '  ·  Out: ' + fmtTime(data.check_out_time) : '  ·  Not checked out');
+}
+
+// ── Dashboard Stats ─────────────────────────────────────────────
+async function loadDashboardStats() {
+  const today = todayStr();
+  const mStart = monthStart();
+
+  // My pending tasks
+  const { data: myPending } = await db.from('task_master')
+    .select('task_id,title,priority,status,due_date', {count:'exact'})
+    .eq('primary_assignee', myEmployeeId)
+    .in('status', ['Pending','In Progress'])
+    .eq('is_active', true);
+
+  document.getElementById('dashMyPending').textContent = myPending?.length || 0;
+
+  // Team tasks active (assigned_by = me, Tier 4 doing)
+  const { data: teamActive } = await db.from('task_master')
+    .select('task_id,title,priority,status,due_date,primary_assignee')
+    .eq('assigned_by', myEmployeeId)
+    .in('status', ['Pending','In Progress'])
+    .eq('is_active', true);
+
+  document.getElementById('dashTeamActive').textContent = teamActive?.length || 0;
+
+  // Overdue (both my tasks and team tasks)
+  const allActive = [...(myPending || []), ...(teamActive || [])];
+  const overdue = allActive.filter(t => t.due_date && t.due_date < today && t.status !== 'Completed On Time');
+  document.getElementById('dashOverdue').textContent = overdue.length;
+
+  // KPI
+  const { data: kpi } = await db.from('kpi_scores')
+    .select('total_score')
+    .eq('employee_id', myEmployeeId)
+    .eq('period_type', 'Monthly')
+    .gte('period_start', mStart)
+    .order('created_at', {ascending:false})
+    .limit(1)
+    .maybeSingle();
+
+  const kpiScore = kpi?.total_score;
+  const kpiEl = document.getElementById('dashKpi');
+  const kpiNeg = kpiScore !== null && kpiScore < 0;
+  kpiEl.textContent = kpiScore !== null ? Math.abs(kpiScore).toFixed(1) : '—';
+  kpiEl.style.color = kpiNeg ? 'var(--red)' : '';
+  if (kpiNeg) kpiEl.textContent = '−' + Math.abs(kpiScore).toFixed(1);
+  document.getElementById('dashKpiBand').textContent = kpi ? kpiBand(kpiScore) : 'no data';
+
+  // Quick my task list (dashboard)
+  allMyTasks = myPending || [];
+  const dashMyEl = document.getElementById('dashMyTaskList');
+  if (!allMyTasks.length) { dashMyEl.innerHTML = '<div class="empty-state">No active tasks.</div>'; }
+  else {
+    dashMyEl.innerHTML = allMyTasks.slice(0,5).map(t => taskRowHTML(t, false)).join('');
+  }
+
+  // Quick team task list (dashboard)
+  const dashTeamEl = document.getElementById('dashTeamTaskList');
+  if (!teamActive || !teamActive.length) { dashTeamEl.innerHTML = '<div class="empty-state">No active team tasks.</div>'; }
+  else {
+    dashTeamEl.innerHTML = teamActive.slice(0,5).map(t => taskRowHTML(t, true)).join('');
+  }
+
+  // My task nav badge
+  document.getElementById('myTaskBadgeNav').textContent = allMyTasks.length || 0;
+  document.getElementById('teamTaskBadgeNav').textContent = teamActive?.length || 0;
+
+  // Load help requests count for dashboard
+  await loadHelpRequests(true);
+}
+
+function kpiBand(score) {
+  if (score === null || score === undefined) return '—';
+  if (score >= 90) return 'Excellent';
+  if (score >= 80) return 'Good';
+  if (score >= 70) return 'Satisfactory';
+  if (score >= 60) return 'Needs Improvement';
+  return 'Unsatisfactory';
+}
+function kpiBandColor(score) {
+  if (score >= 90) return 'var(--green)';
+  if (score >= 80) return '#3b82f6';
+  if (score >= 70) return 'var(--yellow)';
+  if (score >= 60) return '#f97316';
+  return 'var(--red)';
+}
+
+function priorityColor(p) {
+  return {Critical:'var(--red)',High:'var(--yellow)',Medium:'var(--blue)',Low:'var(--green)'}[p] || 'var(--text-muted)';
+}
+
+function taskRowHTML(t, isTeam) {
+  const overdue = t.due_date && t.due_date < todayStr() && !t.status.includes('Completed');
+  return '<div class="task-item">' +
+    '<div class="task-priority priority-' + (t.priority||'low').toLowerCase() + '"></div>' +
+    '<div class="task-info">' +
+      '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.title || 'Untitled') + '</div>' +
+      '<div class="task-meta">' + (t.priority||'—') + ' · Due: ' + (t.due_date||'—') + (isTeam ? ' · <em>Team</em>' : '') + '</div>' +
+    '</div>' +
+    statusPill(t.status) +
+    '</div>';
+}
+
+function statusPill(s) {
+  const map = {'Pending':'pending','In Progress':'late','Completed On Time':'present','Completed Late':'late','Overdue':'absent'};
+  return '<span class="pill ' + (map[s]||'pending') + '">' + (s||'—') + '</span>';
+}
+
+// ── Leave Balance ───────────────────────────────────────────────
+async function loadLeaveBalance() {
+  const year = new Date().getFullYear();
+  const { data } = await db.from('leave_balance')
+    .select('leave_type, total_allocated, used, balance')
+    .eq('employee_id', myEmployeeId)
+    .eq('year', year);
+
+  const cl = (data||[]).find(r => r.leave_type === 'Casual Leave');
+  const sl = (data||[]).find(r => r.leave_type === 'Sick Leave');
+
+  const clBal  = cl?.balance ?? '—';
+  const slBal  = sl?.balance ?? '—';
+  const clUsedV = cl?.used ?? '—';
+
+  ['clBalance','lvClBalance'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent = clBal; });
+  ['slBalance','lvSlBalance'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent = slBal; });
+  document.getElementById('clUsed').textContent = clUsedV;
+}
+
+// ── Notifications ───────────────────────────────────────────────
+async function loadNotifications() {
+  const { data } = await db.from('notifications')
+    .select('notification_id, type, title, message, is_read, created_at')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', {ascending:false})
+    .limit(20);
+
+  const unread = (data||[]).filter(n => !n.is_read);
+  const dot = document.getElementById('notifDot');
+  dot.classList.toggle('show', unread.length > 0);
+
+  const listEl = document.getElementById('notifList');
+  if (!data || data.length === 0) {
+    listEl.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markNotifRead('${n.notification_id}')">
+      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-msg">${n.message}</div>
+      <div class="notif-time">${fmtDate(n.created_at)}</div>
+    </div>`).join('');
+}
+
+function toggleNotif() {
+  const dd = document.getElementById('notifDropdown');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('notifBellWrap').contains(e.target)) {
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
+});
+
+async function markNotifRead(id) {
+  await db.from('notifications').update({is_read:true}).eq('notification_id', id);
+  await loadNotifications();
+}
+async function markAllRead(e) {
+  e.stopPropagation();
+  await db.from('notifications').update({is_read:true}).eq('employee_id', myEmployeeId).eq('is_read', false);
+  await loadNotifications();
+}
+
+// ── My Tasks Section ────────────────────────────────────────────
+async function loadMyTasks() {
+  const today   = todayStr();
+  const mStart  = monthStart();
+  const tdAgo   = thirtyDaysAgo();
+
+  const { data: active } = await db.from('task_master')
+    .select('task_id, title, priority, status, due_date, task_type, performance_impact_score')
+    .eq('primary_assignee', myEmployeeId)
+    .in('status', ['Pending','In Progress'])
+    .eq('is_active', true)
+    .order('due_date', {ascending:true});
+
+  const { data: completed } = await db.from('task_master')
+    .select('task_id, title, priority, status, due_date, updated_at')
+    .eq('primary_assignee', myEmployeeId)
+    .in('status', ['Completed On Time','Completed Late'])
+    .gte('updated_at', tdAgo)
+    .eq('is_active', true)
+    .order('updated_at', {ascending:false});
+
+  allMyTasks = active || [];
+
+  // Stats
+  const pending    = (active||[]).filter(t => t.status === 'Pending').length;
+  const inProgress = (active||[]).filter(t => t.status === 'In Progress').length;
+  const overdueN   = (active||[]).filter(t => t.due_date && t.due_date < today).length;
+  document.getElementById('mtStatPending').textContent    = pending;
+  document.getElementById('mtStatInProgress').textContent = inProgress;
+  document.getElementById('mtStatOverdue').textContent    = overdueN;
+  document.getElementById('mtStatCompleted').textContent  = completed?.length || 0;
+  document.getElementById('mtActiveBadge').textContent    = (active?.length || 0) + ' tasks';
+  document.getElementById('mtCompletedBadge').textContent = (completed?.length || 0) + ' tasks';
+
+  // Active list
+  const activeEl = document.getElementById('mtActiveList');
+  if (!active || active.length === 0) {
+    activeEl.innerHTML = '<div class="empty-state">কোনো active task নেই। ✅</div>';
+  } else {
+    activeEl.innerHTML = active.map(t => {
+      const overdue = t.due_date && t.due_date < today;
+      const isPending = t.status === 'Pending';
+      const isIP      = t.status === 'In Progress';
+      return '<div class="task-item">' +
+        '<div class="task-priority priority-' + (t.priority||'low').toLowerCase() + '"></div>' +
+        '<div class="task-info">' +
+          '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.title || 'Untitled') + '</div>' +
+          '<div class="task-meta">' + (t.priority||'—') + ' · Due: ' + (t.due_date||'—') + ' · Impact: ' + (t.performance_impact_score||'—') + '</div>' +
+        '</div>' +
+        statusPill(t.status) +
+        '<div class="task-actions" style="margin-left:8px;">' +
+          (isPending ? '<button class="btn-sm btn-primary" onclick="openStartTask(\'' + t.task_id + '\')">Start</button>' : '') +
+          (isIP ? '<button class="btn-sm btn-primary" onclick="openProgress(\'' + t.task_id + '\')">Update</button>' : '') +
+          (isIP ? '<button class="btn-sm btn-secondary" onclick="openComplete(\'' + t.task_id + '\')">Complete</button>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Completed
+  const compEl = document.getElementById('mtCompletedList');
+  if (!completed || completed.length === 0) {
+    compEl.innerHTML = '<div class="empty-state">গত ৩০ দিনে কোনো task সম্পন্ন হয়নি।</div>';
+  } else {
+    compEl.innerHTML = completed.map(t => {
+      const late = t.status === 'Completed Late';
+      return '<div class="task-item">' +
+        '<div class="task-priority" style="background:' + (late?'var(--yellow)':'var(--green)') + ';width:4px;height:32px;border-radius:2px;flex-shrink:0;"></div>' +
+        '<div class="task-info"><div class="task-name">' + (t.title||'Untitled') + '</div><div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date||'—') + '</div></div>' +
+        '<span class="pill ' + (late?'late':'present') + '">' + (late?'Late ✓':'On Time ✓') + '</span>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+// Task modals (same pattern as Tier 4)
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function getMyTask(id) { return allMyTasks.find(t => t.task_id === id); }
+function taskInfoHTML(t) {
+  return '<strong>' + (t.title||'Untitled') + '</strong><br>' +
+    '<span style="font-size:12px;color:var(--text-muted);">' + t.priority + ' Priority · Due: ' + (t.due_date||'—') + '</span>';
+}
+function showModalMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'var(--green-dim)' : 'var(--red-bg)';
+  el.style.color = type === 'success' ? 'var(--green)' : 'var(--red)';
+  el.textContent = text;
+}
+
+function openStartTask(taskId) {
+  const t = getMyTask(taskId);
+  if (!t) return;
+  currentTaskId = taskId; currentTaskObj = t;
+  document.getElementById('startTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('startMsg').style.display = 'none';
+  openModal('modalStartTask');
+}
+async function confirmStartTask() {
+  const btn = document.getElementById('btnConfirmStart');
+  btn.disabled = true; btn.textContent = 'শুরু হচ্ছে...';
+  const { error } = await db.from('task_master').update({status:'In Progress',updated_at:new Date().toISOString()}).eq('task_id',currentTaskId);
+  if (error) showModalMsg('startMsg','error','সমস্যা: ' + error.message);
+  else { closeModal('modalStartTask'); await loadMyTasks(); }
+  btn.disabled = false; btn.textContent = '✅ Start Task';
+}
+
+function openProgress(taskId) {
+  const t = getMyTask(taskId);
+  if (!t) return;
+  currentTaskId = taskId; currentTaskObj = t;
+  document.getElementById('progressTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('progressPercent').value = '50';
+  document.getElementById('progressPercentVal').textContent = '50%';
+  document.getElementById('progressWorkDone').value = '';
+  document.getElementById('progressChallenges').value = '';
+  document.getElementById('progressSupport').value = '';
+  document.getElementById('progressMsg').style.display = 'none';
+  openModal('modalProgress');
+}
+async function submitProgressUpdate() {
+  const workDone   = document.getElementById('progressWorkDone').value.trim();
+  const challenges = document.getElementById('progressChallenges').value.trim();
+  const support    = document.getElementById('progressSupport').value.trim();
+  const progress   = parseInt(document.getElementById('progressPercent').value);
+  if (!workDone || !challenges) { showModalMsg('progressMsg','error','কাজের বিবরণ এবং চ্যালেঞ্জ field পূরণ করুন।'); return; }
+  const btn = document.getElementById('btnSubmitProgress');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  const { error } = await db.from('task_updates').insert({
+    task_id:currentTaskId, progress_percentage:progress, status:'In Progress',
+    work_completed:workDone, challenges_faced:challenges, support_required:support||null,
+    submitted_by:myEmployeeId, submitted_at:new Date().toISOString()
+  });
+  if (error) showModalMsg('progressMsg','error','সমস্যা: '+error.message);
+  else { closeModal('modalProgress'); await loadMyTasks(); }
+  btn.disabled = false; btn.textContent = '📤 Submit Update';
+}
+
+function openComplete(taskId) {
+  const t = getMyTask(taskId);
+  if (!t) return;
+  currentTaskId = taskId; currentTaskObj = t;
+  document.getElementById('completeTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('completeNote').value = '';
+  document.getElementById('completeEvidence').value = '';
+  document.getElementById('completeMsg').style.display = 'none';
+  document.getElementById('evidenceRequired').style.display = t.priority === 'Critical' ? 'inline' : 'none';
+  openModal('modalComplete');
+}
+async function submitTaskComplete() {
+  const note     = document.getElementById('completeNote').value.trim();
+  const evidence = document.getElementById('completeEvidence').value.trim();
+  if (!note) { showModalMsg('completeMsg','error','কাজের বিবরণ লিখুন।'); return; }
+  if (currentTaskObj?.priority === 'Critical' && !evidence) { showModalMsg('completeMsg','error','Critical task-এর জন্য Evidence URL বাধ্যতামূলক।'); return; }
+  const btn = document.getElementById('btnSubmitComplete');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  const today = todayStr();
+  const isLate = currentTaskObj?.due_date && currentTaskObj.due_date < today;
+  await db.from('task_updates').insert({
+    task_id:currentTaskId, progress_percentage:100, status:'Completed',
+    work_completed:note, evidence_url:evidence||null,
+    submitted_by:myEmployeeId, submitted_at:new Date().toISOString()
+  });
+  const { error } = await db.from('task_master').update({
+    status: isLate ? 'Completed Late' : 'Completed On Time',
+    updated_at: new Date().toISOString()
+  }).eq('task_id',currentTaskId);
+  if (error) showModalMsg('completeMsg','error','সমস্যা: '+error.message);
+  else { closeModal('modalComplete'); await loadMyTasks(); }
+  btn.disabled = false; btn.textContent = '✅ Mark as Completed';
+}
+
+// ── Attendance History ──────────────────────────────────────────
+async function loadAttHistory() {
+  const { data } = await db.from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, status, minutes_late, remarks')
+    .eq('employee_id', myEmployeeId)
+    .gte('attendance_date', thirtyDaysAgo())
+    .order('attendance_date', {ascending:false});
+
+  const tbody = document.getElementById('attHistoryBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">No attendance records found.</td></tr>';
+    document.getElementById('attSummaryBadge').textContent = '0 records';
+    return;
+  }
+  document.getElementById('attSummaryBadge').textContent = data.length + ' records';
+  const pillClass = {Present:'present',Late:'late',Absent:'absent',Leave:'leave'};
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.attendance_date}</td>
+      <td>${fmtTime(r.check_in_time)}</td>
+      <td>${fmtTime(r.check_out_time)}</td>
+      <td><span class="pill ${pillClass[r.status]||'pending'}">${r.status}</span></td>
+      <td>${r.minutes_late||0} min</td>
+      <td style="color:var(--text-muted);font-size:12px;">${r.remarks||'—'}</td>
+    </tr>`).join('');
+}
+
+// ── Leave ───────────────────────────────────────────────────────
+async function loadLeaveHistory() {
+  const { data } = await db.from('leave_request')
+    .select('leave_type, start_date, end_date, status, created_at')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', {ascending:false})
+    .limit(30);
+  const el = document.getElementById('leaveHistBody');
+  document.getElementById('leaveHistBadge').textContent = (data?.length||0) + ' records';
+  if (!data || data.length===0) { el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">No leave requests yet.</td></tr>'; return; }
+  const pillMap = {Approved:'present',Rejected:'absent',Pending:'pending'};
+  el.innerHTML = data.map(r => {
+    const from = new Date(r.start_date), to = new Date(r.end_date);
+    const days = Math.round((to-from)/(1000*60*60*24))+1;
+    return `<tr><td>${r.leave_type}</td><td>${r.start_date}</td><td>${r.end_date}</td><td>${days}</td><td><span class="pill ${pillMap[r.status]||'pending'}">${r.status}</span></td><td>${fmtDate(r.created_at)}</td></tr>`;
+  }).join('');
+}
+
+async function submitLeaveRequest() {
+  const type   = document.getElementById('leaveType').value;
+  const from   = document.getElementById('leaveFrom').value;
+  const to     = document.getElementById('leaveTo').value;
+  const reason = document.getElementById('leaveReason').value.trim();
+  if (!type||!from||!to||!reason) { showFormMsg('leaveMsg','error','সব field পূরণ করুন।'); return; }
+  if (from > to) { showFormMsg('leaveMsg','error','Start date end date-এর পরে হতে পারে না।'); return; }
+
+  const { error } = await db.from('leave_request').insert({
+    employee_id:myEmployeeId, leave_type:type, start_date:from, end_date:to,
+    reason, status:'Pending', created_at:new Date().toISOString()
+  });
+  if (error) showFormMsg('leaveMsg','error','সমস্যা: '+error.message);
+  else {
+    showFormMsg('leaveMsg','success','✅ Leave request submit হয়েছে। Tier 2-এর approval-এর জন্য অপেক্ষা করুন।');
+    document.getElementById('leaveType').value='';
+    document.getElementById('leaveFrom').value='';
+    document.getElementById('leaveTo').value='';
+    document.getElementById('leaveReason').value='';
+    await loadLeaveHistory();
+  }
+}
+
+function showFormMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.style.display='block';
+  el.style.background = type==='success' ? 'var(--green-dim)' : 'var(--red-bg)';
+  el.style.color = type==='success' ? 'var(--green)' : 'var(--red)';
+  el.textContent = text;
+}
+
+// ── KPI ─────────────────────────────────────────────────────────
+async function loadKPI() {
+  const mStart = monthStart();
+  const { data } = await db.from('kpi_scores')
+    .select('total_score, attendance_score, task_performance_score, reporting_discipline_score, issue_resolution_score, work_efficiency_score, management_eval_score, productivity_per_hour, period_start, is_negative_allowed')
+    .eq('employee_id', myEmployeeId)
+    .eq('period_type', 'Monthly')
+    .order('period_start', {ascending:false})
+    .limit(6);
+
+  const latest = data?.[0];
+  document.getElementById('kpiMonthBadge').textContent = latest?.period_start ? new Date(latest.period_start).toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : 'No data';
+
+  if (!latest) {
+    document.getElementById('kpiTotalScore').textContent = '—';
+    document.getElementById('kpiBandLabel').textContent = 'KPI data not yet calculated.';
+    document.getElementById('kpiComponents').innerHTML = '<div class="empty-state">No KPI data yet. Calculated monthly.</div>';
+    return;
+  }
+
+  const score = parseFloat(latest.total_score);
+  const isNeg = score < 0;
+  const scoreEl = document.getElementById('kpiTotalScore');
+  scoreEl.textContent = (isNeg ? '−' : '') + Math.abs(score).toFixed(1);
+  scoreEl.style.color = isNeg ? 'var(--red)' : kpiBandColor(score);
+
+  document.getElementById('kpiBandLabel').textContent = kpiBand(score);
+  document.getElementById('kpiBandLabel').style.color = kpiBandColor(score);
+  document.getElementById('kpiPPH').textContent = latest.productivity_per_hour ? parseFloat(latest.productivity_per_hour).toFixed(2) : '—';
+
+  const components = [
+    {name:'Attendance (15%)',       score:latest.attendance_score,           weight:15},
+    {name:'Task Performance (35%)', score:latest.task_performance_score,     weight:35},
+    {name:'Reporting Discipline (15%)', score:latest.reporting_discipline_score, weight:15},
+    {name:'Issue Resolution (10%)', score:latest.issue_resolution_score,     weight:10},
+    {name:'Work Efficiency (10%)',  score:latest.work_efficiency_score,      weight:10},
+    {name:'Management Eval (15%)',  score:latest.management_eval_score,      weight:15},
+  ];
+  function barClass(s) {
+    if (s >= 90) return 'ex';
+    if (s >= 70) return 'good';
+    if (s >= 50) return 'mid';
+    return 'low';
+  }
+  document.getElementById('kpiComponents').innerHTML = components.map(c => {
+    const s = c.score !== null && c.score !== undefined ? parseFloat(c.score) : null;
+    const pct = s !== null ? Math.max(0, Math.min(100, Math.abs(s))) : 0;
+    const displayScore = s !== null ? (s < 0 ? '−' + Math.abs(s).toFixed(1) : s.toFixed(1)) : '—';
+    const scoreColor = s < 0 ? 'var(--red)' : 'var(--navy)';
+    return '<div class="kpi-item"><div class="kpi-top"><span class="kpi-name">' + c.name + '</span><span class="kpi-score" style="color:'+scoreColor+';">' + displayScore + '</span></div><div class="kpi-bar-bg"><div class="kpi-bar-fill ' + barClass(pct) + '" style="width:' + pct + '%"></div></div></div>';
+  }).join('');
+
+  // History
+  if (data && data.length > 1) {
+    document.getElementById('kpiHistory').innerHTML = data.slice(1).map(k => {
+      const sc = parseFloat(k.total_score);
+      return '<div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="font-size:13px;color:var(--text-muted);">' + new Date(k.period_start).toLocaleDateString('en-GB',{month:'long',year:'numeric'}) + '</div>' +
+        '<span style="font-size:14px;font-weight:800;color:' + kpiBandColor(sc) + ';">' + (sc<0?'−':'') + Math.abs(sc).toFixed(1) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+// ── Meetings ────────────────────────────────────────────────────
+async function loadMeetings() {
+  const { data: allMtg } = await db.from('meetings')
+    .select('meeting_id, title, meeting_type, scheduled_date, status, field_visit_compliance_status, participants')
+    .eq('is_active', true)
+    .order('scheduled_date', {ascending:false});
+
+  const myMtgs = (allMtg||[]).filter(m => {
+    try {
+      const p = typeof m.participants === 'string' ? JSON.parse(m.participants) : (m.participants||[]);
+      return p.includes(myEmployeeId);
+    } catch { return false; }
+  });
+
+  const upcoming = myMtgs.filter(m => m.status === 'Scheduled').length;
+  const done     = myMtgs.filter(m => ['Completed','Closed'].includes(m.status)).length;
+  document.getElementById('mtgUpcoming').textContent = upcoming;
+  document.getElementById('mtgDone').textContent = done;
+  document.getElementById('mtgListBadge').textContent = myMtgs.length + ' total';
+
+  const mtgEl = document.getElementById('mtgList');
+  if (!myMtgs.length) { mtgEl.innerHTML = '<div class="empty-state">No meetings found.</div>'; }
+  else {
+    const pillMap = {'Scheduled':'present','In Progress':'late','Completed':'pending','Closed':'pending'};
+    mtgEl.innerHTML = myMtgs.map(m => {
+      const compliance = m.meeting_type === 'Field_Visit'
+        ? '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status==='VERIFIED'?'var(--green)':'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status||'UNVERIFIED') + '</span>'
+        : '';
+      return '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
+        '<div><div style="font-size:13px;font-weight:600;">' + (m.title||'Untitled') + compliance + '</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + m.meeting_type + ' · ' + fmtDate(m.scheduled_date) + '</div></div>' +
+        '<span class="pill ' + (pillMap[m.status]||'pending') + '">' + m.status + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Action items
+  const { data: actions } = await db.from('meeting_action_items')
+    .select('action_id, action_description, due_date, priority, status, meetings(title)')
+    .eq('assigned_to', myEmployeeId)
+    .eq('is_active', true)
+    .order('due_date', {ascending:true});
+
+  const pending = (actions||[]).filter(a => a.status !== 'Completed');
+  document.getElementById('mtgActionPending').textContent = pending.length;
+  document.getElementById('actionListBadge').textContent = (actions?.length||0) + ' total';
+
+  const actionEl = document.getElementById('actionList');
+  if (!actions || actions.length===0) { actionEl.innerHTML = '<div class="empty-state">No action items assigned.</div>'; return; }
+
+  const today = todayStr();
+  const prioColor = {Critical:'var(--red)',High:'var(--yellow)',Medium:'var(--blue)',Low:'var(--green)'};
+  actionEl.innerHTML = actions.map(a => {
+    const overdue = a.due_date && a.due_date < today && a.status !== 'Completed';
+    const opts = ['Pending','In Progress','Completed'].map(s => '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+s+'</option>').join('');
+    return '<div style="padding:13px 18px;border-bottom:1px solid var(--border);' + (overdue?'background:#fff8f8;':'') + '">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:600;">' + (overdue?'⚠️ ':'') + (a.action_description||'—') + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Meeting: ' + (a.meetings?.title||'—') + ' · Due: ' + (a.due_date||'—') +
+          ' · <span style="font-weight:700;color:' + (prioColor[a.priority]||'var(--text-muted)') + ';">' + (a.priority||'—') + '</span>' +
+          (overdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') + '</div>' +
+        '</div>' +
+        '<select onchange="updateActionStatus(\''+a.action_id+'\', this.value)" style="font-size:12px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--white);cursor:pointer;">' + opts + '</select>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function updateActionStatus(actionId, newStatus) {
+  const { error } = await db.from('meeting_action_items').update({status:newStatus}).eq('action_id',actionId);
+  if (!error) await loadMeetings();
+}
+
+// ── Tier 4 Staff Load ────────────────────────────────────────────
+let tier4Staff = [];
+async function loadTier4Staff() {
+  const { data } = await db.from('employee_master')
+    .select('employee_id, full_name, designation')
+    .eq('tier', 4)
+    .eq('is_active', true);
+
+  tier4Staff = data || [];
+
+  const sel = document.getElementById('assignTo');
+  if (!tier4Staff.length) {
+    sel.innerHTML = '<option value="">No Tier 4 staff yet</option>';
+    document.getElementById('tier4NotRecruited').style.display = 'block';
+    document.getElementById('teamKpiNotRecruited').style.display = 'block';
+    return;
+  }
+  sel.innerHTML = '<option value="">Select staff member...</option>' +
+    tier4Staff.map(s => '<option value="'+s.employee_id+'">'+s.full_name+(s.designation?' ('+s.designation+')':'')+' </option>').join('');
+}
+
+// ── Assign Task ──────────────────────────────────────────────────
+async function assignTask() {
+  const assignTo  = document.getElementById('assignTo').value;
+  const title     = document.getElementById('taskTitle').value.trim();
+  const desc      = document.getElementById('taskDesc').value.trim();
+  const priority  = document.getElementById('taskPriority').value;
+  const dueDate   = document.getElementById('taskDueDate').value;
+  const taskType  = document.getElementById('taskType').value;
+  const impact    = parseInt(document.getElementById('taskImpact').value) || 5;
+
+  if (!assignTo || !title || !priority || !dueDate) {
+    showFormMsg('assignTaskMsg','error','Assigned To, Title, Priority, এবং Due Date বাধ্যতামূলক।');
+    return;
+  }
+  if (impact < 1 || impact > 10) {
+    showFormMsg('assignTaskMsg','error','Performance Impact Score ১ থেকে ১০-এর মধ্যে হতে হবে।');
+    return;
+  }
+
+  const { error } = await db.from('task_master').insert({
+    primary_assignee:        assignTo,
+    assigned_by:             myEmployeeId,
+    assigned_tier:           4,
+    title,
+    description:             desc || null,
+    priority,
+    due_date:                dueDate,
+    task_type:               taskType,
+    performance_impact_score: impact,
+    status:                  'Pending',
+    is_active:               true,
+    created_at:              new Date().toISOString(),
+    updated_at:              new Date().toISOString(),
+  });
+
+  if (error) {
+    showFormMsg('assignTaskMsg','error','সমস্যা: ' + error.message);
+  } else {
+    showFormMsg('assignTaskMsg','success','✅ Task সফলভাবে assign হয়েছে।');
+    // Reset form
+    ['taskTitle','taskDesc','taskDueDate','taskDeadlineNote'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('assignTo').value='';
+    document.getElementById('taskPriority').value='';
+    document.getElementById('taskImpact').value='5';
+    await loadTeamTasks();
+    // Send notification (app-level)
+    await db.from('notifications').insert({
+      employee_id: assignTo,
+      type: 'task_assigned',
+      title: 'নতুন Task Assigned',
+      message: '"' + title + '" task আপনাকে assign করা হয়েছে। Due: ' + dueDate,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  }
+}
+
+// ── Team Task Monitor ───────────────────────────────────────────
+async function loadTeamTasks() {
+  const filterStatus = document.getElementById('ttFilterStatus').value;
+  let query = db.from('task_master')
+    .select('task_id, title, priority, status, due_date, primary_assignee, employee_master!primary_assignee(full_name)')
+    .eq('assigned_by', myEmployeeId)
+    .eq('is_active', true)
+    .order('due_date', {ascending:true});
+
+  if (filterStatus) query = query.eq('status', filterStatus);
+
+  const { data } = await query;
+  const today = todayStr();
+
+  const pending    = (data||[]).filter(t => t.status === 'Pending').length;
+  const inProgress = (data||[]).filter(t => t.status === 'In Progress').length;
+  const overdueN   = (data||[]).filter(t => t.due_date && t.due_date < today && !t.status.includes('Completed')).length;
+  const completedN = (data||[]).filter(t => t.status.includes('Completed')).length;
+
+  document.getElementById('ttStatPending').textContent    = pending;
+  document.getElementById('ttStatInProgress').textContent = inProgress;
+  document.getElementById('ttStatOverdue').textContent    = overdueN;
+  document.getElementById('ttStatCompleted').textContent  = completedN;
+  document.getElementById('ttListBadge').textContent      = (data?.length||0) + ' tasks';
+
+  const tbody = document.getElementById('ttListBody');
+  if (!data || data.length===0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No team tasks found.</td></tr>';
+    return;
+  }
+
+  const prioColors = {Critical:'var(--red)',High:'var(--yellow)',Medium:'var(--blue)',Low:'var(--green)'};
+  tbody.innerHTML = data.map(t => {
+    const overdue = t.due_date && t.due_date < today && !t.status.includes('Completed');
+    const empName = t.employee_master?.full_name || 'Unknown';
+    return '<tr>' +
+      '<td><div style="font-weight:600;font-size:13px;">' + (overdue?'⚠️ ':'') + (t.title||'—') + '</div></td>' +
+      '<td style="font-size:13px;">' + empName + '</td>' +
+      '<td><span style="font-size:12px;font-weight:700;color:' + (prioColors[t.priority]||'var(--text-muted)') + ';">' + (t.priority||'—') + '</span></td>' +
+      '<td style="font-size:13px;">' + (t.due_date||'—') + (overdue?' <span style="color:var(--red);font-size:11px;font-weight:700;">OVERDUE</span>':'') + '</td>' +
+      '<td>' + statusPill(t.status) + '</td>' +
+      '<td><button class="btn-sm btn-secondary" onclick="openAdjustDeadline(\''+t.task_id+'\',\''+t.due_date+'\',\''+t.title+'\')">Adjust</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function openAdjustDeadline(taskId, currentDue, title) {
+  currentAdjustId = taskId;
+  document.getElementById('adjustTaskInfo').innerHTML = '<strong>' + title + '</strong><br><span style="font-size:12px;color:var(--text-muted);">Current due: ' + currentDue + '</span>';
+  document.getElementById('newDueDate').value = currentDue || '';
+  document.getElementById('adjustReason').value = '';
+  document.getElementById('adjustMsg').style.display = 'none';
+  openModal('modalAdjustDeadline');
+}
+
+async function submitDeadlineAdjust() {
+  const newDate = document.getElementById('newDueDate').value;
+  const reason  = document.getElementById('adjustReason').value.trim();
+  if (!newDate || !reason) { showFormMsg('adjustMsg','error','নতুন তারিখ এবং কারণ উভয়ই বাধ্যতামূলক।'); return; }
+
+  const { error } = await db.from('task_master').update({
+    due_date: newDate, updated_at: new Date().toISOString()
+  }).eq('task_id', currentAdjustId);
+
+  if (error) showFormMsg('adjustMsg','error','সমস্যা: '+error.message);
+  else {
+    // Log in audit
+    await db.from('audit_logs').insert({
+      user_id: myEmployeeId, action: 'TASK_DEADLINE_ADJUSTED',
+      module: 'task_master', new_value: JSON.stringify({task_id:currentAdjustId, new_due_date:newDate, reason}),
+      risk_score: 2, risk_level: 'Low', created_at: new Date().toISOString()
+    });
+    closeModal('modalAdjustDeadline');
+    await loadTeamTasks();
+  }
+}
+
+// ── Help Requests ───────────────────────────────────────────────
+async function loadHelpRequests(dashboardOnly = false) {
+  const { data } = await db.from('help_requests')
+    .select('request_id, task_id, from_employee_id, to_employee_id, message, status, resolved_at, created_at, employee_master!from_employee_id(full_name), task_master!task_id(title)')
+    .eq('to_employee_id', myEmployeeId)
+    .eq('is_active', true)
+    .order('created_at', {ascending:false});
+
+  const pending  = (data||[]).filter(r => r.status === 'Pending');
+  const resolved = (data||[]).filter(r => r.status !== 'Pending');
+
+  // Update nav badge
+  if (pending.length > 0) document.getElementById('helpBadgeNav').style.display = 'inline';
+  else document.getElementById('helpBadgeNav').style.display = 'none';
+
+  // Dashboard quick view
+  const dashCount = document.getElementById('dashHelpCount');
+  const dashEl    = document.getElementById('dashHelpList');
+  if (dashCount) dashCount.textContent = pending.length;
+  if (dashEl) {
+    if (!pending.length) { dashEl.innerHTML = '<div class="empty-state">No pending help requests.</div>'; }
+    else {
+      dashEl.innerHTML = pending.slice(0,3).map(r => helpItemHTML(r)).join('');
+    }
+  }
+
+  if (dashboardOnly) return;
+
+  document.getElementById('helpPendingBadge').textContent  = pending.length + ' pending';
+  document.getElementById('helpResolvedBadge').textContent = resolved.length + ' resolved';
+
+  const pendEl = document.getElementById('helpPendingList');
+  pendEl.innerHTML = !pending.length ? '<div class="empty-state">No pending help requests.</div>'
+    : pending.map(r => helpItemHTML(r) + '<div style="padding:0 18px 12px;"><button class="btn-sm btn-primary" onclick="openHelpRespond(\''+r.request_id+'\',\''+r.message+'\',\''+(r.employee_master?.full_name||'Unknown')+'\',\''+(r.task_master?.title||'—')+'\')">Respond</button></div>').join('');
+
+  const resolEl = document.getElementById('helpResolvedList');
+  resolEl.innerHTML = !resolved.length ? '<div class="empty-state">No resolved requests yet.</div>'
+    : resolved.map(r => '<div class="help-item"><div class="help-item-title">' + (r.employee_master?.full_name||'—') + ' — ' + (r.task_master?.title||'Unknown task') + '</div><div class="help-item-meta">' + fmtDate(r.created_at) + ' · <span style="color:' + (r.status==='Accepted'?'var(--green)':'var(--red)') + ';font-weight:700;">' + r.status + '</span></div></div>').join('');
+}
+
+function helpItemHTML(r) {
+  return '<div class="help-item">' +
+    '<div class="help-item-title">🆘 ' + (r.employee_master?.full_name||'Unknown') + ' — ' + (r.task_master?.title||'Unknown task') + '</div>' +
+    '<div class="help-item-meta">' + fmtDate(r.created_at) + '</div>' +
+    '<div class="help-item-desc">' + (r.message||'No message') + '</div>' +
+  '</div>';
+}
+
+function openHelpRespond(reqId, msg, fromName, taskTitle) {
+  currentHelpId = reqId;
+  document.getElementById('helpRespondInfo').innerHTML =
+    '<strong>' + fromName + '</strong> — Task: ' + taskTitle + '<br><em style="color:var(--text-muted);font-size:12px;">' + msg + '</em>';
+  document.getElementById('helpResponseText').value = '';
+  document.getElementById('helpRespondMsg').style.display = 'none';
+  openModal('modalHelpRespond');
+}
+
+async function respondHelp(decision) {
+  const responseText = document.getElementById('helpResponseText').value.trim();
+  if (!responseText) { showFormMsg('helpRespondMsg','error','Response লিখুন।'); return; }
+
+  const { error } = await db.from('help_requests').update({
+    status: decision, resolved_at: new Date().toISOString()
+  }).eq('request_id', currentHelpId);
+
+  if (error) showFormMsg('helpRespondMsg','error','সমস্যা: '+error.message);
+  else {
+    closeModal('modalHelpRespond');
+    await loadHelpRequests();
+  }
+}
+
+// ── Team KPI ────────────────────────────────────────────────────
+async function loadTeamKpi() {
+  if (!tier4Staff.length) { return; }
+
+  const mStart = monthStart();
+  const ids = tier4Staff.map(s => s.employee_id);
+
+  const { data } = await db.from('kpi_scores')
+    .select('employee_id, total_score, attendance_score, task_performance_score, reporting_discipline_score, period_start')
+    .in('employee_id', ids)
+    .eq('period_type', 'Monthly')
+    .gte('period_start', mStart)
+    .order('total_score', {ascending:false});
+
+  document.getElementById('teamKpiBadge').textContent = (data?.length||0) + ' records';
+
+  const tbody = document.getElementById('teamKpiBody');
+  if (!data || data.length===0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No KPI data yet for team.</td></tr>';
+    return;
+  }
+
+  // Map to staff names
+  tbody.innerHTML = data.map(k => {
+    const staff = tier4Staff.find(s => s.employee_id === k.employee_id);
+    const sc = parseFloat(k.total_score);
+    const isNeg = sc < 0;
+    const band = kpiBand(sc);
+    return '<tr>' +
+      '<td style="font-weight:600;">' + (staff?.full_name||'Unknown') + '</td>' +
+      '<td>' + (k.attendance_score ? parseFloat(k.attendance_score).toFixed(1) : '—') + '</td>' +
+      '<td>' + (k.task_performance_score ? parseFloat(k.task_performance_score).toFixed(1) : '—') + '</td>' +
+      '<td>' + (k.reporting_discipline_score ? parseFloat(k.reporting_discipline_score).toFixed(1) : '—') + '</td>' +
+      '<td style="font-weight:800;color:' + (isNeg?'var(--red)':kpiBandColor(sc)) + ';">' + (isNeg?'−':'') + Math.abs(sc).toFixed(1) + '</td>' +
+      '<td><span style="font-size:12px;font-weight:700;color:' + kpiBandColor(sc) + ';">' + band + '</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ── Daily Report ────────────────────────────────────────────────
+async function submitDailyReport() {
+  const fields = {
+    completed_tasks:  document.getElementById('rCompleted').value.trim(),
+    pending_tasks:    document.getElementById('rPending').value.trim(),
+    key_achievements: document.getElementById('rAchievements').value.trim(),
+    problems_faced:   document.getElementById('rProblems').value.trim(),
+    team_status:      document.getElementById('rTeamStatus').value.trim() || null,
+    support_needed:   document.getElementById('rSupport').value.trim() || null,
+    tomorrow_plan:    document.getElementById('rTomorrow').value.trim(),
+    priority_activities: document.getElementById('rPriority').value.trim(),
+  };
+
+  const required = ['completed_tasks','pending_tasks','key_achievements','problems_faced','tomorrow_plan','priority_activities'];
+  const missing = required.filter(f => !fields[f]);
+  if (missing.length) { showFormMsg('reportMsg','error','সব বাধ্যতামূলক field পূরণ করুন।'); return; }
+
+  const btn = document.getElementById('reportSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const { error } = await db.from('daily_reports').upsert({
+    employee_id: myEmployeeId, report_date: todayStr(),
+    ...fields, status: 'Submitted', submitted_at: new Date().toISOString()
+  }, {onConflict:'employee_id,report_date'});
+
+  if (error) showFormMsg('reportMsg','error','সমস্যা: '+error.message);
+  else showFormMsg('reportMsg','success','✅ Daily report সফলভাবে submit হয়েছে!');
+
+  btn.disabled = false; btn.textContent = 'Submit Daily Report';
+}
+
+// Check if already submitted
+async function checkReportSubmitted() {
+  const { data } = await db.from('daily_reports')
+    .select('report_id, status, completed_tasks, pending_tasks, key_achievements, problems_faced, team_status, support_needed, tomorrow_plan, priority_activities')
+    .eq('employee_id', myEmployeeId)
+    .eq('report_date', todayStr())
+    .maybeSingle();
+
+  if (data) {
+    document.getElementById('reportAlreadySubmitted').style.display = 'block';
+    // Pre-fill with submitted data
+    document.getElementById('rCompleted').value    = data.completed_tasks   || '';
+    document.getElementById('rPending').value      = data.pending_tasks     || '';
+    document.getElementById('rAchievements').value = data.key_achievements  || '';
+    document.getElementById('rProblems').value     = data.problems_faced    || '';
+    document.getElementById('rTeamStatus').value   = data.team_status       || '';
+    document.getElementById('rSupport').value      = data.support_needed    || '';
+    document.getElementById('rTomorrow').value     = data.tomorrow_plan     || '';
+    document.getElementById('rPriority').value     = data.priority_activities || '';
+  }
+}
+
+// ── Section Navigation ──────────────────────────────────────────
+const sectionTitles = {
+  dashboard:     'My Dashboard',
+  mytasks:       'My Tasks',
+  report:        'Daily Report',
+  attendance:    'My Attendance',
+  leave:         'Leave Management',
+  kpi:           'My KPI & Performance',
+  meetings:      'Meetings & Action Items',
+  teamtasks:     'Assign & Monitor Team Tasks',
+  helprequests:  'Team Help Requests',
+  teamkpi:       'Team KPI Summary',
+  announcements: 'Announcements & Notices',
+  holidays:      'Holiday Calendar',
+  rules:         'Rules & Regulations',
+  salary:        'Salary Slip',
+};
+
+function showSection(name, el) {
+  document.querySelectorAll('[id^="sec-"]').forEach(s => s.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.style.display = 'block';
+  document.getElementById('topbarTitle').textContent = sectionTitles[name] || name;
+  const navEl = el || document.querySelector(`.nav-item[onclick*="showSection('${name}'"]`);
+  if (navEl) navEl.classList.add('active');
+
+  // Lazy load
+  if (name === 'mytasks')      loadMyTasks();
+  if (name === 'attendance')   loadAttHistory();
+  if (name === 'leave')        { loadLeaveBalance(); loadLeaveHistory(); }
+  if (name === 'kpi')          loadKPI();
+  if (name === 'meetings')     loadMeetings();
+  if (name === 'teamtasks')    loadTeamTasks();
+  if (name === 'helprequests') loadHelpRequests();
+  if (name === 'teamkpi')      loadTeamKpi();
+  if (name === 'report')       checkReportSubmitted();
+  if (name === 'announcements') loadAnnouncements();
+  if (name === 'holidays')      loadHolidays();
+  if (name === 'rules')         loadRules();
+}
+
+function openCheckin() { window.location.href = 'attendance.html'; }
+
+// ── Announcements (Blueprint §16) ────────────────────────────────
+async function loadAnnouncements() {
+  const { data, error } = await db.from('notifications')
+    .select('notification_id, type, title, message, created_at')
+    .eq('employee_id', myEmployeeId)
+    .eq('type', 'Announcement')
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('annList');
+  const badge = document.getElementById('annCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Announcement নেই।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = data.length;
+  list.innerHTML = data.map(a => `
+    <div class="ann-item">
+      <div class="ann-icon">📢</div>
+      <div style="flex:1;">
+        <div class="ann-title">${a.title}</div>
+        <div class="ann-body">${a.message}</div>
+        <div class="ann-meta">${fmtDate(a.created_at)} · ${fmtTime(a.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Holiday Calendar (Blueprint §7) ──────────────────────────────
+async function loadHolidays() {
+  const year = new Date().getFullYear();
+  document.getElementById('holidayYearLabel').textContent = year;
+  const { data, error } = await db.from('holiday_master')
+    .select('holiday_id, holiday_type, holiday_date, is_recurring')
+    .eq('is_active', true)
+    .gte('holiday_date', `${year}-01-01`)
+    .lte('holiday_date', `${year}-12-31`)
+    .order('holiday_date', { ascending: true });
+
+  const list = document.getElementById('holidayList');
+  const badge = document.getElementById('holidayCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">এই বছরের জন্য কোনো Holiday যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = data.length;
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  list.innerHTML = data.map(h => {
+    const d = new Date(h.holiday_date);
+    return `
+    <div class="holiday-item">
+      <div class="holiday-date-box">
+        <div class="holiday-date-day">${d.getDate()}</div>
+        <div class="holiday-date-mon">${months[d.getMonth()]}</div>
+      </div>
+      <div>
+        <div class="holiday-name">${h.holiday_type}</div>
+        <div class="holiday-type">${h.is_recurring ? 'প্রতি বছর' : 'এই বছরের জন্য'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Rules & Regulations (view-only — Tier 3) ─────────────────────
+let currentRuleLang = 'bn';
+let cachedRules = [];
+
+async function loadRules() {
+  const { data, error } = await db.from('rules_regulations')
+    .select('rule_id, category, title_en, title_bn, content_en, content_bn, legal_reference')
+    .eq('is_active', true)
+    .order('category', { ascending: true });
+
+  const list = document.getElementById('rulesList');
+  const badge = document.getElementById('rulesCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Rule যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    cachedRules = [];
+    return;
+  }
+  cachedRules = data;
+  badge.textContent = data.length;
+  renderRules();
+}
+
+function renderRules() {
+  const list = document.getElementById('rulesList');
+  list.innerHTML = cachedRules.map(r => `
+    <div class="rule-card-item">
+      <span class="rule-card-cat">${r.category}</span>
+      <div class="rule-card-title">${currentRuleLang === 'bn' ? r.title_bn : r.title_en}</div>
+      <div class="rule-card-body">${currentRuleLang === 'bn' ? r.content_bn : r.content_en}</div>
+      ${r.legal_reference ? `<div style="font-size:11px;color:var(--text-light);margin-top:6px;">Ref: ${r.legal_reference}</div>` : ''}
+    </div>`).join('');
+}
+
+function setRuleLang(lang) {
+  currentRuleLang = lang;
+  document.getElementById('ruleLangBn').classList.toggle('active', lang === 'bn');
+  document.getElementById('ruleLangEn').classList.toggle('active', lang === 'en');
+  renderRules();
+}
+
+async function loadRulesBadge() {
+  const { count } = await db.from('rules_regulations')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  const badgeEl = document.getElementById('rulesBadge');
+  if (badgeEl && count > 0) {
+    badgeEl.textContent = count;
+    badgeEl.classList.add('show');
+  }
+}
+
+// ── Salary Slip Download (Blueprint §12.9) ───────────────────────
+async function loadSalarySlip() {
+  const month = document.getElementById('salaryMonth').value;
+  const body  = document.getElementById('salarySlipBody');
+  if (!month) { body.innerHTML = '<div class="empty-state">একটি মাস সিলেক্ট করুন।</div>'; return; }
+  body.innerHTML = '<div class="empty-state">Loading...</div>';
+
+  const { data, error } = await db.from('payroll')
+    .select('*')
+    .eq('employee_id', myEmployeeId)
+    .eq('payroll_month', month)
+    .single();
+
+  if (error || !data) {
+    body.innerHTML = '<div class="empty-state">এই মাসের জন্য কোনো Salary Slip পাওয়া যায়নি।</div>';
+    return;
+  }
+
+  const rows = [
+    ['Gross Salary', data.gross_salary],
+    ['Pro-Rata Late Deduction', -data.pro_rata_late_deduction],
+    ['Absent Deduction', -data.absent_deduction],
+    ['Other Deductions', -(data.other_deductions || 0)],
+  ];
+  body.innerHTML = `
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-muted);">
+      <b>${myName}</b> — ${new Date(month + '-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
+      <span class="pill ${data.is_locked ? 'absent' : 'pending'}" style="margin-left:8px;">${data.is_locked ? 'Locked / Final' : 'Draft'}</span>
+    </div>
+    <table class="data-table" style="width:100%;">
+      <tbody>
+        ${rows.map(([label, val]) => `<tr><td>${label}</td><td style="text-align:right;${val < 0 ? 'color:var(--red);' : ''}">${val < 0 ? '−' : ''}৳${Math.abs(val).toLocaleString()}</td></tr>`).join('')}
+        <tr style="font-weight:800;"><td>Net Salary</td><td style="text-align:right;color:var(--green);">৳${Math.round(data.net_salary).toLocaleString()}</td></tr>
+      </tbody>
+    </table>
+    <button onclick="window.print()" style="margin-top:16px;padding:10px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print / Save as PDF</button>
+  `;
+}
+
+// ── Logout ──────────────────────────────────────────────────────
+async function handleLogout() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>
