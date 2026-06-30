@@ -380,7 +380,16 @@
     .lang-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
     .lang-toggle button { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
     .lang-toggle button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
-  </style>
+  
+    /* ── Mobile Sidebar Toggle (added fix) ── */
+    .sidebar-toggle-btn { display:none; background:none; border:none; cursor:pointer; padding:6px; margin-right:8px; align-items:center; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+    @media (max-width: 768px) {
+      .sidebar-toggle-btn { display:flex; }
+      .sidebar.open { transform: translateX(0) !important; }
+    }
+</style>
 </head>
 <body>
 
@@ -523,9 +532,15 @@
     </div>
   </div>
 </nav>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 
 <!-- Top Bar -->
 <div class="topbar">
+  <button class="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  
   <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
   <div class="topbar-right">
     <div class="topbar-date" id="topbarDate"></div>
@@ -4731,6 +4746,17 @@ async function confirmCloseMeeting() {
 
 
 
+
+// ── Mobile Sidebar Toggle (added fix) ──
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+window.addEventListener('resize', () => { if (window.innerWidth > 768) closeSidebar(); });
 </script>
 </body>
 </html>
