@@ -263,7 +263,16 @@
     @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 900px)  { .two-col { grid-template-columns: 1fr; } .three-col { grid-template-columns: 1fr; } }
     @media (max-width: 640px)  { .sidebar { transform: translateX(-100%); } .main { margin-left: 0; } .topbar { left: 0; } }
-  </style>
+  
+    /* ── Mobile Sidebar Toggle (added fix) ── */
+    .sidebar-toggle-btn { display:none; background:none; border:none; cursor:pointer; padding:6px; margin-right:8px; align-items:center; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+    @media (max-width: 640px) {
+      .sidebar-toggle-btn { display:flex; }
+      .sidebar.open { transform: translateX(0) !important; }
+    }
+</style>
 </head>
 <body>
 
@@ -373,9 +382,15 @@
     </div>
   </div>
 </nav>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 
 <!-- ── Topbar ──────────────────────────────────────────────── -->
 <div class="topbar">
+  <button class="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  
   <div class="topbar-title" id="topbarTitle">Dashboard</div>
   <div class="topbar-right">
     <div class="topbar-date" id="topbarDate"></div>
@@ -2149,6 +2164,17 @@ async function handleLogout() {
   await db.auth.signOut();
   window.location.href = 'index.html';
 }
+
+// ── Mobile Sidebar Toggle (added fix) ──
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+window.addEventListener('resize', () => { if (window.innerWidth > 640) closeSidebar(); });
 </script>
 </body>
 </html>
