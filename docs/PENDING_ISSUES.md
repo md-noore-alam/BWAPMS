@@ -4,6 +4,11 @@
 >
 > **How to use:** When starting a new session, read this file first. When the user says "pending issues fix koro" / "fix the pending issues", work through the unresolved items below in priority order, without asking for step-by-step confirmation on each one. Mark items `[x]` and move them to the "Resolved" section with the date once fixed and verified.
 
+**Standing rule — Backend/Frontend parity:** For every new rule or feature request, always deliver a *complete* implementation, not a partial one:
+- If the backend (Supabase table/column/function/RLS policy) already exists but the frontend has no UI/JS to use it → **build the frontend piece.**
+- If the frontend has a form/UI element but there's no backend table/column/function/policy to support it → **build the backend piece.**
+- Never leave a feature half-done on only one side. Check both sides before marking anything complete.
+
 **Last updated:** 2026-07-29
 **Source:** Supabase Security & Performance Advisors (project `lznqbrynniziquzawpfs`, BWAPMS-Database) + GitHub repo review (`md-noore-alam/BWAPMS`, main branch)
 
