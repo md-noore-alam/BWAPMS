@@ -38,6 +38,20 @@
 
 ## ✅ Resolved
 
+### 2026-07-29 — Employee creation UI + self-service photo upload (feature)
+
+- [x] **In-app "Add Employee" flow (Tier 2/1 dashboard)** — previously Tier 2 had to add employees directly in Supabase Dashboard and manually create login credentials, which was error-prone. Now:
+  - New Edge Function `create-employee` (service-role, JWT-verified, Tier 1/2-only internally) atomically creates the Supabase Auth login **and** the `employee_master` row in one call, generates a temporary password, and returns it once for Tier 2 to share with the employee. Rolls back the auth user if the `employee_master` insert fails.
+  - New "+ Add Employee" modal in `dashboard-tier2.html` (Employee Management section) with all onboarding fields (name, email, mobile, NID, designation, department, tier, reporting manager, joining date, salary, bank details) plus an optional photo upload at creation time.
+  - Employee list table now shows a photo/initials avatar column.
+  → `create-employee` edge function (deployed), `dashboard-tier2.html`
+
+- [x] **Employee self-service photo change** — employees can now click their own sidebar avatar (Tier 2/3/4 dashboards) to upload/replace their own photo. Backed by:
+  - New public storage bucket `employee-photos` (2MB limit, image/jpeg|png|webp only) with RLS: Tier 1/2 can manage any employee's photo; an employee can manage only their own (path-scoped by `employee_id`).
+  - New `update_my_photo(p_photo_url)` SECURITY DEFINER function — updates *only* the caller's own `photo_url` column (not a general own-row UPDATE policy, so employees still cannot edit their own tier/salary/etc.).
+  → storage bucket + policies, `update_my_photo()` function, `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html`
+  → **Not yet done for `dashboard-tier1.html`** — Tier 1's sidebar avatar is currently static/hardcoded ("UK") and not wired to `employee_master` at all; lower priority since Tier 1 is exempt from most tracked modules per Blueprint §2.1, but flagged here in case GP Bhai wants it added later.
+
 ### 2026-07-29 — RLS & security hardening pass
 
 - [x] **21 tables had RLS enabled but no policies** (deny-by-default, effectively inaccessible). Added tier-appropriate policies to all: `backup_logs`, `disciplinary_actions`, `download_logs`, `duty_schedule`, `employee_exit`, `employee_ranking`, `grievances`, `helpdesk_tickets`, `holiday_master`, `issues`, `kpi_calculation_log`, `notification_preferences`, `payroll_forecast`, `penalty_history`, `responsibility_assignment`, `responsibility_master`, `salary_history`, `system_settings`, `task_updates`, `user_access`, `version_control`.
