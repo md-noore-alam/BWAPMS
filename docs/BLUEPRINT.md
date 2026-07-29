@@ -20,7 +20,9 @@
 
 ## Section 1 — System Overview & Objectives
 
-BWAPMS v1.2 is an enterprise-grade, centralized workforce and programme management platform for BRPHI's GramGP programme at the Bangladesh Country Office. The system manages 10 permanent, full-time employees across four governance tiers. Built on Google AppSheet with Supabase (PostgreSQL) as the cloud database, it operates as a responsive Progressive Web Application optimized for 3G/4G connectivity.
+BWAPMS v1.2 is an enterprise-grade, centralized workforce and programme management platform for BRPHI's GramGP programme at the Bangladesh Country Office. The system manages 10 permanent, full-time employees across four governance tiers. Built on plain HTML/CSS/JavaScript (no framework, no build step) with Supabase (PostgreSQL, Auth, Storage, and Edge Functions) as the backend, it operates as a responsive Progressive Web Application optimized for 3G/4G connectivity.
+
+> **Note (2026-07-29):** Earlier drafts of this Blueprint referenced Google AppSheet as part of the platform. The live system does not use AppSheet — the frontend is hand-built static HTML/JS. This section has been corrected to match the actual deployed stack.
 
 ### 1.1 Core Management Domains
 
@@ -759,7 +761,7 @@ Each completed Quarterly Governance Review is signed off by the Country Head (BD
 | Incremental Backup | Daily at 2:00 AM | Last 30 daily backups |
 | Full Backup | Every Sunday at 2:00 AM | Included in 30-day window |
 | Monthly Snapshot | 1st of each month at 2:00 AM | Permanent retention |
-| Code Backup (AppSheet & Supabase) | Monthly export to Google Drive & Supabase backup | Permanent retention |
+| Code Backup (GitHub & Supabase) | Monthly export to Google Drive & Supabase backup | Permanent retention |
 | CSV Offline Export | Monthly — all critical tables | 1 year (extreme disaster safeguard) |
 
 - Recovery Time Objective (RTO): 4 hours for full system restore.
@@ -806,7 +808,9 @@ Semantic versioning (MAJOR.MINOR.PATCH). No production changes without Tier 1 ap
 
 ## Section 21 — Technical Constraints & Mitigations
 
-BWAPMS runs on Google AppSheet with Supabase (PostgreSQL) as the cloud database. These platform constraints are acknowledged and actively mitigated to achieve a 99.9% annualized uptime target.
+BWAPMS runs on plain HTML/JS with Supabase (PostgreSQL, Auth, Storage, Edge Functions) as the backend. These platform constraints are acknowledged and actively mitigated to achieve a 99.9% annualized uptime target.
+
+> Note: the "6-minute script execution limit" row below originally referred to Google Apps Script / AppSheet automation limits. Since the platform no longer uses AppSheet, this constraint does not directly apply — Supabase Edge Functions have their own execution limits instead. Kept here for historical context on the batch-job timing strategy, which is still followed.
 
 | Constraint | Risk | Mitigation Strategy |
 |---|---|---|
