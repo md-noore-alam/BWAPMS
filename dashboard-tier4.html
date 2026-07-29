@@ -312,7 +312,8 @@
 
   <div class="sidebar-bottom">
     <div class="user-card">
-      <div class="user-avatar" id="sidebarAvatar">—</div>
+      <div class="user-avatar" id="sidebarAvatar" onclick="triggerChangeMyPhoto()" style="cursor:pointer;overflow:hidden;" title="Click to change your photo">—</div>
+      <input type="file" id="myPhotoFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleMyPhotoChange(event)" />
       <div class="user-info">
         <div class="user-name" id="sidebarName">Loading...</div>
         <div class="user-tier">Staff — Tier 4</div>
@@ -969,15 +970,53 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadProfile(uid) {
   const { data } = await db
     .from('employee_master')
-    .select('employee_id, full_name, designation, department')
+    .select('employee_id, full_name, designation, department, photo_url')
     .eq('auth_user_id', uid)
     .single();
   if (data) {
     myData = data;
     myEmployeeId = data.employee_id;
-    const initials = data.full_name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('sidebarAvatar').textContent = initials;
+    renderMyAvatar(data.full_name, data.photo_url);
     document.getElementById('sidebarName').textContent = data.full_name;
+  }
+}
+
+// ── My Photo (self-service change) ────────────────────────
+function renderMyAvatar(fullName, photoUrl) {
+  const el = document.getElementById('sidebarAvatar');
+  if (photoUrl) {
+    el.innerHTML = `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+  } else {
+    const initials = (fullName || '').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    el.textContent = initials || '—';
+  }
+}
+
+function triggerChangeMyPhoto() {
+  document.getElementById('myPhotoFileInput').click();
+}
+
+async function handleMyPhotoChange(event) {
+  const file = event.target.files[0];
+  if (!file || !myEmployeeId) return;
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `${myEmployeeId}/photo.${ext}`;
+
+    const { error: upErr } = await db.storage
+      .from('employee-photos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) throw upErr;
+
+    const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+
+    const { error: rpcErr } = await db.rpc('update_my_photo', { p_photo_url: pub.publicUrl });
+    if (rpcErr) throw rpcErr;
+
+    renderMyAvatar(myData?.full_name, pub.publicUrl);
+  } catch (e) {
+    alert('Photo update failed: ' + (e.message || e));
   }
 }
 
