@@ -371,7 +371,8 @@
 
   <div class="sidebar-bottom">
     <div class="user-card">
-      <div class="user-avatar" id="sidebarAvatar">?</div>
+      <div class="user-avatar" id="sidebarAvatar" onclick="triggerChangeMyPhoto()" style="cursor:pointer;overflow:hidden;" title="Click to change your photo">?</div>
+      <input type="file" id="myPhotoFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleMyPhotoChange(event)" />
       <div class="user-info">
         <div class="user-name" id="sidebarName">Loading...</div>
         <div class="user-tier">Tier 3 — Senior Staff</div>
@@ -896,6 +897,46 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let myEmployeeId = null;
 let myName       = '';
+let myPhotoUrl   = null;
+
+// ── My Photo (self-service change) ────────────────────────
+function renderMyAvatar(fullName, photoUrl) {
+  const el = document.getElementById('sidebarAvatar');
+  if (photoUrl) {
+    el.innerHTML = `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+  } else {
+    el.textContent = (fullName || '?').charAt(0).toUpperCase();
+  }
+}
+
+function triggerChangeMyPhoto() {
+  document.getElementById('myPhotoFileInput').click();
+}
+
+async function handleMyPhotoChange(event) {
+  const file = event.target.files[0];
+  if (!file || !myEmployeeId) return;
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `${myEmployeeId}/photo.${ext}`;
+
+    const { error: upErr } = await db.storage
+      .from('employee-photos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) throw upErr;
+
+    const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+
+    const { error: rpcErr } = await db.rpc('update_my_photo', { p_photo_url: pub.publicUrl });
+    if (rpcErr) throw rpcErr;
+
+    myPhotoUrl = pub.publicUrl;
+    renderMyAvatar(myName, myPhotoUrl);
+  } catch (e) {
+    alert('Photo update failed: ' + (e.message || e));
+  }
+}
 // ══════════════════════════════════════════════════════
 // SESSION SECURITY — Blueprint §3.1
 // Session Timeout: auto-logout after 15 min of inactivity
@@ -1027,7 +1068,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Get employee profile
   const { data: emp } = await db
     .from('employee_master')
-    .select('employee_id, full_name, tier, is_active')
+    .select('employee_id, full_name, tier, is_active, photo_url')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -1040,10 +1081,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   myEmployeeId = emp.employee_id;
   myName       = emp.full_name;
+  myPhotoUrl   = emp.photo_url;
   startIdleWatcher();
   await registerSession();
   document.getElementById('sidebarName').textContent = myName;
-  document.getElementById('sidebarAvatar').textContent = myName.charAt(0).toUpperCase();
+  renderMyAvatar(myName, myPhotoUrl);
 
   // Load all dashboard data
   await Promise.all([
