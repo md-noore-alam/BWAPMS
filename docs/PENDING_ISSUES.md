@@ -49,8 +49,7 @@
 - [x] **Employee self-service photo change** — employees can now click their own sidebar avatar (Tier 2/3/4 dashboards) to upload/replace their own photo. Backed by:
   - New public storage bucket `employee-photos` (2MB limit, image/jpeg|png|webp only) with RLS: Tier 1/2 can manage any employee's photo; an employee can manage only their own (path-scoped by `employee_id`).
   - New `update_my_photo(p_photo_url)` SECURITY DEFINER function — updates *only* the caller's own `photo_url` column (not a general own-row UPDATE policy, so employees still cannot edit their own tier/salary/etc.).
-  → storage bucket + policies, `update_my_photo()` function, `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html`
-  → **Not yet done for `dashboard-tier1.html`** — Tier 1's sidebar avatar is currently static/hardcoded ("UK") and not wired to `employee_master` at all; lower priority since Tier 1 is exempt from most tracked modules per Blueprint §2.1, but flagged here in case GP Bhai wants it added later.
+  → storage bucket + policies, `update_my_photo()` function, `dashboard-tier1.html`, `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html` — all four tiers now covered. (Tier 1's login is a shared "UK Team" account per Blueprint §2.1; photo change applies to that shared account, not an individual.)
 
 ### 2026-07-29 — RLS & security hardening pass
 
