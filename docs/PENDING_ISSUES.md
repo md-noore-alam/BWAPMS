@@ -18,7 +18,21 @@
 
 *(none currently open)*
 
+## 🔴 High Priority
+
+- [ ] **2FA + Device ID Binding not implemented** (Blueprint §3.1) — mandatory OTP-based 2FA for all users, device fingerprint binding, 2-device trusted-device limit, 5-failure lockout. Currently only email+password login exists. `employee_master.trusted_devices` / `twofa_enabled` columns exist but unused. Needs: OTP delivery service (email/SMS), device fingerprint capture on frontend, login flow rework.
+
+- [ ] **GPS Fraud Detection 10-point engine not implemented** (Blueprint §3.2) — mock-GPS detection, speed anomaly, location jump, timestamp deviation, etc. `gps_log.mock_gps_flag` and `risk_score` columns exist but nothing populates them. This is the core anti-fraud mechanism for attendance and isn't running.
+
+- [ ] **Pro-rata Payroll Calculation Engine not automated** (Blueprint §12.2-12.3) — the late-deduction/absent-deduction formulas (exact-Taka-fraction, 480-minute-day basis) exist only as columns on the `payroll` table; nothing calculates them. Tier 2 appears to be entering deduction values manually today.
+
 ## 🟠 Medium Priority
+
+- [ ] **Leave Balance auto-credit/reset not automated** (Blueprint §6.1) — 1.5 days/month CL, 14 days/year SL, 31 Dec expiry + 1 Jan fresh allocation. `leave_balance` table exists, no cron job updates it.
+
+- [ ] **Field Visit Compliance cross-reference not automated** (Blueprint §10.2) — should auto-set `meetings.field_visit_compliance_status` to VERIFIED/UNVERIFIED by matching meeting minutes against GPS check-ins at the same whitelisted location/day. Nothing populates this today.
+
+- [ ] **Next-Month Payroll Forecast + Turnover Risk Analyzer have no backend calculation** (Blueprint §12.8, §13.5) — `payroll_forecast` and `turnover_risk_flags` tables exist, and the Tier 2 dashboard already has a `payrollforecast` UI section, but no function generates the data, so it will render empty. Quick win since the frontend already exists.
 
 - [ ] **Leaked Password Protection disabled** in Supabase Auth — cannot be toggled via SQL/API, no MCP tool covers Auth config either. Still needs manual action.
   **Action needed (GP Bhai):** Supabase Dashboard → Authentication → Providers → Email → enable "Leaked password protection" (HaveIBeenPwned check).
@@ -27,6 +41,10 @@
   (Note: the 19 tables where *both* overlapping policies were created in the 2026-07-29 RLS migration — i.e. known, safe to merge — have already been consolidated. See Resolved section below.)
 
 ## 🟢 Low Priority
+
+- [ ] **Responsibility Management + Duty Schedule have no frontend** — `responsibility_master`, `responsibility_assignment`, `duty_schedule` tables and RLS policies are fully ready (as of 2026-07-29 migration), but no dashboard has a UI section for them yet.
+
+- [ ] **Employee Exit/Offboarding + Salary Increment workflows have no frontend** — `employee_exit` and `salary_history` tables exist but there's no offboarding checklist UI or annual-increment-approval UI. Low priority given infrequent events (10-person team).
 
 - [ ] **10 unused indexes** (never used since creation) — candidates for removal if confirmed genuinely unused after more production traffic: `idx_attendance_status`, `idx_gps_log_risk`, `idx_task_master_deadline`, `idx_payroll_employee_month`, `idx_kpi_scores_employee`, `idx_audit_logs_user`, `idx_audit_logs_risk`, `idx_audit_logs_module`, `idx_penalty_history_employee`, `idx_gps_exception_employee_status`, `idx_data_entry_employee_date`, `idx_call_log_employee_date`, `idx_help_requests_status`, `idx_task_timer_task_running`, `idx_notifications_employee_unread`. (Note: dataset is still small — revisit after more real usage before removing.)
 
@@ -37,6 +55,16 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-07-29 — Blueprint compliance audit + critical cron bug fixes
+
+- [x] **NEWLY DISCOVERED & FIXED — `calculate_kpi_for_employee()` broke the monthly KPI cron job (Critical):** The Tier1/2 authorization check added earlier the same day used `auth.uid()`, which is NULL in a `pg_cron` context (no JWT). This meant `v_caller_tier` was NULL, and `NULL IS DISTINCT FROM 1` evaluates true, so the RAISE EXCEPTION fired for every employee at every month-end, silently breaking KPI scoring. Fixed by only enforcing the check when `auth.uid() IS NOT NULL` (a NULL auth context = trusted server-side call).
+  → `migrations/20260729_audit_bugfixes.sql`
+
+- [x] **NEWLY DISCOVERED & FIXED — duplicate pg_cron jobs racing on attendance (Medium):** `auto-absent-daily` and `bwapms-auto-absent-daily` were both scheduled at the same time doing the same "mark absent" job, racing against the `attendance` table's `UNIQUE(employee_id, attendance_date)` constraint. Removed the older, less complete job (the surviving one includes an `Audit_Logs` entry per Blueprint §14.2).
+  → `migrations/20260729_audit_bugfixes.sql`
+
+- [x] **Full Blueprint v1.2 vs. live-system compliance audit performed** — cross-checked all 22 Blueprint sections against actual tables, functions, cron jobs, and frontend dashboard sections. Findings split into High/Medium/Low priority gaps above. Key takeaway: attendance/leave/tasks/meetings/KPI-display/payroll-display/audit logging are functional; the automated *calculation engines* behind payroll, GPS fraud detection, leave balances, and 2FA/device-binding security are the biggest gaps.
 
 ### 2026-07-29 — Docs cleanup + RLS policy consolidation
 
