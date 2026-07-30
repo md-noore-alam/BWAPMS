@@ -20,10 +20,11 @@
 
 ## 🟠 Medium Priority
 
-- [ ] **Leaked Password Protection disabled** in Supabase Auth — cannot be toggled via SQL/API, needs manual action.
+- [ ] **Leaked Password Protection disabled** in Supabase Auth — cannot be toggled via SQL/API, no MCP tool covers Auth config either. Still needs manual action.
   **Action needed (GP Bhai):** Supabase Dashboard → Authentication → Providers → Email → enable "Leaked password protection" (HaveIBeenPwned check).
 
-- [ ] **30+ "multiple permissive policies" findings** — several tables have overlapping RLS policies for the same role+action (e.g. `attendance`, `audit_logs`, `call_log`, `daily_reports`, `data_entry_log`, `employee_master`, `gps_exception_requests`, `gps_log`, `help_requests`, `intelligence_alerts`, `kpi_scores`, `payroll`, `rules_regulations`, `task_master`, `task_timer`). Each extra policy adds overhead per query. **Deliberately not auto-merged** — consolidating overlapping policies risks accidentally narrowing or widening access; needs a careful table-by-table review with GP Bhai before combining any of them.
+- [ ] **Legacy overlapping policies on 15 pre-existing tables** — NOT auto-merged (deliberately): `attendance`, `audit_logs`, `call_log`, `daily_reports`, `data_entry_log`, `employee_master`, `gps_exception_requests`, `gps_log`, `help_requests`, `intelligence_alerts`, `kpi_scores`, `payroll`, `rules_regulations`, `task_master`, `task_timer`. These policies predate this tracker and their exact original intent isn't fully documented, so merging them risks accidentally narrowing or widening access. Needs a table-by-table review with GP Bhai before combining.
+  (Note: the 19 tables where *both* overlapping policies were created in the 2026-07-29 RLS migration — i.e. known, safe to merge — have already been consolidated. See Resolved section below.)
 
 ## 🟢 Low Priority
 
@@ -31,12 +32,23 @@
 
 ## 📝 Documentation / Process Notes
 
-- [ ] Blueprint v1.2 (`docs/BLUEPRINT.md`) references **Google AppSheet + Supabase** as the platform, but the actual live repo is pure HTML/JS + Supabase (no AppSheet). Confirm with GP Bhai whether to update the Blueprint wording to reflect the actual stack.
-- [ ] No `README.md` currently in repo root — consider adding one that links to `docs/BLUEPRINT.md` and this file for onboarding.
+*(none currently open)*
 
 ---
 
 ## ✅ Resolved
+
+### 2026-07-29 — Docs cleanup + RLS policy consolidation
+
+- [x] **No `README.md` in repo root** — added one linking to `docs/BLUEPRINT.md` and `docs/PENDING_ISSUES.md`, with stack summary and repo layout for onboarding.
+  → `README.md`
+
+- [x] **Blueprint referenced outdated "Google AppSheet" stack** — corrected all 3 mentions in `docs/BLUEPRINT.md` (system overview, backup table, technical constraints) to reflect the actual stack (plain HTML/JS + Supabase), with an inline note explaining the correction for anyone reading the historical document.
+  → `docs/BLUEPRINT.md`
+
+- [x] **19 tables had overlapping/duplicate RLS policies** (all from the 2026-07-29 RLS migration, so exact definitions were known and safe to merge) — consolidated `disciplinary_actions`, `download_logs`, `duty_schedule`, `employee_exit`, `employee_ranking`, `grievances`, `helpdesk_tickets`, `holiday_master`, `issues`, `kpi_calculation_log`, `notification_preferences`, `penalty_history`, `responsibility_assignment`, `responsibility_master`, `salary_history`, `system_settings`, `task_updates`, `user_access`, `version_control`. Pattern: one combined SELECT policy per table instead of two overlapping ones, with command-specific INSERT/UPDATE/DELETE policies. Verified zero remaining overlaps on these 19 tables via `pg_policies` query.
+  → `migrations/20260729_consolidate_rls_policies.sql`
+  → **Remaining 15 legacy tables intentionally left alone** — see Medium Priority above.
 
 ### 2026-07-29 — Employee creation UI + self-service photo upload (feature)
 
