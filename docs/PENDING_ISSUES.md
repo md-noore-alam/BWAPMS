@@ -28,9 +28,11 @@
 
 ## 🟠 Medium Priority
 
-- [ ] **Report & Download Matrix largely unbuilt** (Blueprint §15.2) — the blueprint specifies 17 report categories (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) across PDF/Excel/CSV. `download_logs` table exists with RLS ready but nothing in the frontend writes to it yet either. Build incrementally, one report category at a time — GP Bhai to prioritize order. Remaining: Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log — none built on any tier dashboard yet.
+- [ ] **Report & Download Matrix — Tier 1 complete, Tier 2/3/4 not yet extended** (Blueprint §15.2) — all 17 report categories from the blueprint (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) are now built and downloadable (CSV/Excel/PDF) on the **Tier 1 Executive Dashboard** as of 2026-07-31. This was GP Bhai's original "UK team can't download anything" report. `download_logs` table still exists with RLS ready but nothing writes to it yet — low-priority follow-up. Tier 2/3/4 dashboards still only have Attendance (and Leave, CSV-only) downloads — extend the same report set to those dashboards when needed, respecting each tier's narrower RLS scope (own-record-only for Tier 3/4 on several tables).
   - [x] Attendance PDF added to Tier 1 dashboard (2026-07-31) — was CSV/Excel-only, now matches Tier 2's PDF export (print-to-PDF window). See Resolved below.
   - [x] Payroll Summary + Deduction Breakdown reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `payroll` table, no backend changes needed. See Resolved below.
+  - [x] KPI Score + Performance Ranking reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `kpi_scores` table. See Resolved below.
+  - [x] Salary History, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, and Audit Log reports all added to Tier 1 dashboard (2026-07-31) in a new "More Reports" nav section, CSV/Excel/PDF each. See Resolved below.
 
 - [ ] **Leave Balance auto-credit/reset not automated** (Blueprint §6.1) — 1.5 days/month CL, 14 days/year SL, 31 Dec expiry + 1 Jan fresh allocation. `leave_balance` table exists, no cron job updates it.
 
@@ -59,6 +61,21 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-07-31 — Tier 1 remaining 6 reports: Salary History, Task, Meeting & Action Items, Issue, Donor Audit Readiness, Audit Log (feature)
+
+- [x] **Completed Blueprint §15.2's Report & Download Matrix on the Tier 1 dashboard** — added a new "More Reports" sidebar section with 6 cards, each exporting CSV/Excel/PDF:
+  - Salary History Report — `salary_history` table, filterable by year or all-time
+  - Task Report — `task_master` table, filterable by due-date range
+  - Meeting & Action Items Report — `meetings` + `meeting_action_items` tables joined, filterable by meeting date range
+  - Issue Report — `issues` table, filterable by created-date range
+  - Monthly Donor Audit Readiness Report — `audit_logs` table, sorted HIGH-risk-first, filterable by date range, title shows HIGH-risk event count
+  - Audit Log Report — `audit_logs` table, filterable by date range
+
+  Introduced two shared helpers (`exportRows()` for CSV/Excel/PDF generation, `getEmployeeMap()` for name lookups) to avoid duplicating the export logic across 6 more report types, and to sidestep ambiguous PostgREST embeds on tables with multiple foreign keys into `employee_master` (e.g. `salary_history` has `employee_id`, `proposed_by_tier2`, `approved_by_tier1` all pointing there). All RLS policies already granted Tier 1 full read access on these tables — no backend migration needed.
+
+  This completes all 17 report categories from the Blueprint §15.2 matrix on the Tier 1 dashboard, resolving GP Bhai's original "UK team can't download anything" report. Tier 2/3/4 dashboards were not touched — extending the same reports there (with narrower RLS-appropriate scope) is tracked as a follow-up under Medium priority above.
+  → `dashboard-tier1.html`
 
 ### 2026-07-31 — Tier 1 Payroll Summary + Deduction Breakdown downloads (feature)
 
