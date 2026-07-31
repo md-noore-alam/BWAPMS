@@ -595,7 +595,39 @@
           </table>
         </div>
       </div>
+
+      <p class="section-title" style="margin-top:24px;">Download Payroll Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §12.9</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Payroll Summary &amp; Deduction Breakdown — Any Processed Month</div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Month</label>
+              <input type="month" id="dlPayMonth" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Payroll Summary Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadPayrollReport('summary','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('summary','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('summary','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Deduction Breakdown Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadPayrollReport('deduction','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('deduction','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('deduction','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
 
     <!-- AUDIT -->
     <div id="sec-audit" style="display:none;">
@@ -1303,7 +1335,92 @@ async function downloadAdminAttendance(fmt) {
   }
 }
 
-async function loadAudit() {
+// ── Payroll Summary & Deduction Breakdown Downloads — Blueprint §12.9 ──
+async function downloadPayrollReport(reportType, fmt) {
+  const monthVal = document.getElementById('dlPayMonth').value; // "YYYY-MM"
+  if (!monthVal) { alert('Month select korun.'); return; }
+  const monthStart = `${monthVal}-01`;
+
+  const { data, error } = await db.from('payroll')
+    .select('payroll_month, gross_salary, prorata_late_deduction, absent_deduction, early_departure_deduction, income_tax_deduction, kpi_penalty_deduction, other_deductions, other_deductions_reason, total_deductions, approved_adjustments, net_salary, is_locked, employee_id, employee_master(full_name, designation, tier)')
+    .eq('payroll_month', monthStart)
+    .order('created_at', { ascending: true });
+
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই মাসে কোনো প্রসেসড payroll রেকর্ড পাওয়া যায়নি।'); return; }
+
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    tier: r.employee_master?.tier ?? '',
+    gross: Number(r.gross_salary || 0).toFixed(2),
+    late: Number(r.prorata_late_deduction || 0).toFixed(2),
+    absent: Number(r.absent_deduction || 0).toFixed(2),
+    early: Number(r.early_departure_deduction || 0).toFixed(2),
+    tax: Number(r.income_tax_deduction || 0).toFixed(2),
+    kpi: Number(r.kpi_penalty_deduction || 0).toFixed(2),
+    other: Number(r.other_deductions || 0).toFixed(2),
+    otherReason: r.other_deductions_reason || '',
+    totalDed: Number(r.total_deductions || 0).toFixed(2),
+    adjustments: Number(r.approved_adjustments || 0).toFixed(2),
+    net: Number(r.net_salary || 0).toFixed(2),
+    locked: r.is_locked ? 'Locked' : 'Open',
+  }));
+
+  const isSummary = reportType === 'summary';
+  const reportLabel = isSummary ? 'Payroll_Summary' : 'Deduction_Breakdown';
+  const reportTitle = isSummary ? 'Payroll Summary Report' : 'Deduction Breakdown Report';
+
+  const headers = isSummary
+    ? ['Employee','Designation','Tier','Gross Salary','Total Deductions','Adjustments','Net Salary','Status']
+    : ['Employee','Designation','Late Deduction','Absent Deduction','Early Departure','Income Tax','KPI Penalty','Other Deductions','Other Reason','Total Deductions'];
+
+  const rowToCells = r => isSummary
+    ? [r.name, r.designation, r.tier, r.gross, r.totalDed, r.adjustments, r.net, r.locked]
+    : [r.name, r.designation, r.late, r.absent, r.early, r.tax, r.kpi, r.other, r.otherReason, r.totalDed];
+
+  if (fmt === 'csv') {
+    const header = headers.join(',') + '\n';
+    const body = rows.map(r => rowToCells(r).map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${monthVal}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>${reportTitle} — ${monthVal}</h2>
+    <table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${monthVal}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${reportTitle}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>${reportTitle}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${monthVal}</div>
+    <table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
   const { data } = await db.from('audit_logs')
     .select('log_id, action, module, risk_score, risk_level, created_at')
     .order('created_at', { ascending: false }).limit(50);
