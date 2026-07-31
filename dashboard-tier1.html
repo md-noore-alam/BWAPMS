@@ -568,6 +568,7 @@
             </div>
             <button class="btn-primary" onclick="downloadAdminAttendance('csv')">⬇ CSV</button>
             <button class="btn-secondary" onclick="downloadAdminAttendance('excel')">⬇ Excel</button>
+            <button class="btn-secondary" onclick="downloadAdminAttendance('pdf')">⬇ PDF</button>
           </div>
         </div>
       </div>
@@ -1264,7 +1265,7 @@ async function downloadAdminAttendance(fmt) {
     const a = document.createElement('a');
     a.href = url; a.download = `attendance_${labelSuffix}_${from}_${to}.csv`;
     a.click(); URL.revokeObjectURL(url);
-  } else {
+  } else if (fmt === 'excel') {
     let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
     <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
     <body><h2>Attendance Report — ${empId ? rows[0]?.name : 'All Employees'} | ${from} to ${to}</h2>
@@ -1278,6 +1279,27 @@ async function downloadAdminAttendance(fmt) {
     const a = document.createElement('a');
     a.href = url; a.download = `attendance_${labelSuffix}_${from}_${to}.xls`;
     a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Attendance Report</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>Attendance Report — ${empId ? (rows[0]?.name || empId) : 'All Employees'}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${from} to ${to}</div>
+    <table><tr><th>Employee</th><th>Designation</th><th>Tier</th><th>তারিখ</th><th>Check-In</th><th>Check-Out</th><th>দেরি (মিনিট)</th><th>স্ট্যাটাস</th><th>Mode</th></tr>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r.name}</td><td>${r.designation}</td><td>${r.tier}</td><td>${r.date}</td><td>${r.checkIn || '—'}</td><td>${r.checkOut || '—'}</td><td>${r.late}</td><td>${r.status || '—'}</td><td>${r.mode || '—'}</td></tr>`;
+    });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
   }
 }
 
