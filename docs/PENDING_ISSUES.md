@@ -28,7 +28,7 @@
 
 ## 🟠 Medium Priority
 
-- [ ] **Report & Download Matrix — Tier 1 complete, Tier 2/3/4 not yet extended** (Blueprint §15.2) — all 17 report categories from the blueprint (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) are now built and downloadable (CSV/Excel/PDF) on the **Tier 1 Executive Dashboard** as of 2026-07-31. This was GP Bhai's original "UK team can't download anything" report. `download_logs` table still exists with RLS ready but nothing writes to it yet — low-priority follow-up. Tier 2/3/4 dashboards still only have Attendance (and Leave, CSV-only) downloads — extend the same report set to those dashboards when needed, respecting each tier's narrower RLS scope (own-record-only for Tier 3/4 on several tables).
+- [ ] **Report & Download Matrix — Tier 1 fully complete (all §5.8/§6.3/§12.9/§15.2 rows), Tier 2/3/4 not yet extended** — every report row across the full blueprint (not just the §15.2 summary table, which undercounted at ~11) is now built and downloadable on the **Tier 1 Executive Dashboard** as of 2026-07-31: Daily Attendance Slip, Monthly Attendance Report, Yearly Attendance Summary, Late Attendance Report, Absentee Report, Field Visit Compliance Report, Leave Balance Slip, Monthly Leave Summary, Yearly Leave Summary, Payroll Summary, Deduction Breakdown, Salary History, Individual Salary Slip, Next-Month Payroll Forecast (dashboard + PDF export), KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log — 21 report/slip types total, each CSV/Excel/PDF where the blueprint specifies (slips are PDF-only by design). This was GP Bhai's original "UK team can't download anything" report — root cause was the §15.2 summary table alone undercounting what §5.8/§6.3/§12.9 actually specify in detail; first two passes only covered the summary table's 11 rows before a third pass caught the remaining 7-10 items via a full blueprint re-read. `download_logs` table still exists with RLS ready but nothing writes to it yet — low-priority follow-up. Tier 2/3/4 dashboards still only have basic Attendance (and Leave, CSV-only) downloads — extend the same report set to those dashboards when needed, respecting each tier's narrower RLS scope (own-record-only for Tier 3/4 on several tables).
   - [x] Attendance PDF added to Tier 1 dashboard (2026-07-31) — was CSV/Excel-only, now matches Tier 2's PDF export (print-to-PDF window). See Resolved below.
   - [x] Payroll Summary + Deduction Breakdown reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `payroll` table, no backend changes needed. See Resolved below.
   - [x] KPI Score + Performance Ranking reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `kpi_scores` table. See Resolved below.
@@ -61,6 +61,24 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-07-31 — Final full-blueprint re-audit: 7 more report/slip types added (feature)
+
+- [x] **GP Bhai flagged that earlier passes had missed items** — a re-read of §5.8 (Attendance Reports & Slips), §6.3 (Leave Slip Downloads), and §12.9 (Salary Slip & Payroll Reports) — not just the §15.2 summary table — surfaced 7 more report/slip types that hadn't been built yet. Added to the Tier 1 dashboard:
+  - **Daily Attendance Slip** (PDF, per employee/day) — attendance section
+  - **Yearly Attendance Summary** (CSV/Excel/PDF) — attendance section
+  - **Late Attendance Report** (CSV/Excel/PDF) — attendance section
+  - **Absentee Report** (CSV/Excel/PDF) — attendance section
+  - **Field Visit Compliance Report** (CSV/Excel/PDF, from `meetings.field_visit_compliance_status`) — attendance section
+  - **Leave Balance Slip** (PDF, per employee current-year snapshot, from `leave_balance`) — More Reports section
+  - **Monthly + Yearly Leave Summary** (CSV/Excel/PDF, from `leave_request` where status='Approved') — More Reports section
+  - **Individual Salary Slip** (PDF, per employee/month, from `payroll`) — payroll section
+  - **Next-Month Payroll Forecast PDF export** — payroll section, exports the existing forecast widget
+
+  Added two new shared helpers: `openSlipWindow()` for single-record PDF slips (distinct look from the tabular `exportRows()`), and `populateReportEmployeeDropdowns()` to fill the three new employee-select dropdowns on init. All column names and RLS policies verified directly against the live schema before writing each query — no backend migration needed.
+
+  **Lesson for future sessions:** when a blueprint has both a summary table (§15.2) and detailed per-module sections (§5.8, §6.3, §12.9) describing the same feature area, always cross-check the detailed sections too — the summary table is not guaranteed to be exhaustive.
+  → `dashboard-tier1.html`
 
 ### 2026-07-31 — Tier 1 remaining 6 reports: Salary History, Task, Meeting & Action Items, Issue, Donor Audit Readiness, Audit Log (feature)
 
