@@ -576,6 +576,107 @@
           </div>
         </div>
       </div>
+
+      <p class="section-title" style="margin-top:24px;">More Attendance Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §5.8</span></p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Daily Attendance Slip</div><span class="card-badge badge-gray">Per Day, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlSlipEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Date</label>
+              <input type="date" id="dlSlipDate" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <button class="btn-primary" onclick="downloadDailyAttendanceSlip()">⬇ PDF Slip</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Yearly Attendance Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year</label>
+              <input type="number" id="dlYearAtt" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadYearlyAttendanceSummary('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadYearlyAttendanceSummary('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadYearlyAttendanceSummary('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Late Attendance Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlLateFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlLateTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLateReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLateReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLateReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Absentee Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlAbsFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlAbsTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadAbsenteeReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadAbsenteeReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadAbsenteeReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Field Visit Compliance Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlFvFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlFvTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadFieldVisitCompliance('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadFieldVisitCompliance('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadFieldVisitCompliance('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- KPI -->
@@ -634,7 +735,10 @@
     <div id="sec-payroll" style="display:none;">
       <p class="section-title">Payroll Forecast <span class="projected-tag">PROJECTED — NON-BINDING</span></p>
       <div class="card">
-        <div class="card-header"><div class="card-title">Next Month Estimate</div></div>
+        <div class="card-header">
+          <div class="card-title">Next Month Estimate</div>
+          <button class="btn-secondary" onclick="downloadPayrollForecastPDF()" style="font-size:12px;">⬇ Export PDF</button>
+        </div>
         <div style="overflow-x:auto;">
           <table class="forecast-table">
             <thead><tr><th>Employee</th><th>Gross</th><th>Late Days (this month)</th><th>Est. Late Deduction</th><th>Est. Net</th></tr></thead>
@@ -670,6 +774,25 @@
                 <button class="btn-secondary" onclick="downloadPayrollReport('deduction','pdf')">⬇ PDF</button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Individual Salary Slip</div><span class="card-badge badge-gray">Per Month, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlSlipEmployeePay" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Month</label>
+              <input type="month" id="dlSlipMonth" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <button class="btn-primary" onclick="downloadSalarySlip()">⬇ PDF Slip</button>
           </div>
         </div>
       </div>
@@ -752,6 +875,63 @@
     <!-- MORE REPORTS -->
     <div id="sec-reports" style="display:none;">
       <p class="section-title">More Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §15.2</span></p>
+
+      <p class="section-title" style="margin-top:0;">Leave Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §6.3</span></p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Leave Balance Slip</div><span class="card-badge badge-gray">Current Snapshot, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlLeaveBalEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="downloadLeaveBalanceSlip()">⬇ PDF Slip</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Monthly Leave Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlLeaveMonFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlLeaveMonTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLeaveSummary('monthly','csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('monthly','excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('monthly','pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Yearly Leave Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year</label>
+              <input type="number" id="dlLeaveYear" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLeaveSummary('yearly','csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('yearly','excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('yearly','pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">Other Reports</p>
 
       <div class="card">
         <div class="card-header"><div class="card-title">Salary History Report</div><span class="card-badge badge-gray">Yearly / All-time</span></div>
@@ -1135,6 +1315,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadAudit(),
     loadNotifications(),
     loadRulesBadge(),
+    populateReportEmployeeDropdowns(),
   ]);
 
   document.getElementById('dbStatus').textContent = 'Connected ✓';
@@ -1890,6 +2071,284 @@ async function downloadAuditLogReport(fmt) {
   const headers = ['Date/Time','Action','Module','Risk Score','Risk Level'];
   const rowToCells = r => [r.date, r.action, r.module, r.risk, r.level];
   exportRows(headers, rows, rowToCells, 'Audit_Log_Report', 'Audit Log Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Populate employee-select dropdowns used by slip/leave-balance downloads — Blueprint §5.8/§6.3/§12.9 ──
+async function populateReportEmployeeDropdowns() {
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).order('full_name');
+  if (!emps) return;
+  ['dlSlipEmployee', 'dlSlipEmployeePay', 'dlLeaveBalEmployee'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel || sel.options.length > 1) return;
+    emps.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = `${e.full_name} (Tier ${e.tier})`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function openSlipWindow(title, bodyHtml, periodLabel) {
+  const w = window.open('', '_blank');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;padding:36px;color:#1a2233;}
+    h2{font-size:19px;color:#0f1f3d;margin-bottom:2px;}
+    .org{font-size:12px;color:#667;margin-bottom:22px;}
+    .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef0f4;font-size:13px;}
+    .row .lbl{color:#667;}
+    .row .val{font-weight:600;}
+    table{border-collapse:collapse;width:100%;font-size:12px;margin-top:10px;}
+    th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+    td{padding:6px 7px;border:1px solid #ddd;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <h2>${title}</h2>
+  <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${periodLabel}</div>
+  ${bodyHtml}
+  <br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button>
+  </body></html>`;
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── Daily Attendance Slip — Blueprint §5.8 ──
+async function downloadDailyAttendanceSlip() {
+  const empId = document.getElementById('dlSlipEmployee').value;
+  const date  = document.getElementById('dlSlipDate').value;
+  if (!empId || !date) { alert('Employee এবং Date দুটোই দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, minutes_late, minutes_early_departure, validated_hours, status, mode, remarks, employee_master(full_name, designation, tier)')
+    .eq('employee_id', empId).eq('attendance_date', date).maybeSingle();
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data) { alert('এই তারিখে কোনো Attendance রেকর্ড পাওয়া যায়নি।'); return; }
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${data.employee_master?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${data.employee_master?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Date</span><span class="val">${data.attendance_date}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val">${data.status || '—'}</span></div>
+    <div class="row"><span class="lbl">Mode</span><span class="val">${data.mode || '—'}</span></div>
+    <div class="row"><span class="lbl">Check-In</span><span class="val">${data.check_in_time ? new Date(data.check_in_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+    <div class="row"><span class="lbl">Check-Out</span><span class="val">${data.check_out_time ? new Date(data.check_out_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+    <div class="row"><span class="lbl">Minutes Late</span><span class="val">${data.minutes_late || 0}</span></div>
+    <div class="row"><span class="lbl">Minutes Early Departure</span><span class="val">${data.minutes_early_departure || 0}</span></div>
+    <div class="row"><span class="lbl">Validated Hours</span><span class="val">${data.validated_hours ?? '—'}</span></div>
+    <div class="row"><span class="lbl">Remarks</span><span class="val">${data.remarks || '—'}</span></div>`;
+  openSlipWindow('Daily Attendance Slip', body, date);
+}
+
+// ── Yearly Attendance Summary — Blueprint §5.8 ──
+async function downloadYearlyAttendanceSummary(fmt) {
+  const year = document.getElementById('dlYearAtt').value;
+  if (!year) { alert('Year দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('employee_id, status, minutes_late')
+    .gte('attendance_date', `${year}-01-01`).lte('attendance_date', `${year}-12-31`);
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই বছরে কোনো রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const agg = {};
+  data.forEach(r => {
+    if (!agg[r.employee_id]) agg[r.employee_id] = { present: 0, late: 0, absent: 0, leave: 0, totalMinLate: 0 };
+    const a = agg[r.employee_id];
+    if (r.status === 'Present') a.present++;
+    else if (r.status === 'Late') { a.present++; a.late++; }
+    else if (r.status === 'Absent') a.absent++;
+    else if (r.status === 'Leave') a.leave++;
+    a.totalMinLate += (r.minutes_late || 0);
+  });
+  const rows = Object.keys(agg).map(empId => ({
+    name: empMap[empId]?.full_name || empId,
+    designation: empMap[empId]?.designation || '',
+    present: agg[empId].present, late: agg[empId].late,
+    absent: agg[empId].absent, leave: agg[empId].leave,
+    totalMinLate: agg[empId].totalMinLate,
+  }));
+  const headers = ['Employee','Designation','Present Days','Late Days','Absent Days','Leave Days','Total Minutes Late'];
+  const rowToCells = r => [r.name, r.designation, r.present, r.late, r.absent, r.leave, r.totalMinLate];
+  exportRows(headers, rows, rowToCells, 'Yearly_Attendance_Summary', 'Yearly Attendance Summary', year, fmt);
+}
+
+// ── Late Attendance Report — Blueprint §5.8 ──
+async function downloadLateReport(fmt) {
+  const from = document.getElementById('dlLateFrom').value;
+  const to   = document.getElementById('dlLateTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, check_in_time, minutes_late, status, employee_id, employee_master(full_name, designation, tier)')
+    .eq('status', 'Late')
+    .gte('attendance_date', from).lte('attendance_date', to)
+    .order('minutes_late', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Late Attendance পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    date: r.attendance_date,
+    checkIn: r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : '',
+    minLate: r.minutes_late || 0,
+  }));
+  const headers = ['Employee','Designation','Date','Check-In','Minutes Late'];
+  const rowToCells = r => [r.name, r.designation, r.date, r.checkIn, r.minLate];
+  exportRows(headers, rows, rowToCells, 'Late_Attendance_Report', 'Late Attendance Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Absentee Report — Blueprint §5.8 ──
+async function downloadAbsenteeReport(fmt) {
+  const from = document.getElementById('dlAbsFrom').value;
+  const to   = document.getElementById('dlAbsTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, status, remarks, employee_id, employee_master(full_name, designation, tier)')
+    .eq('status', 'Absent')
+    .gte('attendance_date', from).lte('attendance_date', to)
+    .order('attendance_date', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Absentee রেকর্ড পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    date: r.attendance_date,
+    remarks: r.remarks || '',
+  }));
+  const headers = ['Employee','Designation','Date','Remarks'];
+  const rowToCells = r => [r.name, r.designation, r.date, r.remarks];
+  exportRows(headers, rows, rowToCells, 'Absentee_Report', 'Absentee Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Field Visit Compliance Report — Blueprint §10.2 / §5.8 ──
+async function downloadFieldVisitCompliance(fmt) {
+  const from = document.getElementById('dlFvFrom').value;
+  const to   = document.getElementById('dlFvTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('meetings')
+    .select('title, meeting_type, organizer_id, scheduled_start, location_or_platform, field_visit_compliance_status, risk_score')
+    .not('field_visit_compliance_status', 'is', null)
+    .gte('scheduled_start', from).lte('scheduled_start', to + 'T23:59:59')
+    .eq('is_active', true)
+    .order('scheduled_start', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Field Visit মিটিং পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    meeting: r.title,
+    organizer: empMap[r.organizer_id]?.full_name || r.organizer_id || '—',
+    date: (r.scheduled_start || '').substring(0, 10),
+    location: r.location_or_platform || '',
+    status: r.field_visit_compliance_status || '',
+    risk: r.risk_score ?? 0,
+  }));
+  const headers = ['Meeting','Organizer','Date','Location','Compliance Status','Risk Score'];
+  const rowToCells = r => [r.meeting, r.organizer, r.date, r.location, r.status, r.risk];
+  exportRows(headers, rows, rowToCells, 'Field_Visit_Compliance', 'Field Visit Compliance Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Next-Month Payroll Forecast — PDF export — Blueprint §12.8 ──
+async function downloadPayrollForecastPDF() {
+  const { data: emps } = await db.from('employee_master')
+    .select('employee_id, full_name, monthly_gross_salary')
+    .eq('is_active', true).neq('tier', 1);
+  if (!emps || emps.length === 0) { alert('কোনো Employee ডেটা পাওয়া যায়নি।'); return; }
+  const now = new Date();
+  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  let rowsHtml = '';
+  emps.forEach(e => {
+    const gross = parseFloat(e.monthly_gross_salary) || 0;
+    const dailyGross = gross / 26;
+    const estLateDays = 2;
+    const estLateDeduct = ((estLateDays * 30) / 480 * dailyGross);
+    const estNet = gross - estLateDeduct;
+    rowsHtml += `<tr><td>${e.full_name}</td><td>৳${gross.toLocaleString()}</td><td>৳${estLateDeduct.toFixed(0)}</td><td>৳${estNet.toFixed(0)}</td></tr>`;
+  });
+  const body = `<table><tr><th>Employee</th><th>Gross</th><th>Est. Late Deduction</th><th>Est. Net</th></tr>${rowsHtml}</table>
+    <p style="font-size:11px;color:#999;margin-top:10px;">Projected estimate — non-binding. Actual payroll depends on real attendance for the month.</p>`;
+  openSlipWindow('Next-Month Payroll Forecast', body, monthLabel);
+}
+
+// ── Individual Salary Slip — Blueprint §12.9 ──
+async function downloadSalarySlip() {
+  const empId = document.getElementById('dlSlipEmployeePay').value;
+  const monthVal = document.getElementById('dlSlipMonth').value;
+  if (!empId || !monthVal) { alert('Employee এবং Month দুটোই দিন।'); return; }
+  const monthStart = `${monthVal}-01`;
+  const { data, error } = await db.from('payroll')
+    .select('gross_salary, prorata_late_deduction, absent_deduction, early_departure_deduction, income_tax_deduction, kpi_penalty_deduction, other_deductions, total_deductions, approved_adjustments, net_salary, is_locked, employee_master(full_name, designation, tier)')
+    .eq('employee_id', empId).eq('payroll_month', monthStart).maybeSingle();
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data) { alert('এই মাসে এই Employee-এর কোনো processed Payroll রেকর্ড পাওয়া যায়নি।'); return; }
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${data.employee_master?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${data.employee_master?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Month</span><span class="val">${monthVal}</span></div>
+    <div class="row"><span class="lbl">Gross Salary</span><span class="val">৳${Number(data.gross_salary || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Late Deduction</span><span class="val">−৳${Number(data.prorata_late_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Absent Deduction</span><span class="val">−৳${Number(data.absent_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Early Departure Deduction</span><span class="val">−৳${Number(data.early_departure_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Income Tax</span><span class="val">−৳${Number(data.income_tax_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">KPI Penalty</span><span class="val">−৳${Number(data.kpi_penalty_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Other Deductions</span><span class="val">−৳${Number(data.other_deductions || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Approved Adjustments</span><span class="val">৳${Number(data.approved_adjustments || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Total Deductions</span><span class="val">−৳${Number(data.total_deductions || 0).toFixed(2)}</span></div>
+    <div class="row" style="font-size:15px;padding-top:14px;"><span class="lbl" style="font-weight:700;">NET SALARY</span><span class="val" style="color:#0f1f3d;">৳${Number(data.net_salary || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val">${data.is_locked ? 'Locked' : 'Open'}</span></div>`;
+  openSlipWindow('Individual Salary Slip', body, monthVal);
+}
+
+// ── Leave Balance Slip — Blueprint §6.3 ──
+async function downloadLeaveBalanceSlip() {
+  const empId = document.getElementById('dlLeaveBalEmployee').value;
+  if (!empId) { alert('Employee নির্বাচন করুন।'); return; }
+  const currentYear = new Date().getFullYear();
+  const { data, error } = await db.from('leave_balance')
+    .select('leave_type, year, total_allocated, used, balance')
+    .eq('employee_id', empId).eq('year', currentYear).eq('is_active', true)
+    .order('leave_type');
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই Employee-এর কোনো Leave Balance রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  let rowsHtml = '';
+  data.forEach(r => {
+    rowsHtml += `<div class="row"><span class="lbl">${r.leave_type}</span><span class="val">Allocated: ${r.total_allocated} | Used: ${r.used} | Balance: ${r.balance}</span></div>`;
+  });
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${empMap[empId]?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${empMap[empId]?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Year</span><span class="val">${currentYear}</span></div>
+    <div style="margin-top:12px;">${rowsHtml}</div>`;
+  openSlipWindow('Leave Balance Slip', body, `${currentYear} Snapshot`);
+}
+
+// ── Monthly / Yearly Leave Summary — Blueprint §6.3 ──
+async function downloadLeaveSummary(periodType, fmt) {
+  let from, to, periodLabel;
+  if (periodType === 'yearly') {
+    const year = document.getElementById('dlLeaveYear').value;
+    if (!year) { alert('Year দিন।'); return; }
+    from = `${year}-01-01`; to = `${year}-12-31`; periodLabel = year;
+  } else {
+    from = document.getElementById('dlLeaveMonFrom').value;
+    to   = document.getElementById('dlLeaveMonTo').value;
+    if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+    periodLabel = `${from}_to_${to}`;
+  }
+  const { data, error } = await db.from('leave_request')
+    .select('employee_id, leave_type, start_date, end_date, total_days, status')
+    .eq('status', 'Approved')
+    .gte('start_date', from).lte('start_date', to)
+    .order('start_date', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Approved Leave পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    name: empMap[r.employee_id]?.full_name || r.employee_id,
+    designation: empMap[r.employee_id]?.designation || '',
+    type: r.leave_type, start: r.start_date, end: r.end_date, days: r.total_days,
+  }));
+  const headers = ['Employee','Designation','Leave Type','Start Date','End Date','Total Days'];
+  const rowToCells = r => [r.name, r.designation, r.type, r.start, r.end, r.days];
+  const title = periodType === 'yearly' ? 'Yearly Leave Summary' : 'Monthly Leave Summary';
+  exportRows(headers, rows, rowToCells, title.replace(/ /g, '_'), title, periodLabel, fmt);
 }
 
 async function loadAudit() {
