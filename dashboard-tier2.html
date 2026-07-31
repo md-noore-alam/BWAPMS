@@ -2254,66 +2254,23 @@ async function loadPendingApprovals() {
         <div class="approval-type">${r.leave_type} Leave &nbsp;·&nbsp; ${r.start_date} to ${r.end_date}</div>
       </div>
       <div class="approval-actions">
-        <button class="btn-approve" onclick="approveLeave('${r.request_id}')">Approve</button>
-        <button class="btn-reject"  onclick="rejectLeave('${r.request_id}')">Reject</button>
+        <button class="btn-approve" onclick="approveLeave('${r.request_id}', true)">Approve</button>
+        <button class="btn-reject"  onclick="approveLeave('${r.request_id}', false)">Reject</button>
       </div>
     </div>`).join('');
 }
 
 // ── Approve / Reject Leave ────────────────────────────────
-async function approveLeave(id) {
-  // Bug fix: approved_by-তে employee_id (UUID) পাঠাতে হবে, employee_code (TEXT) নয়
-  // Bug fix: approved_at timestamp সেট করা হচ্ছে
-  const now = new Date().toISOString();
-  await db.from('leave_request').update({
-    status: 'Approved',
-    approved_by: employeeData?.employee_id,
-    approved_at: now,
-  }).eq('request_id', id);
-
-  // Bug fix: leave_balance আপডেট — approve হলে 'used' বাড়াতে হবে
-  const { data: req } = await db
-    .from('leave_request')
-    .select('employee_id, leave_type, start_date, end_date')
-    .eq('request_id', id)
-    .single();
-
-  if (req) {
-    const start = new Date(req.start_date);
-    const end   = new Date(req.end_date);
-    const days  = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    const year  = start.getFullYear();
-
-    // leave_balance-এ used বাড়ানো, balance কমানো
-    const { data: bal } = await db
-      .from('leave_balance')
-      .select('balance_id, used, balance')
-      .eq('employee_id', req.employee_id)
-      .eq('leave_type', req.leave_type)
-      .eq('year', year)
-      .single();
-
-    if (bal) {
-      await db.from('leave_balance').update({
-        used:    (bal.used    || 0) + days,
-        balance: (bal.balance || 0) - days,
-      }).eq('balance_id', bal.balance_id);
-    }
-  }
-
-  await loadPendingApprovals();
-}
-
-async function rejectLeave(id) {
-  // Bug fix: approved_by-তে UUID, approved_at timestamp
-  const now = new Date().toISOString();
-  await db.from('leave_request').update({
-    status: 'Rejected',
-    approved_by: employeeData?.employee_id,
-    approved_at: now,
-  }).eq('request_id', id);
-  await loadPendingApprovals();
-}
+// NOTE: the real implementation is defined further below as
+// approveLeave(id, approve) — it also refreshes the Leave section.
+// (Bug fix 2026-08-01: this file used to have a second, dead
+// approveLeave(id) [1-arg] + separate rejectLeave(id) here, which the
+// Dashboard's Pending Approvals widget called with only 1 argument.
+// Since JS function declarations with the same name overwrite each
+// other, calls resolved to the 2-arg version below with approve=
+// undefined -- so clicking "Approve" on the Dashboard silently
+// REJECTED the leave request instead. Removed the dead duplicates and
+// fixed the Dashboard widget's onclick to pass true/false explicitly.)
 
 // ── Load Alerts ───────────────────────────────────────────
 async function loadAlerts() {
