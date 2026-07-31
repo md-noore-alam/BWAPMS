@@ -28,6 +28,9 @@
 
 ## 🟠 Medium Priority
 
+- [ ] **Report & Download Matrix largely unbuilt** (Blueprint §15.2) — the blueprint specifies 17 report categories (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) across PDF/Excel/CSV. Currently only **Attendance** (all tiers) and **Leave** (CSV only, via `leave.html`) downloads exist anywhere in the app. Tier 1 (Executive/UK Team) dashboard has just the one Attendance download section — everything else in the matrix (Payroll, KPI, Task, Meeting, Issue, Donor Audit Readiness, Audit Log, Payroll Forecast reports) is missing entirely, on all tier dashboards. `download_logs` table exists with RLS ready but nothing in the frontend writes to it yet either. Build incrementally, one report category at a time — GP Bhai to prioritize order.
+  - [x] Attendance PDF added to Tier 1 dashboard (2026-07-31) — was CSV/Excel-only, now matches Tier 2's PDF export (print-to-PDF window). See Resolved below.
+
 - [ ] **Leave Balance auto-credit/reset not automated** (Blueprint §6.1) — 1.5 days/month CL, 14 days/year SL, 31 Dec expiry + 1 Jan fresh allocation. `leave_balance` table exists, no cron job updates it.
 
 - [ ] **Field Visit Compliance cross-reference not automated** (Blueprint §10.2) — should auto-set `meetings.field_visit_compliance_status` to VERIFIED/UNVERIFIED by matching meeting minutes against GPS check-ins at the same whitelisted location/day. Nothing populates this today.
@@ -55,6 +58,11 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-07-31 — Tier 1 Attendance PDF export (feature)
+
+- [x] **Tier 1 (UK Team) dashboard missing PDF export on Attendance Reports** — reported by GP Bhai as "UK team can't download anything." Investigation found the RLS/backend layer was fine (Tier 1 has full `get_my_tier() <= 2` access everywhere); the gap was purely frontend — `dashboard-tier1.html` only had CSV/Excel buttons, no PDF, while Tier 2's equivalent section already had all three. Added the missing PDF branch to `downloadAdminAttendance()`, identical to Tier 2's print-to-PDF implementation. Broader finding: most of Blueprint §15.2's 17-category Report & Download Matrix is unbuilt across all tiers — tracked as a new Medium priority item above, to be built incrementally.
+  → `dashboard-tier1.html`
 
 ### 2026-07-29 — Blueprint compliance audit + critical cron bug fixes
 
