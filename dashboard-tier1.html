@@ -325,6 +325,10 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
       System Health
     </div>
+    <div class="nav-item" onclick="showSection('reports', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+      More Reports
+    </div>
   </div>
 
   <div class="nav-section">
@@ -743,6 +747,134 @@
         <div class="card-header"><div class="card-title">All Rules</div><span class="card-badge badge-gray" id="rulesCountBadge">—</span></div>
         <div id="rulesList"><div class="empty-state">Loading...</div></div>
       </div>
+    </div>
+
+    <!-- MORE REPORTS -->
+    <div id="sec-reports" style="display:none;">
+      <p class="section-title">More Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §15.2</span></p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Salary History Report</div><span class="card-badge badge-gray">Yearly / All-time</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year (leave blank for all-time)</label>
+              <input type="number" id="dlSalYear" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadSalaryHistory('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadSalaryHistory('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadSalaryHistory('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Task Report</div><span class="card-badge badge-gray">Daily / Weekly / Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlTaskFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlTaskTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadTaskReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadTaskReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadTaskReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Meeting & Action Items Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlMeetFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlMeetTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadMeetingReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadMeetingReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadMeetingReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Issue Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlIssueFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlIssueTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadIssueReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadIssueReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadIssueReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Monthly Donor Audit Readiness Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlDonorFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlDonorTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadDonorAuditReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadDonorAuditReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadDonorAuditReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Audit Log Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlAuditFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlAuditTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadAuditLogReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadAuditLogReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadAuditLogReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -1553,6 +1685,213 @@ async function downloadKPIReport(reportType, fmt) {
   }
 }
 
+// ── Shared export helper for the remaining report types ──
+async function getEmployeeMap() {
+  const { data } = await db.from('employee_master').select('employee_id, full_name, designation, tier');
+  const map = {};
+  (data || []).forEach(e => { map[e.employee_id] = e; });
+  return map;
+}
+
+function exportRows(headers, rows, rowToCells, fileLabel, reportTitle, periodLabel, fmt) {
+  if (fmt === 'csv') {
+    const header = headers.join(',') + '\n';
+    const body = rows.map(r => rowToCells(r).map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${fileLabel}_${periodLabel}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>${reportTitle} — ${periodLabel}</h2>
+    <table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v ?? '—'}</td>`).join('')}</tr>`; });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${fileLabel}_${periodLabel}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${reportTitle}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>${reportTitle}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${periodLabel}</div>
+    <table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v ?? '—'}</td>`).join('')}</tr>`; });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ── Salary History Report — Blueprint §15.2 ──
+async function downloadSalaryHistory(fmt) {
+  const yearVal = document.getElementById('dlSalYear').value;
+  let query = db.from('salary_history')
+    .select('employee_id, previous_salary, new_salary, increment_amount, effective_date, justification, status')
+    .eq('is_active', true)
+    .order('effective_date', { ascending: false });
+  if (yearVal) {
+    query = query.gte('effective_date', `${yearVal}-01-01`).lte('effective_date', `${yearVal}-12-31`);
+  }
+  const { data, error } = await query;
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('কোনো Salary History রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    name: empMap[r.employee_id]?.full_name || r.employee_id,
+    designation: empMap[r.employee_id]?.designation || '',
+    prev: Number(r.previous_salary || 0).toFixed(2),
+    next: Number(r.new_salary || 0).toFixed(2),
+    increment: Number(r.increment_amount || 0).toFixed(2),
+    effDate: r.effective_date,
+    status: r.status || '',
+    justification: r.justification || '',
+  }));
+  const headers = ['Employee','Designation','Previous Salary','New Salary','Increment','Effective Date','Status','Justification'];
+  const rowToCells = r => [r.name, r.designation, r.prev, r.next, r.increment, r.effDate, r.status, r.justification];
+  exportRows(headers, rows, rowToCells, 'Salary_History', 'Salary History Report', yearVal || 'All-time', fmt);
+}
+
+// ── Task Report — Blueprint §15.2 ──
+async function downloadTaskReport(fmt) {
+  const from = document.getElementById('dlTaskFrom').value;
+  const to = document.getElementById('dlTaskTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('task_master')
+    .select('task_title, task_type, priority, assigned_tier, primary_assignee, due_date, status, expected_completion_hours, actual_completion_hours, total_penalty_percent')
+    .gte('due_date', from).lte('due_date', to)
+    .eq('is_active', true)
+    .order('due_date', { ascending: true });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Task পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    title: r.task_title, type: r.task_type, priority: r.priority,
+    assignee: empMap[r.primary_assignee]?.full_name || r.primary_assignee || '—',
+    tier: r.assigned_tier, due: r.due_date, status: r.status,
+    expHrs: r.expected_completion_hours ?? '', actHrs: r.actual_completion_hours ?? '',
+    penalty: r.total_penalty_percent ?? 0,
+  }));
+  const headers = ['Task','Type','Priority','Assignee','Tier','Due Date','Status','Expected Hrs','Actual Hrs','Penalty %'];
+  const rowToCells = r => [r.title, r.type, r.priority, r.assignee, r.tier, r.due, r.status, r.expHrs, r.actHrs, r.penalty];
+  exportRows(headers, rows, rowToCells, 'Task_Report', 'Task Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Meeting & Action Items Report — Blueprint §15.2 ──
+async function downloadMeetingReport(fmt) {
+  const from = document.getElementById('dlMeetFrom').value;
+  const to = document.getElementById('dlMeetTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data: meetings, error: mErr } = await db.from('meetings')
+    .select('meeting_id, title, meeting_type, scheduled_start, status')
+    .gte('scheduled_start', from).lte('scheduled_start', to + 'T23:59:59')
+    .eq('is_active', true);
+  if (mErr) { alert('মিটিং ডেটা আনতে সমস্যা হয়েছে: ' + mErr.message); return; }
+  if (!meetings || meetings.length === 0) { alert('এই সময়ে কোনো মিটিং পাওয়া যায়নি।'); return; }
+  const meetingIds = meetings.map(m => m.meeting_id);
+  const meetingMap = {}; meetings.forEach(m => { meetingMap[m.meeting_id] = m; });
+  const { data: actions, error: aErr } = await db.from('meeting_action_items')
+    .select('meeting_id, action_description, assigned_to, due_date, priority, status')
+    .in('meeting_id', meetingIds)
+    .eq('is_active', true);
+  if (aErr) { alert('অ্যাকশন আইটেম আনতে সমস্যা হয়েছে: ' + aErr.message); return; }
+  if (!actions || actions.length === 0) { alert('এই সময়ে মিটিং থাকলেও কোনো Action Item পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = actions.map(a => ({
+    meeting: meetingMap[a.meeting_id]?.title || '',
+    action: a.action_description,
+    assignee: empMap[a.assigned_to]?.full_name || a.assigned_to || '—',
+    due: a.due_date, priority: a.priority, status: a.status,
+  }));
+  const headers = ['Meeting','Action Item','Assigned To','Due Date','Priority','Status'];
+  const rowToCells = r => [r.meeting, r.action, r.assignee, r.due, r.priority, r.status];
+  exportRows(headers, rows, rowToCells, 'Meeting_Action_Items', 'Meeting & Action Items Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Issue Report — Blueprint §15.2 ──
+async function downloadIssueReport(fmt) {
+  const from = document.getElementById('dlIssueFrom').value;
+  const to = document.getElementById('dlIssueTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('issues')
+    .select('title, category, priority, reported_by, assigned_to, status, risk_score, created_at, resolved_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Issue পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    title: r.title, category: r.category, priority: r.priority,
+    reportedBy: empMap[r.reported_by]?.full_name || r.reported_by || '—',
+    assignedTo: empMap[r.assigned_to]?.full_name || r.assigned_to || '—',
+    status: r.status, risk: r.risk_score ?? '',
+    created: (r.created_at || '').substring(0, 10),
+    resolved: r.resolved_at ? r.resolved_at.substring(0, 10) : '—',
+  }));
+  const headers = ['Issue','Category','Priority','Reported By','Assigned To','Status','Risk Score','Created','Resolved'];
+  const rowToCells = r => [r.title, r.category, r.priority, r.reportedBy, r.assignedTo, r.status, r.risk, r.created, r.resolved];
+  exportRows(headers, rows, rowToCells, 'Issue_Report', 'Issue Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Monthly Donor Audit Readiness Report — Blueprint §15.2 / §12.7 ──
+async function downloadDonorAuditReport(fmt) {
+  const from = document.getElementById('dlDonorFrom').value;
+  const to = document.getElementById('dlDonorTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('audit_logs')
+    .select('action, module, risk_score, risk_level, is_high_risk_locked, description, created_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .order('risk_score', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Audit Log পাওয়া যায়নি।'); return; }
+  const highCount = data.filter(r => (r.risk_score || 0) >= 8).length;
+  const rows = data.map(r => ({
+    date: (r.created_at || '').substring(0, 10),
+    action: r.action, module: r.module,
+    risk: r.risk_score ?? '', level: r.risk_level || '',
+    locked: r.is_high_risk_locked ? 'Locked' : '—',
+    desc: r.description || '',
+  }));
+  const headers = ['Date','Action','Module','Risk Score','Risk Level','Locked','Description'];
+  const rowToCells = r => [r.date, r.action, r.module, r.risk, r.level, r.locked, r.desc];
+  const title = `Monthly Donor Audit Readiness Report (${highCount} HIGH-risk event${highCount === 1 ? '' : 's'})`;
+  exportRows(headers, rows, rowToCells, 'Donor_Audit_Readiness', title, `${from}_to_${to}`, fmt);
+}
+
+// ── Audit Log Report — Blueprint §15.2 ──
+async function downloadAuditLogReport(fmt) {
+  const from = document.getElementById('dlAuditFrom').value;
+  const to = document.getElementById('dlAuditTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('audit_logs')
+    .select('action, module, risk_score, risk_level, created_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .order('created_at', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Audit Log পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    date: (r.created_at || '').substring(0, 16).replace('T', ' '),
+    action: r.action, module: r.module, risk: r.risk_score ?? '', level: r.risk_level || '',
+  }));
+  const headers = ['Date/Time','Action','Module','Risk Score','Risk Level'];
+  const rowToCells = r => [r.date, r.action, r.module, r.risk, r.level];
+  exportRows(headers, rows, rowToCells, 'Audit_Log_Report', 'Audit Log Report', `${from}_to_${to}`, fmt);
+}
+
 async function loadAudit() {
   const { data } = await db.from('audit_logs')
     .select('log_id, action, module, risk_score, risk_level, created_at')
@@ -1576,7 +1915,7 @@ const sectionTitles = {
   attendance: 'Attendance Overview', kpi: 'KPI Overview',
   payroll: 'Payroll Forecast', audit: 'Audit Log', system: 'System Health',
   announcements: 'Announcements & Notices', holidays: 'Holiday Calendar',
-  rules: 'Rules & Regulations',
+  rules: 'Rules & Regulations', reports: 'More Reports',
 };
 
 function showSection(name, el) {
