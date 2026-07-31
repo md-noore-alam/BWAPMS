@@ -517,12 +517,108 @@
     <div id="sec-employees" style="display:none;">
       <p class="section-title">All Employees</p>
       <div class="card">
-        <div class="card-header"><div class="card-title">Organisation Directory</div><span class="card-badge badge-gray" id="empCountBadge">—</span></div>
+        <div class="card-header">
+          <div class="card-title">Organisation Directory</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="card-badge badge-gray" id="empCountBadge">—</span>
+            <button onclick="openAddEmployeeModal()" style="background:var(--green,#1a7f4e);color:#fff;border:none;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Employee</button>
+          </div>
+        </div>
         <div style="overflow-x:auto;">
           <table class="emp-table">
             <thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Tier</th><th>Email</th><th>Status</th><th>Joined</th></tr></thead>
             <tbody id="empTableBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Add Employee Modal (Blueprint: employee creation must go through the app, not SQL — Tier 1 & 2 only) ── -->
+    <div id="addEmpModalBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:24px;width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="margin:0;font-size:17px;color:var(--navy);">Add New Employee</h3>
+          <button onclick="closeAddEmployeeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+
+        <div id="addEmpFormArea" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:4px;">
+            <div id="addEmpPhotoPreview" style="width:72px;height:72px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted);overflow:hidden;">No Photo</div>
+            <input type="file" id="addEmpPhotoFile" accept="image/png,image/jpeg,image/webp" onchange="previewAddEmpPhoto()" style="font-size:12px;" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Full Name *</label>
+              <input id="addEmpName" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Official Email *</label>
+              <input id="addEmpEmail" type="email" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Mobile Number</label>
+              <input id="addEmpMobile" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">NID Number</label>
+              <input id="addEmpNid" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Designation</label>
+              <input id="addEmpDesignation" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Department</label>
+              <input id="addEmpDept" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Tier *</label>
+              <select id="addEmpTier" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                <option value="1">Tier 1 — UK Team / Super Admin</option>
+                <option value="2" selected>Tier 2 — Country Head</option>
+                <option value="3">Tier 3 — Senior Staff</option>
+                <option value="4">Tier 4 — Staff</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Reporting Manager</label>
+              <select id="addEmpManager" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"><option value="">— None —</option></select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Joining Date</label>
+              <input id="addEmpJoinDate" type="date" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Monthly Gross Salary</label>
+              <input id="addEmpSalary" type="number" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Bank Name</label>
+              <input id="addEmpBankName" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Bank Account No.</label>
+              <input id="addEmpBankAcc" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+          </div>
+
+          <div id="addEmpMsg" style="font-size:13px;display:none;"></div>
+
+          <button onclick="submitAddEmployee()" id="addEmpSubmitBtn" style="background:var(--green,#1a7f4e);color:#fff;border:none;padding:10px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;">Create Employee</button>
+        </div>
+
+        <!-- Success panel showing the temp password once -->
+        <div id="addEmpSuccessArea" style="display:none;text-align:center;padding:12px 0;">
+          <div style="font-size:32px;">✅</div>
+          <p style="font-weight:700;color:var(--navy);margin:8px 0 4px;">Employee Created</p>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">Login credentials — share these with the employee securely. This password is shown only once.</p>
+          <div style="background:var(--bg-light);border-radius:8px;padding:12px;text-align:left;font-size:13px;">
+            <div><b>Email:</b> <span id="addEmpResultEmail"></span></div>
+            <div><b>Temporary Password:</b> <span id="addEmpResultPassword" style="font-family:monospace;font-weight:700;"></span></div>
+            <div><b>Employee Code:</b> <span id="addEmpResultCode"></span></div>
+          </div>
+          <button onclick="closeAddEmployeeModal()" style="background:var(--navy);color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;">Done</button>
         </div>
       </div>
     </div>
@@ -1146,6 +1242,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Bug fix: নিজের employee_id store করা — approve/reject-এ approved_by সেট করার জন্য
 let myEmployeeId = null;
+let addEmpPhotoFileObj = null;
 
 // ── My Photo (self-service change) ────────────────────────
 function renderMyAvatar(fullName, photoUrl) {
@@ -1546,6 +1643,125 @@ async function loadEmployees() {
     '<td><span class="pill present">' + e.employment_status + '</span></td>' +
     '<td style="color:var(--text-muted);">' + (e.joining_date || '—') + '</td>' +
     '</tr>').join('');
+}
+
+// ── Add Employee Modal (Tier 1 & 2 only — enforced server-side by the create-employee edge function) ──
+async function openAddEmployeeModal() {
+  document.getElementById('addEmpModalBackdrop').style.display = 'flex';
+  document.getElementById('addEmpFormArea').style.display = 'flex';
+  document.getElementById('addEmpSuccessArea').style.display = 'none';
+  document.getElementById('addEmpMsg').style.display = 'none';
+  addEmpPhotoFileObj = null;
+  document.getElementById('addEmpPhotoPreview').innerHTML = 'No Photo';
+  ['addEmpName','addEmpEmail','addEmpMobile','addEmpNid','addEmpDesignation','addEmpDept','addEmpJoinDate','addEmpSalary','addEmpBankName','addEmpBankAcc']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addEmpPhotoFile').value = '';
+
+  const { data: mgrs } = await db.from('employee_master')
+    .select('employee_id, full_name, tier')
+    .eq('is_active', true)
+    .in('tier', [1, 2, 3]);
+  const sel = document.getElementById('addEmpManager');
+  sel.innerHTML = '<option value="">— None —</option>' +
+    (mgrs || []).map(m => `<option value="${m.employee_id}">${m.full_name} (Tier ${m.tier})</option>`).join('');
+}
+
+function closeAddEmployeeModal() {
+  document.getElementById('addEmpModalBackdrop').style.display = 'none';
+  loadEmployees();
+}
+
+function previewAddEmpPhoto() {
+  const file = document.getElementById('addEmpPhotoFile').files[0];
+  if (!file) { addEmpPhotoFileObj = null; return; }
+  addEmpPhotoFileObj = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('addEmpPhotoPreview').innerHTML =
+      `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitAddEmployee() {
+  const msg = document.getElementById('addEmpMsg');
+  const btn = document.getElementById('addEmpSubmitBtn');
+  const name = document.getElementById('addEmpName').value.trim();
+  const email = document.getElementById('addEmpEmail').value.trim();
+  const tier = document.getElementById('addEmpTier').value;
+
+  if (!name || !email) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Full Name and Official Email are required.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  msg.style.display = 'none';
+
+  try {
+    const { data: sessionData } = await db.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-employee`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        full_name: name,
+        official_email: email,
+        mobile_number: document.getElementById('addEmpMobile').value.trim() || null,
+        nid_number: document.getElementById('addEmpNid').value.trim() || null,
+        designation: document.getElementById('addEmpDesignation').value.trim() || null,
+        department: document.getElementById('addEmpDept').value.trim() || null,
+        tier: parseInt(tier, 10),
+        reporting_manager: document.getElementById('addEmpManager').value || null,
+        joining_date: document.getElementById('addEmpJoinDate').value || null,
+        monthly_gross_salary: document.getElementById('addEmpSalary').value || null,
+        bank_name: document.getElementById('addEmpBankName').value.trim() || null,
+        bank_account_number: document.getElementById('addEmpBankAcc').value.trim() || null,
+      }),
+    });
+
+    const result = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(result.error || 'Failed to create employee');
+    }
+
+    if (addEmpPhotoFileObj) {
+      const ext = addEmpPhotoFileObj.name.split('.').pop();
+      const path = `${result.employee_id}/photo.${ext}`;
+      const { error: upErr } = await db.storage
+        .from('employee-photos')
+        .upload(path, addEmpPhotoFileObj, { upsert: true, contentType: addEmpPhotoFileObj.type });
+
+      if (!upErr) {
+        const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+        await db.from('employee_master')
+          .update({ photo_url: pub.publicUrl })
+          .eq('employee_id', result.employee_id);
+      }
+    }
+
+    document.getElementById('addEmpFormArea').style.display = 'none';
+    document.getElementById('addEmpSuccessArea').style.display = 'block';
+    document.getElementById('addEmpResultEmail').textContent = email;
+    document.getElementById('addEmpResultPassword').textContent = result.temp_password;
+    document.getElementById('addEmpResultCode').textContent = result.employee_code;
+
+  } catch (e) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = e.message || 'Something went wrong.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Employee';
+  }
 }
 
 async function loadAttendance() {
