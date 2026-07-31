@@ -28,8 +28,9 @@
 
 ## 🟠 Medium Priority
 
-- [ ] **Report & Download Matrix largely unbuilt** (Blueprint §15.2) — the blueprint specifies 17 report categories (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) across PDF/Excel/CSV. Currently only **Attendance** (all tiers) and **Leave** (CSV only, via `leave.html`) downloads exist anywhere in the app. Tier 1 (Executive/UK Team) dashboard has just the one Attendance download section — everything else in the matrix (Payroll, KPI, Task, Meeting, Issue, Donor Audit Readiness, Audit Log, Payroll Forecast reports) is missing entirely, on all tier dashboards. `download_logs` table exists with RLS ready but nothing in the frontend writes to it yet either. Build incrementally, one report category at a time — GP Bhai to prioritize order.
+- [ ] **Report & Download Matrix largely unbuilt** (Blueprint §15.2) — the blueprint specifies 17 report categories (Attendance, Leave, Payroll Summary, Deduction Breakdown, Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log, Next-Month Payroll Forecast, etc.) across PDF/Excel/CSV. `download_logs` table exists with RLS ready but nothing in the frontend writes to it yet either. Build incrementally, one report category at a time — GP Bhai to prioritize order. Remaining: Salary History, KPI Score, Performance Ranking, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, Audit Log — none built on any tier dashboard yet.
   - [x] Attendance PDF added to Tier 1 dashboard (2026-07-31) — was CSV/Excel-only, now matches Tier 2's PDF export (print-to-PDF window). See Resolved below.
+  - [x] Payroll Summary + Deduction Breakdown reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `payroll` table, no backend changes needed. See Resolved below.
 
 - [ ] **Leave Balance auto-credit/reset not automated** (Blueprint §6.1) — 1.5 days/month CL, 14 days/year SL, 31 Dec expiry + 1 Jan fresh allocation. `leave_balance` table exists, no cron job updates it.
 
@@ -58,6 +59,11 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-07-31 — Tier 1 Payroll Summary + Deduction Breakdown downloads (feature)
+
+- [x] **Payroll Summary Report and Deduction Breakdown Report missing on Tier 1 dashboard** (Blueprint §12.9) — added a new "Download Payroll Reports" card to the Payroll Forecast section: month picker + CSV/Excel/PDF export for both report types. Reads directly from the existing `payroll` table (RLS already grants Tier 1 full read access — `Tier1_2 full access to payroll` policy — no migration needed). Follows the same download pattern as the Attendance reports (blob download for CSV/Excel, print-to-PDF popup for PDF).
+  → `dashboard-tier1.html`
 
 ### 2026-07-31 — Tier 1 Attendance PDF export (feature)
 
