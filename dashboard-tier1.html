@@ -2440,7 +2440,7 @@ async function downloadFieldVisitCompliance(fmt) {
   if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
   const { data, error } = await db.from('meetings')
     .select('title, meeting_type, organizer_id, scheduled_start, location_or_platform, field_visit_compliance_status, risk_score')
-    .not('field_visit_compliance_status', 'is', null)
+    .neq('field_visit_compliance_status', 'Not_Applicable')
     .gte('scheduled_start', from).lte('scheduled_start', to + 'T23:59:59')
     .eq('is_active', true)
     .order('scheduled_start', { ascending: false });
