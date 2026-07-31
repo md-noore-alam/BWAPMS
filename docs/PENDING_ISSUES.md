@@ -62,6 +62,18 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — CRITICAL: Dashboard "Approve" button silently rejected leave requests (bug)
+
+- [x] **GP Bhai reported "Tier 2 feels helpless"** — traced to a duplicate `approveLeave()` function definition in `dashboard-tier2.html`: an old 1-argument version (`approveLeave(id)`) and a newer 2-argument version (`approveLeave(id, approve)`) both existed. JS silently lets the later declaration win, so only the 2-arg version was ever active — but the Dashboard's "Pending Approvals" widget (the very first thing Tier 2 sees on login, per GP Bhai's screenshot) called it with just 1 argument. `approve` resolved to `undefined` → falsy → the leave request status was always set to `'Rejected'`, regardless of whether "Approve" or "Reject" was clicked. The dedicated Leave section's buttons were unaffected (already passed `true`/`false` explicitly) — only the Dashboard shortcut was broken. Fixed the widget's `onclick` handlers to pass `true`/`false` explicitly and removed the dead duplicate function pair entirely. Also swept the whole codebase (`dashboard-tier1/2/3/4.html`, `attendance.html`, `leave.html`, `tasks.html`, `index.html`, `app.js`) for other duplicate function names — none found; this was isolated to Tier 2.
+  → `dashboard-tier2.html`
+
+### 2026-08-01 — Add Employee (app-based, replacing SQL) + duplicate bell icon (feature + fix)
+
+- [x] **Add Employee UI added to Tier 1 dashboard** — GP Bhai requested employee creation move fully into the app (both Tier 1 and Tier 2), replacing manual SQL inserts. The `create-employee` Supabase Edge Function already permitted Tier 1 and Tier 2 callers server-side; only Tier 2 had the frontend modal. Replicated the modal + flow to Tier 1's Employees section. No backend change needed.
+  → `dashboard-tier1.html`
+- [x] **Duplicate bell icon removed from Tier 2 topbar** — there were two bell icons: the notification dropdown and a separate "Alerts" shortcut button that just navigated to the same section the sidebar's "Alerts" nav item already links to (complete with its own live count badge). Removed the redundant topbar button and its unused CSS.
+  → `dashboard-tier2.html`
+
 ### 2026-07-31 — Final full-blueprint re-audit: 7 more report/slip types added (feature)
 
 - [x] **GP Bhai flagged that earlier passes had missed items** — a re-read of §5.8 (Attendance Reports & Slips), §6.3 (Leave Slip Downloads), and §12.9 (Salary Slip & Payroll Reports) — not just the §15.2 summary table — surfaced 7 more report/slip types that hadn't been built yet. Added to the Tier 1 dashboard:
