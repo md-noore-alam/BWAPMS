@@ -5,31 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BWAPMS — Admin Dashboard</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy:        #0f1f3d;
-      --navy-dark:   #081630;
-      --navy-mid:    #162d52;
-      --green:       #1a7a4a;
-      --green-light: #22a05e;
-      --green-dim:   #e8f5ee;
-      --yellow:      #f59e0b;
-      --yellow-bg:   #fffbeb;
-      --red:         #dc2626;
-      --red-bg:      #fef2f2;
-      --blue:        #2563eb;
-      --blue-bg:     #eff6ff;
-      --cream:       #f5f3ee;
-      --white:       #ffffff;
-      --border:      #e2e8f0;
-      --text-main:   #1a2640;
-      --text-muted:  #64748b;
-      --text-light:  #94a3b8;
-      --sidebar-w:   240px;
-      --topbar-h:    64px;
-      --radius:      10px;
-      --shadow:      0 1px 4px rgba(0,0,0,0.08);
-      --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
+      --navy:       #0e1b33;
+      --navy-mid:   #17294a;
+      --navy-dark:  #081020;
+      --navy-deep:  #081020;
+      --green:      #146c46;
+      --green-light:#1f9d5f;
+      --green-dim:  #e6f4ec;
+      --yellow:     #b8791a;
+      --amber:      #b8791a;
+      --yellow-bg:  #fbf1e2;
+      --amber-bg:   #fbf1e2;
+      --red:        #ac2b26;
+      --red-bg:     #fbecea;
+      --blue:       #2856a3;
+      --blue-bg:    #eaf0fa;
+      --cream:      #f4f2ee;
+      --paper:      #f8f7f4;
+      --white:      #ffffff;
+      --border:     #e4e1da;
+      --text-main:  #1c2333;
+      --text-muted: #656b7a;
+      --text-light: #97998f;
+      --sidebar-w:  240px;
+      --topbar-h:   64px;
+      --radius:     11px;
+      --radius-sm:  7px;
+      --shadow:     0 1px 2px rgba(14,27,51,0.05), 0 4px 14px rgba(14,27,51,0.06);
+      --shadow-md:  0 4px 16px rgba(14,27,51,0.10);
+      --shadow-lg:  0 10px 34px rgba(14,27,51,0.16);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Consolas', monospace;
     }
     html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
 
@@ -378,6 +388,31 @@
       .sidebar-toggle-btn { display:flex; }
       .sidebar.open { transform: translateX(0) !important; }
     }
+
+    /* ══════════════ Professional redesign polish (2026-08-01) ══════════════ */
+    html, body { font-family: var(--font-body) !important; background: var(--paper) !important; -webkit-font-smoothing: antialiased; }
+    .sidebar { background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep, var(--navy-dark)) 100%) !important; box-shadow: 2px 0 20px rgba(0,0,0,0.18); }
+    .topbar { background: rgba(255,255,255,0.92) !important; backdrop-filter: saturate(180%) blur(10px); }
+    .topbar-title { font-family: var(--font-display) !important; font-weight: 600 !important; letter-spacing: 0.005em; }
+    .card-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
+    .modal-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
+    .sidebar-sys-name { font-family: var(--font-display) !important; font-weight: 700 !important; }
+    .stat-value { font-family: var(--font-display) !important; font-variant-numeric: tabular-nums; }
+    .holiday-date-day { font-family: var(--font-display) !important; }
+    .card { box-shadow: var(--shadow) !important; transition: box-shadow 0.2s; }
+    .stat-card { box-shadow: var(--shadow) !important; position: relative; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--green-light), var(--green)); }
+    .stat-card:hover { box-shadow: var(--shadow-lg, var(--shadow-md)) !important; transform: translateY(-1px); }
+    .stat-card.yellow::before { background: linear-gradient(90deg, #d7a13f, var(--amber)); }
+    .stat-card.red::before { background: linear-gradient(90deg, #c85a52, var(--red)); }
+    .stat-card.blue::before { background: linear-gradient(90deg, #4b78bf, var(--blue)); }
+    .nav-item.active { background: rgba(31,157,95,0.16) !important; border-left: 2.5px solid var(--green-light); font-weight: 600; }
+    .btn-primary { transition: background 0.15s, transform 0.1s; }
+    .btn-primary:active { transform: scale(0.98); }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--green) !important; box-shadow: 0 0 0 3px rgba(20,108,70,0.12); }
+    #loadingOverlay { background: radial-gradient(circle at 30% 20%, var(--navy-mid), var(--navy-dark)) !important; }
+    .loading-logo { font-family: var(--font-display) !important; }
+
 </style>
 </head>
 <body>
