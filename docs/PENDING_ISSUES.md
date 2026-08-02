@@ -62,6 +62,23 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Tier 2, 3, 4: professional redesign (desktop) + dedicated mobile builds
+
+- [x] **Desktop redesign extended to all tiers** — same refined GramGP navy+forest-green palette and Fraunces/Inter/JetBrains Mono typography from the Tier 1 redesign applied to `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html` via a shared `:root` template + an appended CSS "polish overrides" block (safer/faster than hand-editing each of the ~4,900/2,200/2,200-line files component-by-component; overrides win the cascade without touching original selectors). All four dashboards now look and feel like one consistent product.
+- [x] **New mobile builds for all tiers** — `dashboard-tier2-mobile.html`, `dashboard-tier3-mobile.html`, `dashboard-tier4-mobile.html`, following the same pattern as the Tier 1 mobile build: sidebar replaced with a bottom tab bar (top 3-5 daily-use sections per tier) + a slide-up "More" sheet for the rest, JS business logic reused verbatim (zero re-implementation risk), all form inputs/buttons sized ≥44px, modals as bottom sheets, tables horizontally scrollable.
+  - Tier 2 (19 sections): bottom bar = Dashboard, Attendance, Employees, Payroll, More (14 items in sheet).
+  - Tier 3 (14 sections): bottom bar = Dashboard, My Tasks, Attendance, Team, More (10 items in sheet). Preserved the GPS Check-In/Out button prominently in the topbar (was in the topbar on desktop too — field-staff daily action).
+  - Tier 4 (11 sections): bottom bar = Dashboard, **Check-In**, Tasks, Attendance, More (7 items in sheet). Promoted Check-In from a buried sidebar link to a primary bottom-nav tab, since it's Tier 4 field staff's single most frequent action.
+  - Verified for all three: every `getElementById()` call resolves to a real element, div tags balance exactly, `node --check` passes on the extracted script. Tier 3 caught and fixed a real bug in this process — three nav badges (`myTaskBadgeNav`, `teamTaskBadgeNav`, `helpBadgeNav`) are set by exact ID from existing JS, so the mobile shell had to reuse those exact IDs instead of inventing new ones, or the badges would silently never update.
+  → `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html`, `dashboard-tier2-mobile.html`, `dashboard-tier3-mobile.html`, `dashboard-tier4-mobile.html` (3 new files)
+
+**All 8 dashboard files (4 desktop + 4 mobile) now share one consistent design system.**
+
+**Follow-ups not yet done:**
+- `index.html` (login page) doesn't detect mobile and redirect to the `-mobile.html` variant automatically — currently the person has to know/bookmark the right URL per device.
+- Data-heavy tables (Employee directory, report result tables, audit logs) render as horizontally-scrollable tables on mobile rather than true stacked cards — acceptable, common mobile pattern, but could be upgraded per-section later if desired.
+- `index.html` itself (the shared login page) hasn't been redesigned/mobile-optimized — only the four post-login dashboards have.
+
 ### 2026-08-01 — Tier 1 professional redesign (desktop) + dedicated mobile build
 
 - [x] **Desktop redesign** — `dashboard-tier1.html`'s `<style>` block rewritten with a refined GramGP navy+forest-green palette (was flat/generic navy+green) and a Fraunces (serif display) + Inter (body) + JetBrains Mono (data) typography pairing. Sidebar gradient + left-accent-bar active state, stat-card top accent bars + hover lift, frosted-glass topbar, refined shadows/buttons/forms/modals throughout. All class names/IDs kept identical to the existing markup — zero JS changes needed.
