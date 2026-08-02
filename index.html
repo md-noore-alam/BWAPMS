@@ -5,25 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BWAPMS — Sign In</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy:       #0f1f3d;
-      --navy-dark:  #081630;
-      --navy-mid:   #162d52;
-      --green:      #1a7a4a;
-      --green-light:#22a05e;
-      --cream:      #f5f3ee;
-      --text-main:  #1a2640;
-      --text-muted: #5a6a80;
-      --text-light: #8fa0b8;
-      --red:        #c0392b;
-      --red-bg:     #fdf0ee;
-      --border:     #d8dfe9;
+      --navy:       #0e1b33;
+      --navy-dark:  #081020;
+      --navy-mid:   #17294a;
+      --green:      #146c46;
+      --green-light:#1f9d5f;
+      --cream:      #f4f2ee;
+      --text-main:  #1c2333;
+      --text-muted: #5c6577;
+      --text-light: #8b93a3;
+      --red:        #ac2b26;
+      --red-bg:     #fbecea;
+      --border:     #e4e1da;
       --white:      #ffffff;
-      --radius:     10px;
-      --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
+      --radius:     11px;
+      --font-display: 'Fraunces', Georgia, serif;
+      --font:       'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
     html, body { height: 100%; font-family: var(--font); background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
 
     /* ── Page layout ── */
     .page-wrap { display: flex; min-height: 100vh; }
@@ -80,8 +83,9 @@
       margin-bottom: 28px; width: fit-content;
     }
     .brand-title {
-      font-size: 64px; font-weight: 800;
-      color: #fff; letter-spacing: -0.03em; line-height: 1;
+      font-family: var(--font-display);
+      font-size: 62px; font-weight: 700;
+      color: #fff; letter-spacing: -0.01em; line-height: 1;
       margin-bottom: 18px;
     }
     .brand-sub {
@@ -125,8 +129,9 @@
       color: var(--green); margin-bottom: 10px;
     }
     .form-title {
-      font-size: 26px; font-weight: 700;
-      color: var(--navy); letter-spacing: -0.02em;
+      font-family: var(--font-display);
+      font-size: 27px; font-weight: 600;
+      color: var(--navy); letter-spacing: -0.01em;
       margin-bottom: 8px;
     }
     .form-hint {
@@ -397,6 +402,13 @@ async function recordLoginAttempt(email, status) {
   } catch (e) { /* never block login flow over logging failure */ }
 }
 
+// A phone-sized viewport gets the dedicated mobile-optimized dashboard build;
+// tablets/desktops get the full dashboard. Re-checked on every login rather
+// than cached, so switching devices always routes correctly.
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
 async function redirectByTier() {
   const { data, error } = await db.rpc('get_my_tier');
   if (error || data === null) {
@@ -405,10 +417,11 @@ async function redirectByTier() {
     setLoading(false); return;
   }
   const tier = parseInt(data);
-  if      (tier === 1) window.location.href = 'dashboard-tier1.html';
-  else if (tier === 2) window.location.href = 'dashboard-tier2.html';
-  else if (tier === 3) window.location.href = 'dashboard-tier3.html';
-  else if (tier === 4) window.location.href = 'dashboard-tier4.html';
+  const suffix = isMobileViewport() ? '-mobile.html' : '.html';
+  if      (tier === 1) window.location.href = 'dashboard-tier1' + suffix;
+  else if (tier === 2) window.location.href = 'dashboard-tier2' + suffix;
+  else if (tier === 3) window.location.href = 'dashboard-tier3' + suffix;
+  else if (tier === 4) window.location.href = 'dashboard-tier4' + suffix;
   else { await db.auth.signOut(); showError('অপরিচিত Tier। Administrator-কে জানান।'); setLoading(false); }
 }
 
