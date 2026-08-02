@@ -62,6 +62,15 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Login page: mobile-aware routing + design refresh
+
+- [x] **`index.html` now routes phone-sized screens to the `-mobile.html` dashboards automatically.** `redirectByTier()` checks `window.matchMedia('(max-width: 768px)')` and appends `-mobile.html` instead of `.html` for the chosen tier's dashboard. Re-checked on every login (not cached), so it stays correct if the same person logs in from a phone one day and a laptop the next.
+- [x] Applied the Fraunces/Inter typography from the dashboard redesign to the brand title and form title, so the login page now visually matches the post-login experience. The page's existing responsive layout (brand panel stacks above the form on narrow screens) was already reasonable and didn't need a separate mobile file the way the data-dense dashboards did.
+  → `index.html`
+
+**Remaining follow-up:**
+- Data-heavy tables (Employee directory, report result tables, audit logs) render as horizontally-scrollable tables on mobile rather than true stacked cards — acceptable, common mobile pattern, but could be upgraded per-section later if desired.
+
 ### 2026-08-01 — Tier 2, 3, 4: professional redesign (desktop) + dedicated mobile builds
 
 - [x] **Desktop redesign extended to all tiers** — same refined GramGP navy+forest-green palette and Fraunces/Inter/JetBrains Mono typography from the Tier 1 redesign applied to `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html` via a shared `:root` template + an appended CSS "polish overrides" block (safer/faster than hand-editing each of the ~4,900/2,200/2,200-line files component-by-component; overrides win the cascade without touching original selectors). All four dashboards now look and feel like one consistent product.
@@ -75,9 +84,6 @@
 **All 8 dashboard files (4 desktop + 4 mobile) now share one consistent design system.**
 
 **Follow-ups not yet done:**
-- `index.html` (login page) doesn't detect mobile and redirect to the `-mobile.html` variant automatically — currently the person has to know/bookmark the right URL per device.
-- Data-heavy tables (Employee directory, report result tables, audit logs) render as horizontally-scrollable tables on mobile rather than true stacked cards — acceptable, common mobile pattern, but could be upgraded per-section later if desired.
-- `index.html` itself (the shared login page) hasn't been redesigned/mobile-optimized — only the four post-login dashboards have.
 
 ### 2026-08-01 — Tier 1 professional redesign (desktop) + dedicated mobile build
 
