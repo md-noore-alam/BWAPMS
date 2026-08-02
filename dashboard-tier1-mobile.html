@@ -1,0 +1,2996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0e1b33" />
+  <title>BWAPMS Mobile — Executive Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --navy:       #0e1b33;
+      --navy-mid:   #17294a;
+      --navy-deep:  #081020;
+      --green:      #146c46;
+      --green-light:#1f9d5f;
+      --green-dim:  #e6f4ec;
+      --amber:      #b8791a;
+      --amber-bg:   #fbf1e2;
+      --red:        #ac2b26;
+      --red-bg:     #fbecea;
+      --blue:       #2856a3;
+      --blue-bg:    #eaf0fa;
+      --purple:     #6b4a9e;
+      --purple-bg:  #f2eef8;
+      --cream:      #f4f2ee;
+      --paper:      #f8f7f4;
+      --white:      #ffffff;
+      --border:     #e4e1da;
+      --text-main:  #1c2333;
+      --text-muted: #656b7a;
+      --text-light: #97998f;
+      --sidebar-w:  0px;
+      --topbar-h:   58px;
+      --bottomnav-h: 62px;
+      --radius:     13px;
+      --radius-sm:  9px;
+      --shadow:     0 1px 2px rgba(14,27,51,0.05), 0 4px 14px rgba(14,27,51,0.06);
+      --shadow-lg:  0 10px 34px rgba(14,27,51,0.16);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+    }
+    html, body { height: 100%; font-family: var(--font-body); background: var(--paper); color: var(--text-main); -webkit-font-smoothing: antialiased; font-size: 15px; overscroll-behavior-y: none; }
+    ::selection { background: var(--green-dim); color: var(--navy); }
+    button, input, select, textarea { font-family: inherit; }
+    a { color: inherit; }
+
+    /* ── Sidebar: hidden entirely on mobile — bottom nav replaces it ── */
+    .sidebar { display: none !important; }
+    .sidebar-overlay { display: none !important; }
+
+    /* ── Mobile Top App Bar ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
+      background: var(--navy); color: #fff; display: flex; align-items: center;
+      padding: 0 14px; justify-content: space-between; z-index: 90;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      padding-top: env(safe-area-inset-top);
+      height: calc(var(--topbar-h) + env(safe-area-inset-top));
+    }
+    .sidebar-toggle-btn { display: none; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .topbar-title { font-family: var(--font-display); font-size: 16.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .topbar-tier { display: none; } /* shown instead as a compact chip in the More sheet header */
+    .topbar-date { display: none; } /* saved for the dashboard greeting instead, see .mtopbar-date */
+
+    /* ── Main / Content ── */
+    .main { margin-left: 0; padding-top: calc(var(--topbar-h) + env(safe-area-inset-top)); padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 10px); min-height: 100vh; }
+    .content { padding: 14px 14px 6px; max-width: 720px; margin: 0 auto; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 24px; padding: 0 2px; }
+    .section-title:first-child { margin-top: 4px; }
+
+    /* ── Stat cards: 2-up grid on mobile ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 15px 16px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--green-light), var(--green)); }
+    .stat-icon { display: none; }
+    .stat-label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .stat-value { font-family: var(--font-display); font-size: 27px; font-weight: 700; color: var(--navy); line-height: 1; font-variant-numeric: tabular-nums; }
+    .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 5px; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--amber); }
+    .stat-card.yellow::before { background: linear-gradient(90deg, #d7a13f, var(--amber)); }
+    .stat-card.red .stat-value { color: var(--red); }
+    .stat-card.red::before { background: linear-gradient(90deg, #c85a52, var(--red)); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.blue::before { background: linear-gradient(90deg, #4b78bf, var(--blue)); }
+
+    /* ── Card ── */
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .card-header { padding: 13px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .card-title { font-family: var(--font-display); font-size: 14.5px; font-weight: 600; color: var(--navy); }
+    .card-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+    .badge-red    { background: var(--red-bg);    color: var(--red); }
+    .badge-yellow { background: var(--amber-bg);  color: var(--amber); }
+    .badge-green  { background: var(--green-dim); color: var(--green); }
+    .badge-gray   { background: var(--cream);     color: var(--text-muted); }
+    .badge-blue   { background: var(--blue-bg);   color: var(--blue); }
+    .card-body { padding: 15px; }
+
+    /* Stack everything on mobile — no side-by-side columns */
+    .two-col, .three-col { display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── Red Alert ── */
+    .red-alert-item { padding: 13px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 11px; background: #fff8f8; }
+    .red-alert-item:last-child { border-bottom: none; }
+    .red-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 5px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    .alert-info { flex: 1; min-width: 0; }
+    .alert-title { font-size: 12.5px; font-weight: 700; color: var(--red); }
+    .alert-desc  { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+    .alert-time  { font-size: 10.5px; color: var(--text-light); margin-top: 4px; }
+
+    /* ── Tables → horizontally-scrollable mobile cards with sticky first column ── */
+    .emp-table, .forecast-table, .audit-table, table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 540px; }
+    .emp-table th, .forecast-table th, table th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 9px 12px; background: var(--cream); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; }
+    .emp-table td, .forecast-table td, table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+    .emp-table tr:last-child td, .forecast-table tr:last-child td { border-bottom: none; }
+    .emp-table th:first-child, .emp-table td:first-child, table th:first-child, table td:first-child {
+      position: sticky; left: 0; background: var(--white); box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+    }
+    .emp-table th:first-child, table th:first-child { background: var(--cream); }
+
+    /* ── KPI bar ── */
+    .kpi-item { margin-bottom: 13px; }
+    .kpi-item:last-child { margin-bottom: 0; }
+    .kpi-top { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
+    .kpi-name  { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .kpi-score { font-size: 12.5px; font-weight: 800; color: var(--navy); font-family: var(--font-mono); }
+    .kpi-bar-bg { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .kpi-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s; }
+    .kpi-ex   { background: var(--green); }
+    .kpi-good { background: var(--blue); }
+    .kpi-mid  { background: var(--amber); }
+    .kpi-low  { background: var(--red); }
+
+    /* ── Pill ── */
+    .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .pill.present { background: var(--green-dim); color: var(--green); }
+    .pill.late    { background: var(--amber-bg); color: var(--amber); }
+    .pill.absent  { background: var(--red-bg);    color: var(--red); }
+    .pill.pending { background: var(--cream);     color: var(--text-muted); }
+    .pill.tier1   { background: var(--amber-bg); color: var(--amber); }
+    .pill.tier2   { background: var(--purple-bg); color: var(--purple); }
+    .pill.tier4   { background: var(--blue-bg);   color: var(--blue); }
+
+    /* ── Approval ── */
+    .approval-item { padding: 13px 15px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .approval-item:last-child { border-bottom: none; }
+    .approval-info { flex: 1; min-width: 140px; }
+    .approval-name { font-size: 13px; font-weight: 600; }
+    .approval-type { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .approval-actions { display: flex; gap: 8px; width: 100%; }
+    .btn-approve { flex: 1; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; border: none; background: var(--green); color: #fff; min-height: 40px; }
+    .btn-reject  { flex: 1; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: var(--red-bg); color: var(--red); border: 1px solid rgba(172,43,38,0.2); min-height: 40px; }
+
+    /* ── Payroll forecast table ── */
+    .projected-tag { font-size: 9.5px; background: var(--amber-bg); color: var(--amber); padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 5px; display: inline-block; }
+
+    /* ── System health ── */
+    .health-item { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .health-item:last-child { border-bottom: none; }
+    .health-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .health-dot.ok  { background: var(--green); }
+    .health-dot.warn { background: var(--amber); }
+    .health-dot.err  { background: var(--red); }
+    .health-name  { font-size: 12.5px; font-weight: 600; color: var(--text-main); flex: 1; }
+    .health-value { font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    /* ── Loading ── */
+    #loadingOverlay { position: fixed; inset: 0; background: radial-gradient(circle at 30% 20%, var(--navy-mid), var(--navy-deep)); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 14px; }
+    .loading-logo    { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+    .loading-spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--green-light); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-text    { font-size: 12.5px; color: rgba(255,255,255,0.5); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { padding: 26px 16px; text-align: center; color: var(--text-light); font-size: 12.5px; }
+
+    /* ── Notification bell + dropdown → full-width sheet from top on mobile ── */
+    .notif-bell { position: relative; cursor: pointer; padding: 8px; border-radius: 8px; color: #fff; }
+    .notif-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--navy); display: none; }
+    .notif-dot.show { display: block; }
+    .notif-dropdown {
+      display: none; position: fixed; top: calc(var(--topbar-h) + env(safe-area-inset-top)); left: 10px; right: 10px;
+      width: auto; max-width: none; background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow-lg); z-index: 200;
+    }
+    .notif-dropdown.open { display: block; }
+    .notif-header { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .notif-header span { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .notif-header button { font-size: 11.5px; color: var(--green); background: none; border: none; cursor: pointer; font-weight: 600; padding: 6px; }
+    .notif-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item.unread { background: var(--blue-bg); }
+    .notif-item-title { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .notif-item-msg { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .notif-time { font-size: 10.5px; color: var(--text-light); margin-top: 3px; }
+    .notif-empty { padding: 24px; text-align: center; color: var(--text-light); font-size: 13px; }
+    .notif-list-scroll { max-height: 50vh; overflow-y: auto; }
+
+    /* ── Form fields — big touch targets ── */
+    .form-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 13px; border: 1.5px solid var(--border); border-radius: 9px; font-size: 15px; font-family: inherit; outline: none; min-height: 46px; }
+    .form-textarea { min-height: 90px; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(20,108,70,0.12); }
+    .btn-primary { padding: 13px 18px; background: var(--green); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; min-height: 46px; width: 100%; }
+    .btn-primary:active { background: var(--green-light); }
+    .btn-secondary { padding: 13px 18px; background: var(--cream); color: var(--text-main); border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; min-height: 46px; width: 100%; }
+
+    /* ── Tab buttons ── */
+    .tab-btn { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; min-height: 42px; }
+    .tab-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* ── Modal → full-screen sheet on mobile ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(8,16,32,0.55); z-index: 1000; align-items: flex-end; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--white); border-radius: 18px 18px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom));
+      width: 100%; max-width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: var(--shadow-lg);
+    }
+    .modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; color: var(--navy); }
+    #addEmpModalBackdrop { align-items: flex-end !important; }
+    #addEmpModalBackdrop > div { border-radius: 18px 18px 0 0 !important; width: 100% !important; max-width: 100% !important; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)) !important; }
+    #addEmpModalBackdrop [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+    /* ── Announcement / Holiday / Rules list items ── */
+    .ann-item, .holiday-item, .rule-card-item { padding: 13px 15px; border-bottom: 1px solid var(--border); }
+    .ann-item { display: flex; gap: 11px; align-items: flex-start; }
+    .ann-item:last-child, .holiday-item:last-child, .rule-card-item:last-child { border-bottom: none; }
+    .ann-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; background: var(--cream); }
+    .ann-title { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .ann-body { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+    .ann-meta { font-size: 10.5px; color: var(--text-light); margin-top: 6px; }
+    .holiday-item { display: flex; justify-content: space-between; align-items: center; }
+    .holiday-date-box { width: 42px; height: 42px; border-radius: 8px; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 11px; }
+    .holiday-date-day { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--navy); line-height: 1; }
+    .holiday-date-mon { font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .holiday-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .holiday-type { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .rule-card-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .rule-card-cat { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--blue-bg); color: var(--blue); margin-bottom: 6px; }
+    .rule-card-body { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .lang-toggle { display: flex; gap: 6px; margin-bottom: 15px; }
+    .lang-toggle button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); min-height: 40px; }
+    .lang-toggle button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .btn-icon-sm { padding: 7px 11px; border: 1px solid var(--border); border-radius: 7px; font-size: 11.5px; cursor: pointer; background: var(--white); min-height: 36px; }
+
+    /* ── Report download cards: buttons stack full-width on mobile ── */
+    .content div[style*="display:flex; gap:14px"] { flex-direction: column !important; align-items: stretch !important; }
+    .content div[style*="display:flex; gap:8px"] { flex-wrap: wrap; }
+    .content button[onclick*="download"] { flex: 1 1 auto; min-height: 42px; }
+
+    /* ══════════════════════════════════════════════════
+       BOTTOM TAB BAR + "MORE" SHEET (replaces the sidebar)
+       ══════════════════════════════════════════════════ */
+    .bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+      background: var(--white); border-top: 1px solid var(--border);
+      display: flex; padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 16px rgba(14,27,51,0.08);
+    }
+    .bn-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 9px 2px 8px; color: var(--text-muted); cursor: pointer; position: relative;
+      min-height: var(--bottomnav-h);
+    }
+    .bn-item svg { flex-shrink: 0; }
+    .bn-item span { font-size: 10px; font-weight: 600; }
+    .bn-item.active { color: var(--green); }
+    .bn-item.active::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 2.5px; background: var(--green); border-radius: 0 0 3px 3px; }
+    .bn-dot { position: absolute; top: 5px; right: 22%; width: 8px; height: 8px; border-radius: 50%; background: var(--red); border: 2px solid var(--white); display: none; }
+    .bn-dot.show { display: block; }
+
+    .more-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(8,16,32,0.5); z-index: 400; }
+    .more-sheet-overlay.open { display: block; }
+    .more-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 401;
+      background: var(--navy); border-radius: 20px 20px 0 0;
+      max-height: 82vh; overflow-y: auto;
+      padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+      transform: translateY(100%); transition: transform 0.25s ease;
+    }
+    .more-sheet-overlay.open .more-sheet { transform: translateY(0); }
+    .more-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.25); border-radius: 3px; margin: 10px auto 14px; }
+    .more-sheet-user { display: flex; align-items: center; gap: 12px; padding: 6px 4px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
+    .more-sheet-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-light), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; overflow: hidden; flex-shrink: 0; }
+    .more-sheet-uname { font-size: 14px; font-weight: 600; color: #fff; }
+    .more-sheet-utier { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .more-tile {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+      background: rgba(255,255,255,0.06); border-radius: 13px; padding: 16px 8px; color: rgba(255,255,255,0.85);
+      cursor: pointer; text-align: center; position: relative; min-height: 78px;
+    }
+    .more-tile:active { background: rgba(255,255,255,0.12); }
+    .more-tile span { font-size: 11px; font-weight: 600; line-height: 1.25; }
+    .more-tile .more-badge { position: absolute; top: 6px; right: 8px; background: var(--red); color: #fff; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+    .more-sheet-logout { margin-top: 18px; width: 100%; padding: 13px; background: rgba(172,43,38,0.15); color: #f5b8b3; border: 1px solid rgba(172,43,38,0.3); border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+
+    @media (min-width: 700px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="loading-logo">BWAPMS</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading Executive Dashboard...</div>
+</div>
+
+<!-- Mobile Top App Bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+  </div>
+  <div class="topbar-right" style="display:flex;align-items:center;gap:6px;">
+    <div class="topbar-date" id="topbarDate"></div>
+    <div class="notif-bell" onclick="toggleNotif()" id="notifBellWrap">
+      <svg width="19" height="19" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="notif-dot" id="notifDot"></div>
+      <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-header"><span>Notifications</span><button onclick="markAllRead(event)">Mark all read</button></div>
+        <div class="notif-list-scroll" id="notifList"><div class="notif-empty">No notifications</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Tab Bar (replaces the desktop sidebar) -->
+<nav class="bottom-nav">
+  <div class="bn-item active" id="bn-dashboard" onclick="showMobileSection('dashboard', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>Dashboard</span>
+  </div>
+  <div class="bn-item" id="bn-alerts" onclick="showMobileSection('alerts', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <span>Alerts</span>
+    <div class="bn-dot" id="bnAlertDot"></div>
+  </div>
+  <div class="bn-item" id="bn-approvals" onclick="showMobileSection('approvals', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>Approvals</span>
+    <div class="bn-dot" id="bnApprovalDot"></div>
+  </div>
+  <div class="bn-item" id="bn-employees" onclick="showMobileSection('employees', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <span>Employees</span>
+  </div>
+  <div class="bn-item" id="bn-more" onclick="openMoreSheet()">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    <span>More</span>
+  </div>
+</nav>
+
+<!-- "More" full-screen sheet: everything the desktop sidebar had, minus the 4 items already on the bottom bar -->
+<div class="more-sheet-overlay" id="moreSheetOverlay" onclick="if(event.target===this) closeMoreSheet()">
+  <div class="more-sheet">
+    <div class="more-sheet-handle"></div>
+    <div class="more-sheet-user">
+      <div class="more-sheet-avatar" id="sidebarAvatar" onclick="triggerChangeMyPhoto()" style="cursor:pointer;">UK</div>
+      <input type="file" id="myPhotoFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleMyPhotoChange(event)" />
+      <div>
+        <div class="more-sheet-uname" id="sidebarName">UK Team (Shared)</div>
+        <div class="more-sheet-utier">Tier 1 — Super Admin</div>
+      </div>
+    </div>
+    <div class="more-grid">
+      <div class="more-tile" onclick="showMobileSection('attendance', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Attendance</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('kpi', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span>KPI</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('payroll', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 012.5-2.5h1a2.5 2.5 0 010 5h-2a2.5 2.5 0 000 5h1.5a2.5 2.5 0 002.5-2.5"/></svg>
+        <span>Payroll</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('reports', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>More Reports</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('audit', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        <span>Audit Log</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('system', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M4.93 4.93a10 10 0 000 14.14"/></svg>
+        <span>System Health</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('announcements', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
+        <span>Announcements</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('holidays', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Holidays</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('rules', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+        <span>Rules</span>
+        <span class="more-badge" id="rulesBadge" style="display:none;">0</span>
+      </div>
+    </div>
+    <button class="more-sheet-logout" onclick="handleLogout()">Log Out</button>
+  </div>
+</div>
+<span id="redAlertCount" style="display:none;">0</span>
+<span id="approvalCount" style="display:none;">0</span>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard">
+      <p class="section-title">Organisation Overview — Today</p>
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Total Employees</div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-sub">active (excl. Tier 1)</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Present Today</div>
+          <div class="stat-value" id="statPresent">—</div>
+          <div class="stat-sub">checked in</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Late Today</div>
+          <div class="stat-value" id="statLate">—</div>
+          <div class="stat-sub">after 10:10 AM</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Red Alerts</div>
+          <div class="stat-value" id="statRedAlerts">—</div>
+          <div class="stat-sub">unresolved</div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top:22px;">
+
+        <!-- Red Alerts -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔴 Red Alerts</div>
+            <span class="card-badge badge-red" id="redBadge">0</span>
+          </div>
+          <div id="redAlertList"><div class="empty-state">Loading...</div></div>
+        </div>
+
+        <!-- Pending Tier 2 approvals -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⏳ Tier 2 Pending Approvals</div>
+            <span class="card-badge badge-yellow" id="t2AppBadge">0 pending</span>
+          </div>
+          <div id="tier2ApprovalList"><div class="empty-state">Loading...</div></div>
+        </div>
+
+      </div>
+
+      <!-- KPI Overview -->
+      <p class="section-title" style="margin-top:24px;">KPI Overview — All Staff</p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Performance Scores</div>
+          <span class="card-badge badge-gray">Latest Quarter</span>
+        </div>
+        <div class="card-body" id="kpiOverview"><div class="empty-state">Loading...</div></div>
+      </div>
+
+      <!-- Payroll Forecast -->
+      <p class="section-title" style="margin-top:24px;">Next Month Payroll Forecast <span class="projected-tag">PROJECTED</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Payroll Estimate</div>
+          <span class="card-badge badge-yellow">Non-binding forecast</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="forecast-table">
+            <thead><tr><th>Employee</th><th>Gross Salary</th><th>Est. Late Deduction</th><th>Est. Net</th></tr></thead>
+            <tbody id="payrollForecastBody"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System Health -->
+      <p class="section-title" style="margin-top:24px;">System Health</p>
+      <div class="three-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Database Status</div></div>
+          <div class="card-body">
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Supabase Connection</div><div class="health-value" id="dbStatus">Checking...</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">RLS Policies</div><div class="health-value">Active</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Auth Service</div><div class="health-value">Online</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Data Summary</div></div>
+          <div class="card-body">
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Active Employees</div><div class="health-value" id="healthEmp">—</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Attendance Records (today)</div><div class="health-value" id="healthAtt">—</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Whitelisted Locations</div><div class="health-value" id="healthLoc">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Alerts Summary</div></div>
+          <div class="card-body">
+            <div class="health-item"><div class="health-dot err" id="redDot"></div><div class="health-name">Red Alerts (open)</div><div class="health-value" id="healthRed">—</div></div>
+            <div class="health-item"><div class="health-dot warn"></div><div class="health-name">Yellow Alerts (open)</div><div class="health-value" id="healthYellow">—</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">System Status</div><div class="health-value">Operational</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RED ALERTS -->
+    <div id="sec-alerts" style="display:none;">
+      <p class="section-title">Red Alerts — Unresolved</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔴 High Risk Events (Score 8–10)</div><span class="card-badge badge-red" id="fullRedBadge">—</span></div>
+        <div id="fullRedAlertList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- APPROVALS -->
+    <div id="sec-approvals" style="display:none;">
+      <p class="section-title">Tier 2 Approvals — Country Head (BD)</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Leave & Attendance Requests from Tier 2</div><span class="card-badge badge-yellow" id="fullAppBadge">—</span></div>
+        <div id="fullTier2ApprovalList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div id="sec-employees" style="display:none;">
+      <p class="section-title">All Employees</p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Organisation Directory</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="card-badge badge-gray" id="empCountBadge">—</span>
+            <button onclick="openAddEmployeeModal()" style="background:var(--green,#1a7f4e);color:#fff;border:none;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Employee</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="emp-table">
+            <thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Tier</th><th>Email</th><th>Status</th><th>Joined</th></tr></thead>
+            <tbody id="empTableBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Add Employee Modal (Blueprint: employee creation must go through the app, not SQL — Tier 1 & 2 only) ── -->
+    <div id="addEmpModalBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:24px;width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="margin:0;font-size:17px;color:var(--navy);">Add New Employee</h3>
+          <button onclick="closeAddEmployeeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+
+        <div id="addEmpFormArea" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:4px;">
+            <div id="addEmpPhotoPreview" style="width:72px;height:72px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted);overflow:hidden;">No Photo</div>
+            <input type="file" id="addEmpPhotoFile" accept="image/png,image/jpeg,image/webp" onchange="previewAddEmpPhoto()" style="font-size:12px;" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Full Name *</label>
+              <input id="addEmpName" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Official Email *</label>
+              <input id="addEmpEmail" type="email" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Mobile Number</label>
+              <input id="addEmpMobile" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">NID Number</label>
+              <input id="addEmpNid" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Designation</label>
+              <input id="addEmpDesignation" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Department</label>
+              <input id="addEmpDept" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Tier *</label>
+              <select id="addEmpTier" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                <option value="1">Tier 1 — UK Team / Super Admin</option>
+                <option value="2" selected>Tier 2 — Country Head</option>
+                <option value="3">Tier 3 — Senior Staff</option>
+                <option value="4">Tier 4 — Staff</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Reporting Manager</label>
+              <select id="addEmpManager" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"><option value="">— None —</option></select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Joining Date</label>
+              <input id="addEmpJoinDate" type="date" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Monthly Gross Salary</label>
+              <input id="addEmpSalary" type="number" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Bank Name</label>
+              <input id="addEmpBankName" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);">Bank Account No.</label>
+              <input id="addEmpBankAcc" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;" />
+            </div>
+          </div>
+
+          <div id="addEmpMsg" style="font-size:13px;display:none;"></div>
+
+          <button onclick="submitAddEmployee()" id="addEmpSubmitBtn" style="background:var(--green,#1a7f4e);color:#fff;border:none;padding:10px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;">Create Employee</button>
+        </div>
+
+        <!-- Success panel showing the temp password once -->
+        <div id="addEmpSuccessArea" style="display:none;text-align:center;padding:12px 0;">
+          <div style="font-size:32px;">✅</div>
+          <p style="font-weight:700;color:var(--navy);margin:8px 0 4px;">Employee Created</p>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">Login credentials — share these with the employee securely. This password is shown only once.</p>
+          <div style="background:var(--bg-light);border-radius:8px;padding:12px;text-align:left;font-size:13px;">
+            <div><b>Email:</b> <span id="addEmpResultEmail"></span></div>
+            <div><b>Temporary Password:</b> <span id="addEmpResultPassword" style="font-family:monospace;font-weight:700;"></span></div>
+            <div><b>Employee Code:</b> <span id="addEmpResultCode"></span></div>
+          </div>
+          <button onclick="closeAddEmployeeModal()" style="background:var(--navy);color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="sec-attendance" style="display:none;">
+      <p class="section-title">Attendance Overview — Today</p>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><div class="card-title">All Staff Attendance</div><span class="card-badge badge-green" id="attDateBadge">—</span></div>
+        <div style="overflow-x:auto;">
+          <table class="emp-table">
+            <thead><tr><th>Employee</th><th>Tier</th><th>Status</th><th>Check-In</th><th>Check-Out</th><th>Minutes Late</th></tr></thead>
+            <tbody id="fullAttBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="section-title">Download Attendance Reports</p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Export — All Employees / Individual, Any Date Range</div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlAttEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">সব Employee (All)</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Date Mode</label>
+              <select id="dlAttMode" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" onchange="toggleDlAttRange()">
+                <option value="today">আজকের তারিখ (Current Date)</option>
+                <option value="custom" selected>Custom Range</option>
+              </select>
+            </div>
+            <div id="dlAttRangeRow" style="display:flex; gap:10px;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+                <input type="date" id="dlAttFrom" min="2025-01-01" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+                <input type="date" id="dlAttTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+              </div>
+            </div>
+            <button class="btn-primary" onclick="downloadAdminAttendance('csv')">⬇ CSV</button>
+            <button class="btn-secondary" onclick="downloadAdminAttendance('excel')">⬇ Excel</button>
+            <button class="btn-secondary" onclick="downloadAdminAttendance('pdf')">⬇ PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">More Attendance Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §5.8</span></p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Daily Attendance Slip</div><span class="card-badge badge-gray">Per Day, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlSlipEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Date</label>
+              <input type="date" id="dlSlipDate" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <button class="btn-primary" onclick="downloadDailyAttendanceSlip()">⬇ PDF Slip</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Yearly Attendance Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year</label>
+              <input type="number" id="dlYearAtt" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadYearlyAttendanceSummary('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadYearlyAttendanceSummary('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadYearlyAttendanceSummary('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Late Attendance Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlLateFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlLateTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLateReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLateReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLateReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Absentee Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlAbsFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlAbsTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadAbsenteeReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadAbsenteeReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadAbsenteeReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Field Visit Compliance Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlFvFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlFvTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadFieldVisitCompliance('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadFieldVisitCompliance('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadFieldVisitCompliance('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div id="sec-kpi" style="display:none;">
+      <p class="section-title">KPI & Performance — All Staff</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Performance Scores</div><span class="card-badge badge-gray">Latest</span></div>
+        <div class="card-body" id="kpiFull"><div class="empty-state">Loading...</div></div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">Download KPI Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §15.2</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">KPI Score &amp; Performance Ranking — By Period</div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Period Type</label>
+              <select id="dlKpiPeriodType" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;">
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Period Start</label>
+              <input type="date" id="dlKpiFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Period End</label>
+              <input type="date" id="dlKpiTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">KPI Score Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadKPIReport('kpi','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadKPIReport('kpi','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadKPIReport('kpi','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Performance Ranking Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadKPIReport('ranking','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadKPIReport('ranking','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadKPIReport('ranking','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- PAYROLL -->
+    <div id="sec-payroll" style="display:none;">
+      <p class="section-title">Payroll Forecast <span class="projected-tag">PROJECTED — NON-BINDING</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Next Month Estimate</div>
+          <button class="btn-secondary" onclick="downloadPayrollForecastPDF()" style="font-size:12px;">⬇ Export PDF</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="forecast-table">
+            <thead><tr><th>Employee</th><th>Gross</th><th>Late Days (this month)</th><th>Est. Late Deduction</th><th>Est. Net</th></tr></thead>
+            <tbody id="fullForecastBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">Download Payroll Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §12.9</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Payroll Summary &amp; Deduction Breakdown — Any Processed Month</div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Month</label>
+              <input type="month" id="dlPayMonth" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Payroll Summary Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadPayrollReport('summary','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('summary','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('summary','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Deduction Breakdown Report</label>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary" onclick="downloadPayrollReport('deduction','csv')">⬇ CSV</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('deduction','excel')">⬇ Excel</button>
+                <button class="btn-secondary" onclick="downloadPayrollReport('deduction','pdf')">⬇ PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Individual Salary Slip</div><span class="card-badge badge-gray">Per Month, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlSlipEmployeePay" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Month</label>
+              <input type="month" id="dlSlipMonth" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <button class="btn-primary" onclick="downloadSalarySlip()">⬇ PDF Slip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- AUDIT -->
+    <div id="sec-audit" style="display:none;">
+      <p class="section-title">Audit Log</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Recent System Events</div><span class="card-badge badge-gray">Last 50</span></div>
+        <div style="overflow-x:auto;">
+          <table class="emp-table">
+            <thead><tr><th>Time</th><th>Action</th><th>Module</th><th>Risk Score</th><th>Risk Level</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM -->
+    <div id="sec-system" style="display:none;">
+      <p class="section-title">System Health</p>
+      <div class="three-col">
+        <div class="card"><div class="card-header"><div class="card-title">Database</div></div>
+          <div class="card-body">
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Supabase</div><div class="health-value">Connected</div></div>
+            <div class="health-item"><div class="health-dot ok"></div><div class="health-name">RLS</div><div class="health-value">Enabled</div></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">Records</div></div>
+          <div class="card-body" id="sysRecords"><div class="empty-state">Loading...</div></div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">Alerts</div></div>
+          <div class="card-body" id="sysAlerts"><div class="empty-state">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS (manage) -->
+    <div id="sec-announcements" style="display:none;">
+      <p class="section-title">Announcements & Notices</p>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn-primary" onclick="openAnnouncementModal()">+ New Announcement</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Announcements</div><span class="card-badge badge-gray" id="annCountBadge">—</span></div>
+        <div id="annList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- HOLIDAY CALENDAR (manage) -->
+    <div id="sec-holidays" style="display:none;">
+      <p class="section-title">Holiday Calendar — <span id="holidayYearLabel"></span></p>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn-primary" onclick="openHolidayModal()">+ Add Holiday</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Holidays</div><span class="card-badge badge-gray" id="holidayCountBadge">—</span></div>
+        <div id="holidayList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- RULES & REGULATIONS (manage) -->
+    <div id="sec-rules" style="display:none;">
+      <p class="section-title">Rules & Regulations</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="lang-toggle">
+          <button id="ruleLangBn" class="active" onclick="setRuleLang('bn')">বাংলা</button>
+          <button id="ruleLangEn" onclick="setRuleLang('en')">English</button>
+        </div>
+        <button class="btn-primary" onclick="openRuleModal()">+ New Rule</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Rules</div><span class="card-badge badge-gray" id="rulesCountBadge">—</span></div>
+        <div id="rulesList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- MORE REPORTS -->
+    <div id="sec-reports" style="display:none;">
+      <p class="section-title">More Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §15.2</span></p>
+
+      <p class="section-title" style="margin-top:0;">Leave Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §6.3</span></p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Leave Balance Slip</div><span class="card-badge badge-gray">Current Snapshot, PDF</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="dlLeaveBalEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="">— নির্বাচন করুন —</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="downloadLeaveBalanceSlip()">⬇ PDF Slip</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Monthly Leave Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlLeaveMonFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlLeaveMonTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLeaveSummary('monthly','csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('monthly','excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('monthly','pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Yearly Leave Summary</div></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year</label>
+              <input type="number" id="dlLeaveYear" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadLeaveSummary('yearly','csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('yearly','excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadLeaveSummary('yearly','pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">Other Reports</p>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Salary History Report</div><span class="card-badge badge-gray">Yearly / All-time</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Year (leave blank for all-time)</label>
+              <input type="number" id="dlSalYear" placeholder="e.g. 2026" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; width:140px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadSalaryHistory('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadSalaryHistory('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadSalaryHistory('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Task Report</div><span class="card-badge badge-gray">Daily / Weekly / Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlTaskFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlTaskTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadTaskReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadTaskReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadTaskReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Meeting & Action Items Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlMeetFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlMeetTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadMeetingReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadMeetingReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadMeetingReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Issue Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlIssueFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlIssueTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadIssueReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadIssueReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadIssueReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Monthly Donor Audit Readiness Report</div><span class="card-badge badge-gray">Monthly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlDonorFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlDonorTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadDonorAuditReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadDonorAuditReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadDonorAuditReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">Audit Log Report</div><span class="card-badge badge-gray">Monthly / Yearly</span></div>
+        <div class="card-body">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">From</label>
+              <input type="date" id="dlAuditFrom" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">To</label>
+              <input type="date" id="dlAuditTo" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" onclick="downloadAuditLogReport('csv')">⬇ CSV</button>
+              <button class="btn-secondary" onclick="downloadAuditLogReport('excel')">⬇ Excel</button>
+              <button class="btn-secondary" onclick="downloadAuditLogReport('pdf')">⬇ PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="modal-overlay" id="announcementModal">
+  <div class="modal-box">
+    <div class="modal-title">New Announcement</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Title</label><input type="text" id="annTitle" class="form-input" placeholder="e.g. Office closed for holiday" /></div>
+      <div><label class="form-label">Message</label><textarea id="annMessage" rows="4" class="form-textarea" placeholder="Full announcement text..."></textarea></div>
+      <div><label class="form-label">Audience</label>
+        <select id="annAudience" class="form-select">
+          <option value="all">All Employees (Tiers 2–4)</option>
+          <option value="2">Tier 2 only</option>
+          <option value="3">Tier 3 only</option>
+          <option value="4">Tier 4 only</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn-primary" style="flex:1;" onclick="saveAnnouncement()">Send Announcement</button>
+      <button class="btn-secondary" style="flex:1;" onclick="closeAnnouncementModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Modal -->
+<div class="modal-overlay" id="holidayModal">
+  <div class="modal-box">
+    <div class="modal-title">Add Holiday</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Holiday Name</label><input type="text" id="holidayName" class="form-input" placeholder="e.g. Eid-ul-Fitr" /></div>
+      <div><label class="form-label">Date</label><input type="date" id="holidayDate" class="form-input" /></div>
+      <div><label class="form-label">Type</label>
+        <select id="holidayTypeCat" class="form-select">
+          <option value="Government">Government Holiday</option>
+          <option value="Religious">Religious Holiday</option>
+          <option value="Organizational">Organizational Holiday</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="holidayRecurring" style="width:16px;height:16px;" />
+        <label for="holidayRecurring" style="font-size:13px;color:var(--text-muted);">প্রতি বছর পুনরাবৃত্ত (recurring annually)</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn-primary" style="flex:1;" onclick="saveHoliday()">Save Holiday</button>
+      <button class="btn-secondary" style="flex:1;" onclick="closeHolidayModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rule Modal -->
+<div class="modal-overlay" id="ruleModal">
+  <div class="modal-box">
+    <div class="modal-title">New Rule</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Category</label>
+        <select id="ruleCategory" class="form-select">
+          <option value="Attendance">Attendance</option>
+          <option value="Payroll">Payroll</option>
+          <option value="Leave">Leave</option>
+          <option value="KPI">KPI</option>
+          <option value="Conduct">Conduct</option>
+          <option value="Task">Task</option>
+        </select>
+      </div>
+      <div><label class="form-label">Title (বাংলা)</label><input type="text" id="ruleTitleBn" class="form-input" /></div>
+      <div><label class="form-label">Title (English)</label><input type="text" id="ruleTitleEn" class="form-input" /></div>
+      <div><label class="form-label">Content (বাংলা)</label><textarea id="ruleContentBn" rows="3" class="form-textarea"></textarea></div>
+      <div><label class="form-label">Content (English)</label><textarea id="ruleContentEn" rows="3" class="form-textarea"></textarea></div>
+      <div><label class="form-label">Legal Reference (optional)</label><input type="text" id="ruleLegalRef" class="form-input" placeholder="e.g. §125" /></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn-primary" style="flex:1;" onclick="saveRule()">Save Rule</button>
+      <button class="btn-secondary" style="flex:1;" onclick="closeRuleModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL  = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Bug fix: নিজের employee_id store করা — approve/reject-এ approved_by সেট করার জন্য
+let myEmployeeId = null;
+let addEmpPhotoFileObj = null;
+
+// ── Mobile bottom-nav / more-sheet helpers (mobile-optimized shell around the same showSection() logic) ──
+const BOTTOM_NAV_SECTIONS = ['dashboard', 'alerts', 'approvals', 'employees'];
+
+function showMobileSection(name, el) {
+  showSection(name, null); // reuse the existing section-switch logic untouched
+  document.querySelectorAll('.bn-item').forEach(n => n.classList.remove('active'));
+  if (BOTTOM_NAV_SECTIONS.includes(name)) {
+    const navEl = el || document.getElementById('bn-' + name);
+    if (navEl) navEl.classList.add('active');
+  }
+  window.scrollTo(0, 0);
+}
+
+function openMoreSheet() {
+  document.getElementById('moreSheetOverlay').classList.add('open');
+}
+function closeMoreSheet() {
+  document.getElementById('moreSheetOverlay').classList.remove('open');
+}
+
+// Mirrors the (hidden) redAlertCount/approvalCount/rulesBadge text onto the
+// bottom-nav dots and the More-sheet's Rules tile badge.
+function syncBottomNavBadges() {
+  const redEl = document.getElementById('redAlertCount');
+  const appEl = document.getElementById('approvalCount');
+  const rulesEl = document.getElementById('rulesBadge');
+  const bnAlert = document.getElementById('bnAlertDot');
+  const bnApproval = document.getElementById('bnApprovalDot');
+  if (redEl && bnAlert) {
+    const show = redEl.style.display !== 'none' && parseInt(redEl.textContent || '0', 10) > 0;
+    bnAlert.classList.toggle('show', show);
+  }
+  if (appEl && bnApproval) {
+    const show = appEl.style.display !== 'none';
+    bnApproval.classList.toggle('show', show);
+  }
+  // rulesBadge is shared by ID between hidden sidebar-style badge and the More-sheet tile,
+  // so no extra mirroring needed there — loadRulesBadge() already sets it directly.
+}
+
+
+// ── My Photo (self-service change) ────────────────────────
+function renderMyAvatar(fullName, photoUrl) {
+  const el = document.getElementById('sidebarAvatar');
+  if (photoUrl) {
+    el.innerHTML = `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+  } else {
+    const initials = (fullName || 'UK').split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    el.textContent = initials || 'UK';
+  }
+}
+
+function triggerChangeMyPhoto() {
+  document.getElementById('myPhotoFileInput').click();
+}
+
+async function handleMyPhotoChange(event) {
+  const file = event.target.files[0];
+  if (!file || !myEmployeeId) return;
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `${myEmployeeId}/photo.${ext}`;
+
+    const { error: upErr } = await db.storage
+      .from('employee-photos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) throw upErr;
+
+    const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+
+    const { error: rpcErr } = await db.rpc('update_my_photo', { p_photo_url: pub.publicUrl });
+    if (rpcErr) throw rpcErr;
+
+    renderMyAvatar(document.getElementById('sidebarName').textContent, pub.publicUrl);
+  } catch (e) {
+    alert('Photo update failed: ' + (e.message || e));
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ */
+async function registerSession() {
+  if (!myEmployeeId) return;
+  // Reuse the same device/tab token across page navigations within this tab
+  // (full page reloads used to call safeUUID() fresh every time, which made
+  // every internal page navigation overwrite user_sessions and force-logout
+  // the very page the user just came from). Only generate a new token when
+  // this tab has never had one — sessionStorage is per-tab, so other tabs /
+  // devices still correctly trigger the single-active-session logout.
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await db.from('user_sessions').upsert({
+      employee_id: myEmployeeId,
+      session_token: mySessionToken,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: 'employee_id' });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const { data } = await db.from('user_sessions')
+        .select('session_token')
+        .eq('employee_id', myEmployeeId)
+        .maybeSingle();
+      if (data && data.session_token && data.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (data) {
+        // heartbeat — keep last_seen_at fresh
+        try {
+          await db.from('user_sessions').update({ last_seen_at: new Date().toISOString() })
+            .eq('employee_id', myEmployeeId).eq('session_token', mySessionToken);
+        } catch (e2) { /* network hiccup on heartbeat — non-fatal */ }
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  localStorage.removeItem('bwapms_device_token');
+  try { await db.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const now = new Date();
+  document.getElementById('topbarDate').textContent =
+    now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('attDateBadge').textContent = now.toLocaleDateString('en-GB');
+
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  const { data: tier } = await db.rpc('get_my_tier');
+  if (tier !== 1) { window.location.href = 'index.html'; return; }
+
+  // Bug fix: নিজের employee_id লোড করা
+  const { data: myRow } = await db
+    .from('employee_master')
+    .select('employee_id, full_name, photo_url')
+    .eq('auth_user_id', session.user.id)
+    .single();
+  myEmployeeId = myRow?.employee_id || null;
+  if (myRow) {
+    renderMyAvatar(myRow.full_name || 'UK Team (Shared)', myRow.photo_url);
+    if (myRow.full_name) document.getElementById('sidebarName').textContent = myRow.full_name;
+  }
+  startIdleWatcher();
+  await registerSession();
+
+  await Promise.all([
+    loadStats(),
+    loadRedAlerts(),
+    loadTier2Approvals(),
+    loadKPI(),
+    loadPayrollForecast(),
+    loadEmployees(),
+    loadAttendance(),
+    loadAudit(),
+    loadNotifications(),
+    loadRulesBadge(),
+    populateReportEmployeeDropdowns(),
+  ]);
+
+  document.getElementById('dbStatus').textContent = 'Connected ✓';
+  document.getElementById('loadingOverlay').style.display = 'none';
+  syncBottomNavBadges();
+
+  // Deep-link support: ?section=rules opens that section directly
+  // (used by attendance.html's "View Full Rules & Regulations" link)
+  const deepLinkSection = new URLSearchParams(window.location.search).get('section');
+  if (deepLinkSection) showSection(deepLinkSection);
+});
+
+async function loadStats() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: emps } = await db.from('employee_master').select('employee_id').eq('is_active', true).neq('tier', 1);
+  const total = emps?.length || 0;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('healthEmp').textContent = total;
+
+  const { data: att } = await db.from('attendance').select('status').eq('attendance_date', today);
+  const present = att?.filter(a => ['Present','Late','Field / Official Visit'].includes(a.status)).length || 0;
+  const late    = att?.filter(a => a.status === 'Late').length || 0;
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statLate').textContent    = late;
+  document.getElementById('healthAtt').textContent   = att?.length || 0;
+
+  const { data: locs } = await db.from('whitelisted_locations').select('location_id').eq('is_active', true);
+  document.getElementById('healthLoc').textContent = locs?.length || 0;
+
+  const { data: alerts } = await db.from('intelligence_alerts').select('alert_tier').eq('status', 'Open');
+  const red    = alerts?.filter(a => a.alert_tier === 'Red').length    || 0;
+  const yellow = alerts?.filter(a => a.alert_tier === 'Yellow').length || 0;
+  document.getElementById('statRedAlerts').textContent = red;
+  document.getElementById('healthRed').textContent     = red;
+  document.getElementById('healthYellow').textContent  = yellow;
+  if (red > 0) {
+    document.getElementById('redAlertCount').style.display = 'inline';
+    document.getElementById('redAlertCount').textContent   = red;
+  }
+}
+
+async function loadRedAlerts() {
+  const { data } = await db.from('intelligence_alerts')
+    .select('alert_id, alert_type, alert_domain, risk_score, created_at, status, description')
+    .eq('alert_tier', 'Red').eq('status', 'Open')
+    .order('created_at', { ascending: false }).limit(5);
+
+  const count = data?.length || 0;
+  document.getElementById('redBadge').textContent     = count + ' open';
+  document.getElementById('fullRedBadge').textContent = count + ' open';
+
+  const render = (id) => {
+    const el = document.getElementById(id);
+    if (!data || count === 0) { el.innerHTML = '<div class="empty-state">✅ No red alerts</div>'; return; }
+    el.innerHTML = data.map(a => '<div class="red-alert-item">' +
+      '<div class="red-dot"></div>' +
+      '<div class="alert-info">' +
+        '<div class="alert-title">' + (a.alert_type || 'Alert') + (a.alert_domain ? ' — ' + a.alert_domain : '') + '</div>' +
+        '<div class="alert-desc">Risk Score: ' + a.risk_score + ' · Status: ' + a.status + '</div>' +
+        '<div class="alert-time">' + new Date(a.created_at).toLocaleString('en-GB') + '</div>' +
+      '</div></div>').join('');
+  };
+  render('redAlertList');
+  render('fullRedAlertList');
+}
+
+async function loadTier2Approvals() {
+  const { data: tier2Emp } = await db.from('employee_master').select('employee_id').eq('tier', 2).eq('is_active', true);
+  const tier2Ids = (tier2Emp || []).map(e => e.employee_id);
+
+  let data = [];
+  if (tier2Ids.length > 0) {
+    const { data: reqs } = await db.from('leave_request')
+      .select('request_id, leave_type, start_date, end_date, employee_master(full_name)')
+      .in('employee_id', tier2Ids).eq('status', 'Pending')
+      .order('created_at', { ascending: false });
+    data = reqs || [];
+  }
+
+  const count = data.length;
+  document.getElementById('t2AppBadge').textContent    = count + ' pending';
+  document.getElementById('fullAppBadge').textContent  = count + ' pending';
+  document.getElementById('approvalCount').textContent = count;
+  if (count > 0) document.getElementById('approvalCount').style.display = 'inline';
+
+  const render = (id) => {
+    const el = document.getElementById(id);
+    if (count === 0) { el.innerHTML = '<div class="empty-state">No pending approvals from Tier 2</div>'; return; }
+    el.innerHTML = data.map(r => '<div class="approval-item">' +
+      '<div class="approval-info">' +
+        '<div class="approval-name">' + (r.employee_master?.full_name || '—') + '</div>' +
+        '<div class="approval-type">' + r.leave_type + ' Leave · ' + r.start_date + ' → ' + r.end_date + '</div>' +
+      '</div>' +
+      '<div class="approval-actions">' +
+        '<button class="btn-approve" onclick="approveLeave(\'' + r.request_id + '\')">Approve</button>' +
+        '<button class="btn-reject"  onclick="rejectLeave(\'' + r.request_id + '\')">Reject</button>' +
+      '</div></div>').join('');
+  };
+  render('tier2ApprovalList');
+  render('fullTier2ApprovalList');
+}
+
+async function approveLeave(id) {
+  // Bug fix: approved_by-তে myEmployeeId (UUID), approved_at timestamp সেট করা
+  const now = new Date().toISOString();
+  await db.from('leave_request').update({
+    status: 'Approved',
+    approved_by: myEmployeeId,
+    approved_at: now,
+  }).eq('request_id', id);
+
+  // Bug fix: leave_balance আপডেট — approve হলে 'used' বাড়াতে হবে
+  const { data: req } = await db
+    .from('leave_request')
+    .select('employee_id, leave_type, start_date, end_date')
+    .eq('request_id', id)
+    .single();
+
+  if (req) {
+    const start = new Date(req.start_date);
+    const end   = new Date(req.end_date);
+    const days  = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const year  = start.getFullYear();
+
+    const { data: bal } = await db
+      .from('leave_balance')
+      .select('balance_id, used, balance')
+      .eq('employee_id', req.employee_id)
+      .eq('leave_type', req.leave_type)
+      .eq('year', year)
+      .single();
+
+    if (bal) {
+      await db.from('leave_balance').update({
+        used:    (bal.used    || 0) + days,
+        balance: (bal.balance || 0) - days,
+      }).eq('balance_id', bal.balance_id);
+    }
+  }
+
+  await loadTier2Approvals();
+}
+
+async function rejectLeave(id) {
+  // Bug fix: approved_by UUID, approved_at timestamp
+  const now = new Date().toISOString();
+  await db.from('leave_request').update({
+    status: 'Rejected',
+    approved_by: myEmployeeId,
+    approved_at: now,
+  }).eq('request_id', id);
+  await loadTier2Approvals();
+}
+
+async function loadKPI() {
+  const { data } = await db.from('kpi_scores')
+    .select('total_score, employee_master(full_name)')
+    .order('total_score', { ascending: false }).limit(10);
+
+  const render = (id) => {
+    const el = document.getElementById(id);
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state">No KPI data yet.</div>'; return; }
+    el.innerHTML = data.map(k => {
+      const s = parseFloat(k.total_score) || 0;
+      const c = s >= 90 ? 'kpi-ex' : s >= 80 ? 'kpi-good' : s >= 60 ? 'kpi-mid' : 'kpi-low';
+      return '<div class="kpi-item">' +
+        '<div class="kpi-top"><span class="kpi-name">' + (k.employee_master?.full_name || '—') + '</span><span class="kpi-score">' + s.toFixed(1) + '%</span></div>' +
+        '<div class="kpi-bar-bg"><div class="kpi-bar-fill ' + c + '" style="width:' + s + '%"></div></div>' +
+        '</div>';
+    }).join('');
+  };
+  render('kpiOverview');
+  render('kpiFull');
+}
+
+async function loadPayrollForecast() {
+  const { data: emps } = await db.from('employee_master')
+    .select('employee_id, full_name, monthly_gross_salary')
+    .eq('is_active', true).neq('tier', 1);
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+  const render = (tbodyId, cols) => {
+    const el = document.getElementById(tbodyId);
+    if (!emps || emps.length === 0) { el.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:20px;color:var(--text-light);">No employee data.</td></tr>'; return; }
+    el.innerHTML = emps.map(e => {
+      const gross = parseFloat(e.monthly_gross_salary) || 0;
+      const dailyGross = gross / 26;
+      const estLateDays = 2;
+      const estLateDeduct = ((estLateDays * 30) / 480 * dailyGross).toFixed(0);
+      const estNet = (gross - parseFloat(estLateDeduct)).toFixed(0);
+      if (cols === 4) {
+        return '<tr><td style="font-weight:600;">' + e.full_name + '</td>' +
+          '<td>৳' + gross.toLocaleString() + '</td>' +
+          '<td style="color:var(--red);">−৳' + parseInt(estLateDeduct).toLocaleString() + ' <span style="font-size:11px;color:var(--text-light);">(est.)</span></td>' +
+          '<td style="font-weight:700;color:var(--green);">৳' + parseInt(estNet).toLocaleString() + '</td></tr>';
+      } else {
+        return '<tr><td style="font-weight:600;">' + e.full_name + '</td>' +
+          '<td>৳' + gross.toLocaleString() + '</td>' +
+          '<td>' + estLateDays + ' days (est.)</td>' +
+          '<td style="color:var(--red);">−৳' + parseInt(estLateDeduct).toLocaleString() + '</td>' +
+          '<td style="font-weight:700;color:var(--green);">৳' + parseInt(estNet).toLocaleString() + '</td></tr>';
+      }
+    }).join('');
+  };
+  render('payrollForecastBody', 4);
+  render('fullForecastBody', 5);
+}
+
+async function loadEmployees() {
+  const { data } = await db.from('employee_master')
+    .select('employee_code, full_name, designation, tier, official_email, employment_status, joining_date')
+    .eq('is_active', true).order('tier').order('employee_code');
+
+  const badge = document.getElementById('empCountBadge');
+  badge.textContent = (data?.length || 0) + ' employees';
+
+  const tbody = document.getElementById('empTableBody');
+  if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-light);">No employees.</td></tr>'; return; }
+  const tierClass = { 1:'tier1', 2:'tier2', 3:'tier2', 4:'tier4' };
+  tbody.innerHTML = data.map(e => '<tr>' +
+    '<td style="font-family:monospace;font-size:12px;color:var(--text-muted);">' + e.employee_code + '</td>' +
+    '<td style="font-weight:600;">' + e.full_name + '</td>' +
+    '<td style="color:var(--text-muted);">' + (e.designation || '—') + '</td>' +
+    '<td><span class="pill ' + (tierClass[e.tier] || 'pending') + '">Tier ' + e.tier + '</span></td>' +
+    '<td style="font-size:12px;color:var(--text-muted);">' + e.official_email + '</td>' +
+    '<td><span class="pill present">' + e.employment_status + '</span></td>' +
+    '<td style="color:var(--text-muted);">' + (e.joining_date || '—') + '</td>' +
+    '</tr>').join('');
+}
+
+// ── Add Employee Modal (Tier 1 & 2 only — enforced server-side by the create-employee edge function) ──
+async function openAddEmployeeModal() {
+  document.getElementById('addEmpModalBackdrop').style.display = 'flex';
+  document.getElementById('addEmpFormArea').style.display = 'flex';
+  document.getElementById('addEmpSuccessArea').style.display = 'none';
+  document.getElementById('addEmpMsg').style.display = 'none';
+  addEmpPhotoFileObj = null;
+  document.getElementById('addEmpPhotoPreview').innerHTML = 'No Photo';
+  ['addEmpName','addEmpEmail','addEmpMobile','addEmpNid','addEmpDesignation','addEmpDept','addEmpJoinDate','addEmpSalary','addEmpBankName','addEmpBankAcc']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addEmpPhotoFile').value = '';
+
+  const { data: mgrs } = await db.from('employee_master')
+    .select('employee_id, full_name, tier')
+    .eq('is_active', true)
+    .in('tier', [1, 2, 3]);
+  const sel = document.getElementById('addEmpManager');
+  sel.innerHTML = '<option value="">— None —</option>' +
+    (mgrs || []).map(m => `<option value="${m.employee_id}">${m.full_name} (Tier ${m.tier})</option>`).join('');
+}
+
+function closeAddEmployeeModal() {
+  document.getElementById('addEmpModalBackdrop').style.display = 'none';
+  loadEmployees();
+}
+
+function previewAddEmpPhoto() {
+  const file = document.getElementById('addEmpPhotoFile').files[0];
+  if (!file) { addEmpPhotoFileObj = null; return; }
+  addEmpPhotoFileObj = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('addEmpPhotoPreview').innerHTML =
+      `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitAddEmployee() {
+  const msg = document.getElementById('addEmpMsg');
+  const btn = document.getElementById('addEmpSubmitBtn');
+  const name = document.getElementById('addEmpName').value.trim();
+  const email = document.getElementById('addEmpEmail').value.trim();
+  const tier = document.getElementById('addEmpTier').value;
+
+  if (!name || !email) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Full Name and Official Email are required.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  msg.style.display = 'none';
+
+  try {
+    const { data: sessionData } = await db.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-employee`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        full_name: name,
+        official_email: email,
+        mobile_number: document.getElementById('addEmpMobile').value.trim() || null,
+        nid_number: document.getElementById('addEmpNid').value.trim() || null,
+        designation: document.getElementById('addEmpDesignation').value.trim() || null,
+        department: document.getElementById('addEmpDept').value.trim() || null,
+        tier: parseInt(tier, 10),
+        reporting_manager: document.getElementById('addEmpManager').value || null,
+        joining_date: document.getElementById('addEmpJoinDate').value || null,
+        monthly_gross_salary: document.getElementById('addEmpSalary').value || null,
+        bank_name: document.getElementById('addEmpBankName').value.trim() || null,
+        bank_account_number: document.getElementById('addEmpBankAcc').value.trim() || null,
+      }),
+    });
+
+    const result = await resp.json();
+
+    if (!resp.ok) {
+      throw new Error(result.error || 'Failed to create employee');
+    }
+
+    if (addEmpPhotoFileObj) {
+      const ext = addEmpPhotoFileObj.name.split('.').pop();
+      const path = `${result.employee_id}/photo.${ext}`;
+      const { error: upErr } = await db.storage
+        .from('employee-photos')
+        .upload(path, addEmpPhotoFileObj, { upsert: true, contentType: addEmpPhotoFileObj.type });
+
+      if (!upErr) {
+        const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+        await db.from('employee_master')
+          .update({ photo_url: pub.publicUrl })
+          .eq('employee_id', result.employee_id);
+      }
+    }
+
+    document.getElementById('addEmpFormArea').style.display = 'none';
+    document.getElementById('addEmpSuccessArea').style.display = 'block';
+    document.getElementById('addEmpResultEmail').textContent = email;
+    document.getElementById('addEmpResultPassword').textContent = result.temp_password;
+    document.getElementById('addEmpResultCode').textContent = result.employee_code;
+
+  } catch (e) {
+    msg.style.display = 'block';
+    msg.style.color = 'var(--red)';
+    msg.textContent = e.message || 'Something went wrong.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Employee';
+  }
+}
+
+async function loadAttendance() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).neq('tier', 1);
+  const { data: att  } = await db.from('attendance').select('employee_id, status, check_in_time, check_out_time, minutes_late').eq('attendance_date', today);
+
+  // Populate the "Download Attendance Reports" employee dropdown
+  const dlSel = document.getElementById('dlAttEmployee');
+  if (dlSel && emps && dlSel.options.length <= 1) {
+    emps.slice().sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = `${e.full_name} (Tier ${e.tier})`;
+      dlSel.appendChild(opt);
+    });
+  }
+  toggleDlAttRange();
+  const dlFromEl = document.getElementById('dlAttFrom');
+  const dlToEl   = document.getElementById('dlAttTo');
+  if (dlFromEl && !dlFromEl.value) {
+    const d = new Date(); d.setDate(d.getDate() - 7);
+    dlFromEl.value = d.toISOString().slice(0,10);
+  }
+  if (dlToEl && !dlToEl.value) dlToEl.value = today;
+
+  const attMap = {};
+  (att || []).forEach(a => { attMap[a.employee_id] = a; });
+
+  const tbody = document.getElementById('fullAttBody');
+  if (!emps || emps.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">No employees.</td></tr>'; return; }
+  const pillClass = { 'Present':'present','Late':'late','Absent':'absent','Leave':'leave' };
+  tbody.innerHTML = (emps || []).map(e => {
+    const a = attMap[e.employee_id] || {};
+    const status = a.status || '—';
+    const cin  = a.check_in_time  ? new Date(a.check_in_time).toLocaleTimeString('en-GB',  {hour:'2-digit',minute:'2-digit'}) : '—';
+    const cout = a.check_out_time ? new Date(a.check_out_time).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '—';
+    const pc = pillClass[status] || 'pending';
+    return '<tr>' +
+      '<td style="font-weight:600;">' + e.full_name + '</td>' +
+      '<td><span class="pill ' + (e.tier === 2 ? 'tier2' : 'tier4') + '">Tier ' + e.tier + '</span></td>' +
+      '<td>' + (status !== '—' ? '<span class="pill ' + pc + '">' + status + '</span>' : '<span style="color:var(--text-light);">No record</span>') + '</td>' +
+      '<td>' + cin + '</td>' +
+      '<td>' + cout + '</td>' +
+      '<td>' + (a.minutes_late || 0) + ' min</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── Admin Attendance Download (all employees / individual, any date range) ──
+function toggleDlAttRange() {
+  const mode = document.getElementById('dlAttMode').value;
+  document.getElementById('dlAttRangeRow').style.display = (mode === 'custom') ? 'flex' : 'none';
+}
+
+async function downloadAdminAttendance(fmt) {
+  const mode    = document.getElementById('dlAttMode').value;
+  const empId   = document.getElementById('dlAttEmployee').value;
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  let from, to;
+  if (mode === 'today') {
+    from = todayStr; to = todayStr;
+  } else {
+    from = document.getElementById('dlAttFrom').value;
+    to   = document.getElementById('dlAttTo').value;
+    if (!from || !to) { alert('From এবং To তারিখ দুটোই দিন।'); return; }
+    if (from > to) { alert('From তারিখ, To তারিখের পরে হতে পারবে না।'); return; }
+  }
+
+  let q = db.from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, minutes_late, status, mode, employee_id, employee_master(full_name, designation, tier)')
+    .gte('attendance_date', from)
+    .lte('attendance_date', to)
+    .order('attendance_date', { ascending: false });
+  if (empId) q = q.eq('employee_id', empId);
+
+  const { data, error } = await q;
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই রেঞ্জে কোনো রেকর্ড পাওয়া যায়নি।'); return; }
+
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    tier: r.employee_master?.tier ?? '',
+    date: r.attendance_date,
+    checkIn: r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : '',
+    checkOut: r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB') : '',
+    late: r.minutes_late || 0,
+    status: r.status || '',
+    mode: r.mode || '',
+  }));
+
+  const labelSuffix = empId
+    ? (rows[0]?.name || empId).replace(/\s+/g, '_')
+    : 'AllEmployees';
+
+  if (fmt === 'csv') {
+    const header = 'Employee,Designation,Tier,তারিখ,Check-In,Check-Out,দেরি (মিনিট),স্ট্যাটাস,Mode\n';
+    const body = rows.map(r =>
+      `${r.name},${r.designation},${r.tier},${r.date},${r.checkIn},${r.checkOut},${r.late},${r.status},${r.mode}`
+    ).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `attendance_${labelSuffix}_${from}_${to}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>Attendance Report — ${empId ? rows[0]?.name : 'All Employees'} | ${from} to ${to}</h2>
+    <table border="1"><tr><th>Employee</th><th>Designation</th><th>Tier</th><th>তারিখ</th><th>Check-In</th><th>Check-Out</th><th>দেরি (মিনিট)</th><th>স্ট্যাটাস</th><th>Mode</th></tr>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r.name}</td><td>${r.designation}</td><td>${r.tier}</td><td>${r.date}</td><td>${r.checkIn || '—'}</td><td>${r.checkOut || '—'}</td><td>${r.late}</td><td>${r.status || '—'}</td><td>${r.mode || '—'}</td></tr>`;
+    });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `attendance_${labelSuffix}_${from}_${to}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Attendance Report</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>Attendance Report — ${empId ? (rows[0]?.name || empId) : 'All Employees'}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${from} to ${to}</div>
+    <table><tr><th>Employee</th><th>Designation</th><th>Tier</th><th>তারিখ</th><th>Check-In</th><th>Check-Out</th><th>দেরি (মিনিট)</th><th>স্ট্যাটাস</th><th>Mode</th></tr>`;
+    rows.forEach(r => {
+      html += `<tr><td>${r.name}</td><td>${r.designation}</td><td>${r.tier}</td><td>${r.date}</td><td>${r.checkIn || '—'}</td><td>${r.checkOut || '—'}</td><td>${r.late}</td><td>${r.status || '—'}</td><td>${r.mode || '—'}</td></tr>`;
+    });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ── Payroll Summary & Deduction Breakdown Downloads — Blueprint §12.9 ──
+async function downloadPayrollReport(reportType, fmt) {
+  const monthVal = document.getElementById('dlPayMonth').value; // "YYYY-MM"
+  if (!monthVal) { alert('Month select korun.'); return; }
+  const monthStart = `${monthVal}-01`;
+
+  const { data, error } = await db.from('payroll')
+    .select('payroll_month, gross_salary, prorata_late_deduction, absent_deduction, early_departure_deduction, income_tax_deduction, kpi_penalty_deduction, other_deductions, other_deductions_reason, total_deductions, approved_adjustments, net_salary, is_locked, employee_id, employee_master(full_name, designation, tier)')
+    .eq('payroll_month', monthStart)
+    .order('created_at', { ascending: true });
+
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই মাসে কোনো প্রসেসড payroll রেকর্ড পাওয়া যায়নি।'); return; }
+
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    tier: r.employee_master?.tier ?? '',
+    gross: Number(r.gross_salary || 0).toFixed(2),
+    late: Number(r.prorata_late_deduction || 0).toFixed(2),
+    absent: Number(r.absent_deduction || 0).toFixed(2),
+    early: Number(r.early_departure_deduction || 0).toFixed(2),
+    tax: Number(r.income_tax_deduction || 0).toFixed(2),
+    kpi: Number(r.kpi_penalty_deduction || 0).toFixed(2),
+    other: Number(r.other_deductions || 0).toFixed(2),
+    otherReason: r.other_deductions_reason || '',
+    totalDed: Number(r.total_deductions || 0).toFixed(2),
+    adjustments: Number(r.approved_adjustments || 0).toFixed(2),
+    net: Number(r.net_salary || 0).toFixed(2),
+    locked: r.is_locked ? 'Locked' : 'Open',
+  }));
+
+  const isSummary = reportType === 'summary';
+  const reportLabel = isSummary ? 'Payroll_Summary' : 'Deduction_Breakdown';
+  const reportTitle = isSummary ? 'Payroll Summary Report' : 'Deduction Breakdown Report';
+
+  const headers = isSummary
+    ? ['Employee','Designation','Tier','Gross Salary','Total Deductions','Adjustments','Net Salary','Status']
+    : ['Employee','Designation','Late Deduction','Absent Deduction','Early Departure','Income Tax','KPI Penalty','Other Deductions','Other Reason','Total Deductions'];
+
+  const rowToCells = r => isSummary
+    ? [r.name, r.designation, r.tier, r.gross, r.totalDed, r.adjustments, r.net, r.locked]
+    : [r.name, r.designation, r.late, r.absent, r.early, r.tax, r.kpi, r.other, r.otherReason, r.totalDed];
+
+  if (fmt === 'csv') {
+    const header = headers.join(',') + '\n';
+    const body = rows.map(r => rowToCells(r).map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${monthVal}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>${reportTitle} — ${monthVal}</h2>
+    <table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${monthVal}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${reportTitle}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>${reportTitle}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${monthVal}</div>
+    <table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ── KPI Score & Performance Ranking Downloads — Blueprint §15.2 ──
+async function downloadKPIReport(reportType, fmt) {
+  const periodType = document.getElementById('dlKpiPeriodType').value;
+  const from = document.getElementById('dlKpiFrom').value;
+  const to   = document.getElementById('dlKpiTo').value;
+  if (!from || !to) { alert('Period Start এবং Period End দুটোই দিন।'); return; }
+
+  const { data, error } = await db.from('kpi_scores')
+    .select('period_type, period_start, period_end, total_score, performance_band, attendance_score, task_performance_score, reporting_discipline_score, issue_resolution_score, work_efficiency_score, management_eval_score, productivity_per_hour, employee_id, employee_master(full_name, designation, tier)')
+    .eq('period_type', periodType)
+    .eq('period_start', from)
+    .eq('period_end', to)
+    .eq('is_active', true)
+    .order('total_score', { ascending: false });
+
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই পিরিয়ডে কোনো KPI রেকর্ড পাওয়া যায়নি।'); return; }
+
+  const rows = data.map((r, idx) => ({
+    rank: idx + 1,
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    tier: r.employee_master?.tier ?? '',
+    total: Number(r.total_score || 0).toFixed(2),
+    band: r.performance_band || '',
+    attendance: Number(r.attendance_score || 0).toFixed(2),
+    task: Number(r.task_performance_score || 0).toFixed(2),
+    reporting: Number(r.reporting_discipline_score || 0).toFixed(2),
+    issueRes: Number(r.issue_resolution_score || 0).toFixed(2),
+    efficiency: Number(r.work_efficiency_score || 0).toFixed(2),
+    mgmtEval: Number(r.management_eval_score || 0).toFixed(2),
+    productivity: Number(r.productivity_per_hour || 0).toFixed(2),
+  }));
+
+  const isRanking = reportType === 'ranking';
+  const reportLabel = isRanking ? 'Performance_Ranking' : 'KPI_Score';
+  const reportTitle = isRanking ? 'Performance Ranking Report' : 'KPI Score Report';
+  const periodLabel = `${periodType}_${from}_to_${to}`;
+
+  const headers = isRanking
+    ? ['Rank','Employee','Designation','Tier','Total Score','Band']
+    : ['Employee','Designation','Total Score','Band','Attendance','Task Perf.','Reporting','Issue Res.','Work Eff.','Mgmt Eval','Productivity/hr'];
+
+  const rowToCells = r => isRanking
+    ? [r.rank, r.name, r.designation, r.tier, r.total, r.band]
+    : [r.name, r.designation, r.total, r.band, r.attendance, r.task, r.reporting, r.issueRes, r.efficiency, r.mgmtEval, r.productivity];
+
+  if (fmt === 'csv') {
+    const header = headers.join(',') + '\n';
+    const body = rows.map(r => rowToCells(r).map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${periodLabel}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>${reportTitle} — ${periodType} (${from} to ${to})</h2>
+    <table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${reportLabel}_${periodLabel}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${reportTitle}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>${reportTitle}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${periodType} (${from} to ${to})</div>
+    <table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v || '—'}</td>`).join('')}</tr>`; });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ── Shared export helper for the remaining report types ──
+async function getEmployeeMap() {
+  const { data } = await db.from('employee_master').select('employee_id, full_name, designation, tier');
+  const map = {};
+  (data || []).forEach(e => { map[e.employee_id] = e; });
+  return map;
+}
+
+function exportRows(headers, rows, rowToCells, fileLabel, reportTitle, periodLabel, fmt) {
+  if (fmt === 'csv') {
+    const header = headers.join(',') + '\n';
+    const body = rows.map(r => rowToCells(r).map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + header + body], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${fileLabel}_${periodLabel}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'excel') {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+    <head><meta charset="UTF-8"><style>th{background:#0f1f3d;color:#fff;padding:8px;}td{padding:6px;border:1px solid #ddd;}</style></head>
+    <body><h2>${reportTitle} — ${periodLabel}</h2>
+    <table border="1"><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v ?? '—'}</td>`).join('')}</tr>`; });
+    html += '</table></body></html>';
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${fileLabel}_${periodLabel}.xls`;
+    a.click(); URL.revokeObjectURL(url);
+  } else if (fmt === 'pdf') {
+    const w = window.open('', '_blank');
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${reportTitle}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:32px;color:#1a2233;}
+      h2{font-size:18px;color:#0f1f3d;margin-bottom:4px;}
+      .org{font-size:12px;color:#667;margin-bottom:18px;}
+      table{border-collapse:collapse;width:100%;font-size:12px;}
+      th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+      td{padding:6px 7px;border:1px solid #ddd;}
+      @media print{button{display:none!important}}
+    </style></head><body>
+    <h2>${reportTitle}</h2>
+    <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${periodLabel}</div>
+    <table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    rows.forEach(r => { html += `<tr>${rowToCells(r).map(v => `<td>${v ?? '—'}</td>`).join('')}</tr>`; });
+    html += `</table><br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></body></html>`;
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// ── Salary History Report — Blueprint §15.2 ──
+async function downloadSalaryHistory(fmt) {
+  const yearVal = document.getElementById('dlSalYear').value;
+  let query = db.from('salary_history')
+    .select('employee_id, previous_salary, new_salary, increment_amount, effective_date, justification, status')
+    .eq('is_active', true)
+    .order('effective_date', { ascending: false });
+  if (yearVal) {
+    query = query.gte('effective_date', `${yearVal}-01-01`).lte('effective_date', `${yearVal}-12-31`);
+  }
+  const { data, error } = await query;
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('কোনো Salary History রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    name: empMap[r.employee_id]?.full_name || r.employee_id,
+    designation: empMap[r.employee_id]?.designation || '',
+    prev: Number(r.previous_salary || 0).toFixed(2),
+    next: Number(r.new_salary || 0).toFixed(2),
+    increment: Number(r.increment_amount || 0).toFixed(2),
+    effDate: r.effective_date,
+    status: r.status || '',
+    justification: r.justification || '',
+  }));
+  const headers = ['Employee','Designation','Previous Salary','New Salary','Increment','Effective Date','Status','Justification'];
+  const rowToCells = r => [r.name, r.designation, r.prev, r.next, r.increment, r.effDate, r.status, r.justification];
+  exportRows(headers, rows, rowToCells, 'Salary_History', 'Salary History Report', yearVal || 'All-time', fmt);
+}
+
+// ── Task Report — Blueprint §15.2 ──
+async function downloadTaskReport(fmt) {
+  const from = document.getElementById('dlTaskFrom').value;
+  const to = document.getElementById('dlTaskTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('task_master')
+    .select('task_title, task_type, priority, assigned_tier, primary_assignee, due_date, status, expected_completion_hours, actual_completion_hours, total_penalty_percent')
+    .gte('due_date', from).lte('due_date', to)
+    .eq('is_active', true)
+    .order('due_date', { ascending: true });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Task পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    title: r.task_title, type: r.task_type, priority: r.priority,
+    assignee: empMap[r.primary_assignee]?.full_name || r.primary_assignee || '—',
+    tier: r.assigned_tier, due: r.due_date, status: r.status,
+    expHrs: r.expected_completion_hours ?? '', actHrs: r.actual_completion_hours ?? '',
+    penalty: r.total_penalty_percent ?? 0,
+  }));
+  const headers = ['Task','Type','Priority','Assignee','Tier','Due Date','Status','Expected Hrs','Actual Hrs','Penalty %'];
+  const rowToCells = r => [r.title, r.type, r.priority, r.assignee, r.tier, r.due, r.status, r.expHrs, r.actHrs, r.penalty];
+  exportRows(headers, rows, rowToCells, 'Task_Report', 'Task Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Meeting & Action Items Report — Blueprint §15.2 ──
+async function downloadMeetingReport(fmt) {
+  const from = document.getElementById('dlMeetFrom').value;
+  const to = document.getElementById('dlMeetTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data: meetings, error: mErr } = await db.from('meetings')
+    .select('meeting_id, title, meeting_type, scheduled_start, status')
+    .gte('scheduled_start', from).lte('scheduled_start', to + 'T23:59:59')
+    .eq('is_active', true);
+  if (mErr) { alert('মিটিং ডেটা আনতে সমস্যা হয়েছে: ' + mErr.message); return; }
+  if (!meetings || meetings.length === 0) { alert('এই সময়ে কোনো মিটিং পাওয়া যায়নি।'); return; }
+  const meetingIds = meetings.map(m => m.meeting_id);
+  const meetingMap = {}; meetings.forEach(m => { meetingMap[m.meeting_id] = m; });
+  const { data: actions, error: aErr } = await db.from('meeting_action_items')
+    .select('meeting_id, action_description, assigned_to, due_date, priority, status')
+    .in('meeting_id', meetingIds)
+    .eq('is_active', true);
+  if (aErr) { alert('অ্যাকশন আইটেম আনতে সমস্যা হয়েছে: ' + aErr.message); return; }
+  if (!actions || actions.length === 0) { alert('এই সময়ে মিটিং থাকলেও কোনো Action Item পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = actions.map(a => ({
+    meeting: meetingMap[a.meeting_id]?.title || '',
+    action: a.action_description,
+    assignee: empMap[a.assigned_to]?.full_name || a.assigned_to || '—',
+    due: a.due_date, priority: a.priority, status: a.status,
+  }));
+  const headers = ['Meeting','Action Item','Assigned To','Due Date','Priority','Status'];
+  const rowToCells = r => [r.meeting, r.action, r.assignee, r.due, r.priority, r.status];
+  exportRows(headers, rows, rowToCells, 'Meeting_Action_Items', 'Meeting & Action Items Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Issue Report — Blueprint §15.2 ──
+async function downloadIssueReport(fmt) {
+  const from = document.getElementById('dlIssueFrom').value;
+  const to = document.getElementById('dlIssueTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('issues')
+    .select('title, category, priority, reported_by, assigned_to, status, risk_score, created_at, resolved_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Issue পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    title: r.title, category: r.category, priority: r.priority,
+    reportedBy: empMap[r.reported_by]?.full_name || r.reported_by || '—',
+    assignedTo: empMap[r.assigned_to]?.full_name || r.assigned_to || '—',
+    status: r.status, risk: r.risk_score ?? '',
+    created: (r.created_at || '').substring(0, 10),
+    resolved: r.resolved_at ? r.resolved_at.substring(0, 10) : '—',
+  }));
+  const headers = ['Issue','Category','Priority','Reported By','Assigned To','Status','Risk Score','Created','Resolved'];
+  const rowToCells = r => [r.title, r.category, r.priority, r.reportedBy, r.assignedTo, r.status, r.risk, r.created, r.resolved];
+  exportRows(headers, rows, rowToCells, 'Issue_Report', 'Issue Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Monthly Donor Audit Readiness Report — Blueprint §15.2 / §12.7 ──
+async function downloadDonorAuditReport(fmt) {
+  const from = document.getElementById('dlDonorFrom').value;
+  const to = document.getElementById('dlDonorTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('audit_logs')
+    .select('action, module, risk_score, risk_level, is_high_risk_locked, description, created_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .order('risk_score', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Audit Log পাওয়া যায়নি।'); return; }
+  const highCount = data.filter(r => (r.risk_score || 0) >= 8).length;
+  const rows = data.map(r => ({
+    date: (r.created_at || '').substring(0, 10),
+    action: r.action, module: r.module,
+    risk: r.risk_score ?? '', level: r.risk_level || '',
+    locked: r.is_high_risk_locked ? 'Locked' : '—',
+    desc: r.description || '',
+  }));
+  const headers = ['Date','Action','Module','Risk Score','Risk Level','Locked','Description'];
+  const rowToCells = r => [r.date, r.action, r.module, r.risk, r.level, r.locked, r.desc];
+  const title = `Monthly Donor Audit Readiness Report (${highCount} HIGH-risk event${highCount === 1 ? '' : 's'})`;
+  exportRows(headers, rows, rowToCells, 'Donor_Audit_Readiness', title, `${from}_to_${to}`, fmt);
+}
+
+// ── Audit Log Report — Blueprint §15.2 ──
+async function downloadAuditLogReport(fmt) {
+  const from = document.getElementById('dlAuditFrom').value;
+  const to = document.getElementById('dlAuditTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('audit_logs')
+    .select('action, module, risk_score, risk_level, created_at')
+    .gte('created_at', from).lte('created_at', to + 'T23:59:59')
+    .order('created_at', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Audit Log পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    date: (r.created_at || '').substring(0, 16).replace('T', ' '),
+    action: r.action, module: r.module, risk: r.risk_score ?? '', level: r.risk_level || '',
+  }));
+  const headers = ['Date/Time','Action','Module','Risk Score','Risk Level'];
+  const rowToCells = r => [r.date, r.action, r.module, r.risk, r.level];
+  exportRows(headers, rows, rowToCells, 'Audit_Log_Report', 'Audit Log Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Populate employee-select dropdowns used by slip/leave-balance downloads — Blueprint §5.8/§6.3/§12.9 ──
+async function populateReportEmployeeDropdowns() {
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).order('full_name');
+  if (!emps) return;
+  ['dlSlipEmployee', 'dlSlipEmployeePay', 'dlLeaveBalEmployee'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel || sel.options.length > 1) return;
+    emps.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = `${e.full_name} (Tier ${e.tier})`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function openSlipWindow(title, bodyHtml, periodLabel) {
+  const w = window.open('', '_blank');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+  <style>
+    body{font-family:'Segoe UI',sans-serif;padding:36px;color:#1a2233;}
+    h2{font-size:19px;color:#0f1f3d;margin-bottom:2px;}
+    .org{font-size:12px;color:#667;margin-bottom:22px;}
+    .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef0f4;font-size:13px;}
+    .row .lbl{color:#667;}
+    .row .val{font-weight:600;}
+    table{border-collapse:collapse;width:100%;font-size:12px;margin-top:10px;}
+    th{background:#0f1f3d;color:#fff;padding:7px;text-align:left;}
+    td{padding:6px 7px;border:1px solid #ddd;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+  <h2>${title}</h2>
+  <div class="org">BRPHI Bangladesh Country Office — GramGP Programme | BWAPMS v1.2 | ${periodLabel}</div>
+  ${bodyHtml}
+  <br><button onclick="window.print()" style="padding:10px 20px;background:#0f1f3d;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button>
+  </body></html>`;
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── Daily Attendance Slip — Blueprint §5.8 ──
+async function downloadDailyAttendanceSlip() {
+  const empId = document.getElementById('dlSlipEmployee').value;
+  const date  = document.getElementById('dlSlipDate').value;
+  if (!empId || !date) { alert('Employee এবং Date দুটোই দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, minutes_late, minutes_early_departure, validated_hours, status, mode, remarks, employee_master(full_name, designation, tier)')
+    .eq('employee_id', empId).eq('attendance_date', date).maybeSingle();
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data) { alert('এই তারিখে কোনো Attendance রেকর্ড পাওয়া যায়নি।'); return; }
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${data.employee_master?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${data.employee_master?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Date</span><span class="val">${data.attendance_date}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val">${data.status || '—'}</span></div>
+    <div class="row"><span class="lbl">Mode</span><span class="val">${data.mode || '—'}</span></div>
+    <div class="row"><span class="lbl">Check-In</span><span class="val">${data.check_in_time ? new Date(data.check_in_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+    <div class="row"><span class="lbl">Check-Out</span><span class="val">${data.check_out_time ? new Date(data.check_out_time).toLocaleTimeString('en-GB') : '—'}</span></div>
+    <div class="row"><span class="lbl">Minutes Late</span><span class="val">${data.minutes_late || 0}</span></div>
+    <div class="row"><span class="lbl">Minutes Early Departure</span><span class="val">${data.minutes_early_departure || 0}</span></div>
+    <div class="row"><span class="lbl">Validated Hours</span><span class="val">${data.validated_hours ?? '—'}</span></div>
+    <div class="row"><span class="lbl">Remarks</span><span class="val">${data.remarks || '—'}</span></div>`;
+  openSlipWindow('Daily Attendance Slip', body, date);
+}
+
+// ── Yearly Attendance Summary — Blueprint §5.8 ──
+async function downloadYearlyAttendanceSummary(fmt) {
+  const year = document.getElementById('dlYearAtt').value;
+  if (!year) { alert('Year দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('employee_id, status, minutes_late')
+    .gte('attendance_date', `${year}-01-01`).lte('attendance_date', `${year}-12-31`);
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই বছরে কোনো রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const agg = {};
+  data.forEach(r => {
+    if (!agg[r.employee_id]) agg[r.employee_id] = { present: 0, late: 0, absent: 0, leave: 0, totalMinLate: 0 };
+    const a = agg[r.employee_id];
+    if (r.status === 'Present') a.present++;
+    else if (r.status === 'Late') { a.present++; a.late++; }
+    else if (r.status === 'Absent') a.absent++;
+    else if (r.status === 'Leave') a.leave++;
+    a.totalMinLate += (r.minutes_late || 0);
+  });
+  const rows = Object.keys(agg).map(empId => ({
+    name: empMap[empId]?.full_name || empId,
+    designation: empMap[empId]?.designation || '',
+    present: agg[empId].present, late: agg[empId].late,
+    absent: agg[empId].absent, leave: agg[empId].leave,
+    totalMinLate: agg[empId].totalMinLate,
+  }));
+  const headers = ['Employee','Designation','Present Days','Late Days','Absent Days','Leave Days','Total Minutes Late'];
+  const rowToCells = r => [r.name, r.designation, r.present, r.late, r.absent, r.leave, r.totalMinLate];
+  exportRows(headers, rows, rowToCells, 'Yearly_Attendance_Summary', 'Yearly Attendance Summary', year, fmt);
+}
+
+// ── Late Attendance Report — Blueprint §5.8 ──
+async function downloadLateReport(fmt) {
+  const from = document.getElementById('dlLateFrom').value;
+  const to   = document.getElementById('dlLateTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, check_in_time, minutes_late, status, employee_id, employee_master(full_name, designation, tier)')
+    .eq('status', 'Late')
+    .gte('attendance_date', from).lte('attendance_date', to)
+    .order('minutes_late', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Late Attendance পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    date: r.attendance_date,
+    checkIn: r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-GB') : '',
+    minLate: r.minutes_late || 0,
+  }));
+  const headers = ['Employee','Designation','Date','Check-In','Minutes Late'];
+  const rowToCells = r => [r.name, r.designation, r.date, r.checkIn, r.minLate];
+  exportRows(headers, rows, rowToCells, 'Late_Attendance_Report', 'Late Attendance Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Absentee Report — Blueprint §5.8 ──
+async function downloadAbsenteeReport(fmt) {
+  const from = document.getElementById('dlAbsFrom').value;
+  const to   = document.getElementById('dlAbsTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('attendance')
+    .select('attendance_date, status, remarks, employee_id, employee_master(full_name, designation, tier)')
+    .eq('status', 'Absent')
+    .gte('attendance_date', from).lte('attendance_date', to)
+    .order('attendance_date', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Absentee রেকর্ড পাওয়া যায়নি।'); return; }
+  const rows = data.map(r => ({
+    name: r.employee_master?.full_name || r.employee_id,
+    designation: r.employee_master?.designation || '',
+    date: r.attendance_date,
+    remarks: r.remarks || '',
+  }));
+  const headers = ['Employee','Designation','Date','Remarks'];
+  const rowToCells = r => [r.name, r.designation, r.date, r.remarks];
+  exportRows(headers, rows, rowToCells, 'Absentee_Report', 'Absentee Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Field Visit Compliance Report — Blueprint §10.2 / §5.8 ──
+async function downloadFieldVisitCompliance(fmt) {
+  const from = document.getElementById('dlFvFrom').value;
+  const to   = document.getElementById('dlFvTo').value;
+  if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+  const { data, error } = await db.from('meetings')
+    .select('title, meeting_type, organizer_id, scheduled_start, location_or_platform, field_visit_compliance_status, risk_score')
+    .neq('field_visit_compliance_status', 'Not_Applicable')
+    .gte('scheduled_start', from).lte('scheduled_start', to + 'T23:59:59')
+    .eq('is_active', true)
+    .order('scheduled_start', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Field Visit মিটিং পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    meeting: r.title,
+    organizer: empMap[r.organizer_id]?.full_name || r.organizer_id || '—',
+    date: (r.scheduled_start || '').substring(0, 10),
+    location: r.location_or_platform || '',
+    status: r.field_visit_compliance_status || '',
+    risk: r.risk_score ?? 0,
+  }));
+  const headers = ['Meeting','Organizer','Date','Location','Compliance Status','Risk Score'];
+  const rowToCells = r => [r.meeting, r.organizer, r.date, r.location, r.status, r.risk];
+  exportRows(headers, rows, rowToCells, 'Field_Visit_Compliance', 'Field Visit Compliance Report', `${from}_to_${to}`, fmt);
+}
+
+// ── Next-Month Payroll Forecast — PDF export — Blueprint §12.8 ──
+async function downloadPayrollForecastPDF() {
+  const { data: emps } = await db.from('employee_master')
+    .select('employee_id, full_name, monthly_gross_salary')
+    .eq('is_active', true).neq('tier', 1);
+  if (!emps || emps.length === 0) { alert('কোনো Employee ডেটা পাওয়া যায়নি।'); return; }
+  const now = new Date();
+  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  let rowsHtml = '';
+  emps.forEach(e => {
+    const gross = parseFloat(e.monthly_gross_salary) || 0;
+    const dailyGross = gross / 26;
+    const estLateDays = 2;
+    const estLateDeduct = ((estLateDays * 30) / 480 * dailyGross);
+    const estNet = gross - estLateDeduct;
+    rowsHtml += `<tr><td>${e.full_name}</td><td>৳${gross.toLocaleString()}</td><td>৳${estLateDeduct.toFixed(0)}</td><td>৳${estNet.toFixed(0)}</td></tr>`;
+  });
+  const body = `<table><tr><th>Employee</th><th>Gross</th><th>Est. Late Deduction</th><th>Est. Net</th></tr>${rowsHtml}</table>
+    <p style="font-size:11px;color:#999;margin-top:10px;">Projected estimate — non-binding. Actual payroll depends on real attendance for the month.</p>`;
+  openSlipWindow('Next-Month Payroll Forecast', body, monthLabel);
+}
+
+// ── Individual Salary Slip — Blueprint §12.9 ──
+async function downloadSalarySlip() {
+  const empId = document.getElementById('dlSlipEmployeePay').value;
+  const monthVal = document.getElementById('dlSlipMonth').value;
+  if (!empId || !monthVal) { alert('Employee এবং Month দুটোই দিন।'); return; }
+  const monthStart = `${monthVal}-01`;
+  const { data, error } = await db.from('payroll')
+    .select('gross_salary, prorata_late_deduction, absent_deduction, early_departure_deduction, income_tax_deduction, kpi_penalty_deduction, other_deductions, total_deductions, approved_adjustments, net_salary, is_locked, employee_master(full_name, designation, tier)')
+    .eq('employee_id', empId).eq('payroll_month', monthStart).maybeSingle();
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data) { alert('এই মাসে এই Employee-এর কোনো processed Payroll রেকর্ড পাওয়া যায়নি।'); return; }
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${data.employee_master?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${data.employee_master?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Month</span><span class="val">${monthVal}</span></div>
+    <div class="row"><span class="lbl">Gross Salary</span><span class="val">৳${Number(data.gross_salary || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Late Deduction</span><span class="val">−৳${Number(data.prorata_late_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Absent Deduction</span><span class="val">−৳${Number(data.absent_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Early Departure Deduction</span><span class="val">−৳${Number(data.early_departure_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Income Tax</span><span class="val">−৳${Number(data.income_tax_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">KPI Penalty</span><span class="val">−৳${Number(data.kpi_penalty_deduction || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Other Deductions</span><span class="val">−৳${Number(data.other_deductions || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Approved Adjustments</span><span class="val">৳${Number(data.approved_adjustments || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Total Deductions</span><span class="val">−৳${Number(data.total_deductions || 0).toFixed(2)}</span></div>
+    <div class="row" style="font-size:15px;padding-top:14px;"><span class="lbl" style="font-weight:700;">NET SALARY</span><span class="val" style="color:#0f1f3d;">৳${Number(data.net_salary || 0).toFixed(2)}</span></div>
+    <div class="row"><span class="lbl">Status</span><span class="val">${data.is_locked ? 'Locked' : 'Open'}</span></div>`;
+  openSlipWindow('Individual Salary Slip', body, monthVal);
+}
+
+// ── Leave Balance Slip — Blueprint §6.3 ──
+async function downloadLeaveBalanceSlip() {
+  const empId = document.getElementById('dlLeaveBalEmployee').value;
+  if (!empId) { alert('Employee নির্বাচন করুন।'); return; }
+  const currentYear = new Date().getFullYear();
+  const { data, error } = await db.from('leave_balance')
+    .select('leave_type, year, total_allocated, used, balance')
+    .eq('employee_id', empId).eq('year', currentYear).eq('is_active', true)
+    .order('leave_type');
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই Employee-এর কোনো Leave Balance রেকর্ড পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  let rowsHtml = '';
+  data.forEach(r => {
+    rowsHtml += `<div class="row"><span class="lbl">${r.leave_type}</span><span class="val">Allocated: ${r.total_allocated} | Used: ${r.used} | Balance: ${r.balance}</span></div>`;
+  });
+  const body = `
+    <div class="row"><span class="lbl">Employee</span><span class="val">${empMap[empId]?.full_name || empId}</span></div>
+    <div class="row"><span class="lbl">Designation</span><span class="val">${empMap[empId]?.designation || '—'}</span></div>
+    <div class="row"><span class="lbl">Year</span><span class="val">${currentYear}</span></div>
+    <div style="margin-top:12px;">${rowsHtml}</div>`;
+  openSlipWindow('Leave Balance Slip', body, `${currentYear} Snapshot`);
+}
+
+// ── Monthly / Yearly Leave Summary — Blueprint §6.3 ──
+async function downloadLeaveSummary(periodType, fmt) {
+  let from, to, periodLabel;
+  if (periodType === 'yearly') {
+    const year = document.getElementById('dlLeaveYear').value;
+    if (!year) { alert('Year দিন।'); return; }
+    from = `${year}-01-01`; to = `${year}-12-31`; periodLabel = year;
+  } else {
+    from = document.getElementById('dlLeaveMonFrom').value;
+    to   = document.getElementById('dlLeaveMonTo').value;
+    if (!from || !to) { alert('From এবং To তারিখ দিন।'); return; }
+    periodLabel = `${from}_to_${to}`;
+  }
+  const { data, error } = await db.from('leave_request')
+    .select('employee_id, leave_type, start_date, end_date, total_days, status')
+    .eq('status', 'Approved')
+    .gte('start_date', from).lte('start_date', to)
+    .order('start_date', { ascending: false });
+  if (error) { alert('ডেটা আনতে সমস্যা হয়েছে: ' + error.message); return; }
+  if (!data || data.length === 0) { alert('এই সময়ে কোনো Approved Leave পাওয়া যায়নি।'); return; }
+  const empMap = await getEmployeeMap();
+  const rows = data.map(r => ({
+    name: empMap[r.employee_id]?.full_name || r.employee_id,
+    designation: empMap[r.employee_id]?.designation || '',
+    type: r.leave_type, start: r.start_date, end: r.end_date, days: r.total_days,
+  }));
+  const headers = ['Employee','Designation','Leave Type','Start Date','End Date','Total Days'];
+  const rowToCells = r => [r.name, r.designation, r.type, r.start, r.end, r.days];
+  const title = periodType === 'yearly' ? 'Yearly Leave Summary' : 'Monthly Leave Summary';
+  exportRows(headers, rows, rowToCells, title.replace(/ /g, '_'), title, periodLabel, fmt);
+}
+
+async function loadAudit() {
+  const { data } = await db.from('audit_logs')
+    .select('log_id, action, module, risk_score, risk_level, created_at')
+    .order('created_at', { ascending: false }).limit(50);
+
+  const tbody = document.getElementById('auditBody');
+  if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">No audit records.</td></tr>'; return; }
+  const riskColor = { 'High': 'var(--red)', 'Medium': 'var(--amber)', 'Low': 'var(--green)' };
+  tbody.innerHTML = data.map(r => '<tr>' +
+    '<td style="font-size:12px;color:var(--text-muted);">' + new Date(r.created_at).toLocaleString('en-GB') + '</td>' +
+    '<td style="font-weight:600;">' + (r.action || '—') + '</td>' +
+    '<td style="color:var(--text-muted);">' + (r.module || '—') + '</td>' +
+    '<td style="font-weight:700;color:' + (riskColor[r.risk_level] || 'var(--text-muted)') + ';">' + (r.risk_score || 0) + '</td>' +
+    '<td><span style="font-size:11px;font-weight:700;color:' + (riskColor[r.risk_level] || 'var(--text-muted)') + ';">' + (r.risk_level || '—') + '</span></td>' +
+    '</tr>').join('');
+}
+
+const sectionTitles = {
+  dashboard: 'Executive Dashboard', alerts: 'Red Alerts',
+  approvals: 'Tier 2 Approvals', employees: 'All Employees',
+  attendance: 'Attendance Overview', kpi: 'KPI Overview',
+  payroll: 'Payroll Forecast', audit: 'Audit Log', system: 'System Health',
+  announcements: 'Announcements & Notices', holidays: 'Holiday Calendar',
+  rules: 'Rules & Regulations', reports: 'More Reports',
+};
+
+function showSection(name, el) {
+  document.querySelectorAll('[id^="sec-"]').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.style.display = 'block';
+  document.getElementById('topbarTitle').textContent = sectionTitles[name] || name;
+  const navEl = el || document.querySelector(`.nav-item[onclick*="showSection('${name}'"]`);
+  if (navEl) navEl.classList.add('active');
+
+  if (name === 'announcements') loadAnnouncements();
+  if (name === 'holidays')      loadHolidays();
+  if (name === 'rules')         loadRules();
+}
+
+// ── Announcements (Blueprint §16) — Tier 1 manage ─────────────
+function openAnnouncementModal() {
+  document.getElementById('annTitle').value = '';
+  document.getElementById('annMessage').value = '';
+  document.getElementById('annAudience').value = 'all';
+  document.getElementById('announcementModal').classList.add('open');
+}
+function closeAnnouncementModal() {
+  document.getElementById('announcementModal').classList.remove('open');
+}
+
+async function saveAnnouncement() {
+  const title = document.getElementById('annTitle').value.trim();
+  const message = document.getElementById('annMessage').value.trim();
+  const audience = document.getElementById('annAudience').value;
+  if (!title || !message) { alert('Title ও Message দুটোই দিতে হবে।'); return; }
+
+  let q = db.from('employee_master').select('employee_id').eq('is_active', true);
+  q = audience === 'all' ? q.neq('tier', 1) : q.eq('tier', parseInt(audience));
+  const { data: recipients, error: empErr } = await q;
+
+  if (empErr || !recipients || recipients.length === 0) {
+    alert('কোনো recipient পাওয়া যায়নি।'); return;
+  }
+
+  const rows = recipients.map(r => ({
+    employee_id: r.employee_id, type: 'Announcement', title, message, is_read: false,
+  }));
+  const { error } = await db.from('notifications').insert(rows);
+  if (error) { alert('Error: ' + error.message); return; }
+
+  await db.from('audit_logs').insert({
+    user_id: myEmployeeId, action: 'Announcement_Created', module: 'Announcements',
+    risk_score: 1, risk_level: 'Low',
+    new_value: JSON.stringify({ title, audience, recipientCount: recipients.length }),
+  });
+
+  closeAnnouncementModal();
+  await loadAnnouncements();
+}
+
+async function loadAnnouncements() {
+  // Show distinct announcements (one per title+created_at, since each recipient has their own row)
+  const { data, error } = await db.from('notifications')
+    .select('notification_id, title, message, created_at')
+    .eq('type', 'Announcement')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  const list = document.getElementById('annList');
+  const badge = document.getElementById('annCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Announcement পাঠানো হয়নি।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  // De-duplicate by title+message+created_at (rounded to minute) since one row exists per recipient
+  const seen = new Set();
+  const unique = [];
+  data.forEach(a => {
+    const key = a.title + '|' + a.message + '|' + a.created_at.slice(0, 16);
+    if (!seen.has(key)) { seen.add(key); unique.push(a); }
+  });
+  badge.textContent = unique.length;
+  list.innerHTML = unique.map(a => `
+    <div class="ann-item">
+      <div class="ann-icon">📢</div>
+      <div style="flex:1;">
+        <div class="ann-title">${a.title}</div>
+        <div class="ann-body">${a.message}</div>
+        <div class="ann-meta">${new Date(a.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} · ${new Date(a.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Holiday Calendar (Blueprint §7) — Tier 1 manage ───────────
+function openHolidayModal() {
+  document.getElementById('holidayName').value = '';
+  document.getElementById('holidayDate').value = '';
+  document.getElementById('holidayTypeCat').value = 'Government';
+  document.getElementById('holidayRecurring').checked = false;
+  document.getElementById('holidayModal').classList.add('open');
+}
+function closeHolidayModal() {
+  document.getElementById('holidayModal').classList.remove('open');
+}
+
+async function saveHoliday() {
+  const name = document.getElementById('holidayName').value.trim();
+  const date = document.getElementById('holidayDate').value;
+  const type = document.getElementById('holidayTypeCat').value;
+  const recurring = document.getElementById('holidayRecurring').checked;
+  if (!name || !date) { alert('Holiday Name ও Date দুটোই দিতে হবে।'); return; }
+
+  const { error } = await db.from('holiday_master').insert({
+    holiday_type: name, holiday_date: date, is_recurring: recurring, is_active: true,
+  });
+  if (error) { alert('Error: ' + error.message); return; }
+
+  await db.from('audit_logs').insert({
+    user_id: myEmployeeId, action: 'Holiday_Added', module: 'Holiday_Master',
+    risk_score: 1, risk_level: 'Low',
+    new_value: JSON.stringify({ name, date, type, recurring }),
+  });
+
+  closeHolidayModal();
+  await loadHolidays();
+}
+
+async function loadHolidays() {
+  const year = new Date().getFullYear();
+  document.getElementById('holidayYearLabel').textContent = year;
+  const { data, error } = await db.from('holiday_master')
+    .select('holiday_id, holiday_type, holiday_date, is_recurring')
+    .eq('is_active', true)
+    .gte('holiday_date', `${year}-01-01`)
+    .lte('holiday_date', `${year}-12-31`)
+    .order('holiday_date', { ascending: true });
+
+  const list = document.getElementById('holidayList');
+  const badge = document.getElementById('holidayCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">এই বছরের জন্য কোনো Holiday যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = data.length;
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  list.innerHTML = data.map(h => {
+    const d = new Date(h.holiday_date);
+    return `
+    <div class="holiday-item">
+      <div style="display:flex;align-items:center;">
+        <div class="holiday-date-box">
+          <div class="holiday-date-day">${d.getDate()}</div>
+          <div class="holiday-date-mon">${months[d.getMonth()]}</div>
+        </div>
+        <div>
+          <div class="holiday-name">${h.holiday_type}</div>
+          <div class="holiday-type">${h.is_recurring ? 'প্রতি বছর' : 'এই বছরের জন্য'}</div>
+        </div>
+      </div>
+      <button class="btn-icon-sm" onclick="deactivateHoliday('${h.holiday_id}')">Remove</button>
+    </div>`;
+  }).join('');
+}
+
+async function deactivateHoliday(id) {
+  if (!confirm('এই Holiday remove করতে চান?')) return;
+  await db.from('holiday_master').update({ is_active: false }).eq('holiday_id', id);
+  await loadHolidays();
+}
+
+// ── Rules & Regulations (Blueprint v1.3 §2.1) — Tier 1 manage ─
+let currentRuleLang = 'bn';
+let cachedRules = [];
+
+function openRuleModal() {
+  ['ruleTitleBn','ruleTitleEn','ruleContentBn','ruleContentEn','ruleLegalRef'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ruleCategory').value = 'Attendance';
+  document.getElementById('ruleModal').classList.add('open');
+}
+function closeRuleModal() {
+  document.getElementById('ruleModal').classList.remove('open');
+}
+
+async function saveRule() {
+  const category = document.getElementById('ruleCategory').value;
+  const titleBn = document.getElementById('ruleTitleBn').value.trim();
+  const titleEn = document.getElementById('ruleTitleEn').value.trim();
+  const contentBn = document.getElementById('ruleContentBn').value.trim();
+  const contentEn = document.getElementById('ruleContentEn').value.trim();
+  const legalRef = document.getElementById('ruleLegalRef').value.trim();
+
+  if (!titleBn || !titleEn || !contentBn || !contentEn) {
+    alert('বাংলা ও English — দুই ভাষাতেই Title ও Content দিতে হবে।'); return;
+  }
+
+  const { data, error } = await db.from('rules_regulations').insert({
+    category, title_bn: titleBn, title_en: titleEn,
+    content_bn: contentBn, content_en: contentEn,
+    legal_reference: legalRef || null, is_active: true, created_by: myEmployeeId,
+  }).select('rule_id').single();
+
+  if (error) { alert('Error: ' + error.message); return; }
+
+  await db.from('rule_change_log').insert({
+    rule_id: data.rule_id, action: 'Created', changed_by: myEmployeeId,
+    new_value: JSON.stringify({ category, titleBn, titleEn }),
+  });
+  await db.from('audit_logs').insert({
+    user_id: myEmployeeId, action: 'Rule_Created', module: 'Rules_Regulations',
+    risk_score: 3, risk_level: 'Low',
+    new_value: JSON.stringify({ category, titleBn }),
+  });
+
+  closeRuleModal();
+  await loadRules();
+  await loadRulesBadge();
+}
+
+async function loadRules() {
+  const { data, error } = await db.from('rules_regulations')
+    .select('rule_id, category, title_en, title_bn, content_en, content_bn, legal_reference')
+    .eq('is_active', true)
+    .order('category', { ascending: true });
+
+  const list = document.getElementById('rulesList');
+  const badge = document.getElementById('rulesCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Rule যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    cachedRules = [];
+    return;
+  }
+  cachedRules = data;
+  badge.textContent = data.length;
+  renderRules();
+}
+
+function renderRules() {
+  const list = document.getElementById('rulesList');
+  list.innerHTML = cachedRules.map(r => `
+    <div class="rule-card-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1;">
+          <span class="rule-card-cat">${r.category}</span>
+          <div class="rule-card-title">${currentRuleLang === 'bn' ? r.title_bn : r.title_en}</div>
+          <div class="rule-card-body">${currentRuleLang === 'bn' ? r.content_bn : r.content_en}</div>
+          ${r.legal_reference ? `<div style="font-size:11px;color:var(--text-light);margin-top:6px;">Ref: ${r.legal_reference}</div>` : ''}
+        </div>
+        <button class="btn-icon-sm" onclick="deactivateRule('${r.rule_id}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function setRuleLang(lang) {
+  currentRuleLang = lang;
+  document.getElementById('ruleLangBn').classList.toggle('active', lang === 'bn');
+  document.getElementById('ruleLangEn').classList.toggle('active', lang === 'en');
+  renderRules();
+}
+
+async function deactivateRule(id) {
+  if (!confirm('এই Rule remove করতে চান?')) return;
+  await db.from('rules_regulations').update({ is_active: false }).eq('rule_id', id);
+  await db.from('rule_change_log').insert({ rule_id: id, action: 'Deactivated', changed_by: myEmployeeId });
+  await loadRules();
+  await loadRulesBadge();
+}
+
+async function loadRulesBadge() {
+  const { count } = await db.from('rules_regulations')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  const badgeEl = document.getElementById('rulesBadge');
+  if (badgeEl && count > 0) {
+    badgeEl.textContent = count;
+    badgeEl.style.display = 'inline-block';
+  }
+}
+
+// ── Notifications ──────────────────────────────────────────────
+async function loadNotifications() {
+  if (!myEmployeeId) return;
+  const { data } = await db.from('notifications')
+    .select('notification_id, type, title, message, is_read, created_at')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const unread = (data || []).filter(n => !n.is_read);
+  const dot = document.getElementById('notifDot');
+  if (dot) dot.classList.toggle('show', unread.length > 0);
+
+  const listEl = document.getElementById('notifList');
+  if (!listEl) return;
+  if (!data || data.length === 0) {
+    listEl.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markNotifRead('${n.notification_id}')">
+      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-msg">${n.message}</div>
+      <div class="notif-time">${new Date(n.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} · ${new Date(n.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`).join('');
+}
+
+function toggleNotif() {
+  document.getElementById('notifDropdown').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('notifBellWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
+});
+
+async function markNotifRead(id) {
+  await db.from('notifications').update({ is_read: true }).eq('notification_id', id);
+  await loadNotifications();
+}
+async function markAllRead(e) {
+  e.stopPropagation();
+  await db.from('notifications').update({ is_read: true }).eq('employee_id', myEmployeeId).eq('is_read', false);
+  await loadNotifications();
+}
+
+async function handleLogout() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+// ── (Desktop sidebar-toggle removed — this build uses the bottom-nav/more-sheet shell instead) ──
+</script>
+</body>
+</html>
