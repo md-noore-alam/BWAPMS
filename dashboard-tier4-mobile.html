@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BWAPMS — My Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:       #0e1b33;
+      --navy-mid:   #17294a;
+      --navy-dark:  #081020;
+      --navy-deep:  #081020;
+      --green:      #146c46;
+      --green-light:#1f9d5f;
+      --green-dim:  #e6f4ec;
+      --yellow:     #b8791a;
+      --amber:      #b8791a;
+      --yellow-bg:  #fbf1e2;
+      --amber-bg:   #fbf1e2;
+      --red:        #ac2b26;
+      --red-bg:     #fbecea;
+      --blue:       #2856a3;
+      --blue-bg:    #eaf0fa;
+      --cream:      #f4f2ee;
+      --paper:      #f8f7f4;
+      --white:      #ffffff;
+      --border:     #e4e1da;
+      --text-main:  #1c2333;
+      --text-muted: #656b7a;
+      --text-light: #97998f;
+      --sidebar-w:  220px;
+      --topbar-h:   60px;
+      --radius:     11px;
+      --radius-sm:  7px;
+      --shadow:     0 1px 2px rgba(14,27,51,0.05), 0 4px 14px rgba(14,27,51,0.06);
+      --shadow-md:  0 4px 16px rgba(14,27,51,0.10);
+      --shadow-lg:  0 10px 34px rgba(14,27,51,0.16);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+    }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+    /* Sidebar */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--navy); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+    .sidebar-logo { padding: 16px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo img { height: 32px; width: auto; object-fit: contain; }
+    .sidebar-logo .gramgp { background: rgba(255,255,255,0.9); border-radius: 5px; padding: 2px 5px; height: 22px; }
+    .sidebar-sys { padding: 8px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-sys-name { font-size: 12.5px; font-weight: 700; color: #fff; }
+    .sidebar-sys-sub  { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+    .nav-section { padding: 14px 10px 4px; }
+    .nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 5px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .nav-item.active { background: var(--green); color: #fff; }
+    .nav-item svg { flex-shrink: 0; }
+
+    .sidebar-bottom { margin-top: auto; padding: 14px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-tier { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); padding: 4px; transition: color 0.15s; border-radius: 4px; }
+    .btn-logout:hover { color: #fff; }
+
+    /* Topbar */
+    .topbar { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--topbar-h); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; z-index: 90; box-shadow: var(--shadow); }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--navy); }
+    .topbar-date { font-size: 13px; color: var(--text-muted); }
+
+    /* Main */
+    .main { margin-left: var(--sidebar-w); padding-top: var(--topbar-h); min-height: 100vh; }
+    .content { padding: 24px; }
+    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 24px; }
+    .section-title:first-child { margin-top: 0; }
+
+    /* Stat Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.red .stat-value { color: var(--red); }
+
+    /* Card */
+    .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 0; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+    .card-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+    .badge-green  { background: var(--green-dim); color: var(--green); }
+    .badge-yellow { background: var(--yellow-bg); color: #b45309; }
+    .badge-blue   { background: var(--blue-bg);   color: var(--blue); }
+    .badge-gray   { background: var(--cream);     color: var(--text-muted); }
+    .card-body { padding: 16px 18px; }
+
+    /* Two col */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Pills */
+    .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+    .pill.present  { background: var(--green-dim); color: var(--green); }
+    .pill.late     { background: var(--yellow-bg); color: #b45309; }
+    .pill.absent   { background: var(--red-bg);    color: var(--red); }
+    .pill.leave    { background: var(--blue-bg);   color: var(--blue); }
+    .pill.pending  { background: var(--cream);     color: var(--text-muted); }
+
+    /* Today's status card */
+    .today-card { background: var(--navy); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+    .today-left h2 { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+    .today-status { font-size: 22px; font-weight: 800; color: #fff; }
+    .today-time { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    .btn-checkin-big { background: var(--green); color: #fff; border: none; border-radius: 9px; padding: 12px 22px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; text-decoration: none; display: inline-block; }
+    .btn-checkin-big:hover { background: var(--green-light); }
+
+    /* Task items */
+    .task-item { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .task-item:last-child { border-bottom: none; }
+    .task-priority { width: 4px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+    .priority-critical { background: var(--red); }
+    .priority-high     { background: var(--yellow); }
+    .priority-medium   { background: var(--blue); }
+    .priority-low      { background: var(--green); }
+    .task-info { flex: 1; }
+    .task-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .task-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+    /* KPI bar */
+    .kpi-item { margin-bottom: 14px; }
+    .kpi-item:last-child { margin-bottom: 0; }
+    .kpi-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .kpi-name { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .kpi-score { font-size: 12.5px; font-weight: 800; color: var(--navy); }
+    .kpi-bar-bg { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .kpi-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .kpi-bar-fill.ex  { background: var(--green); }
+    .kpi-bar-fill.good { background: #3b82f6; }
+    .kpi-bar-fill.mid  { background: var(--yellow); }
+    .kpi-bar-fill.low  { background: var(--red); }
+
+    /* Attendance history table */
+    .att-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .att-table th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 12px; background: var(--cream); border-bottom: 1px solid var(--border); }
+    .att-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .att-table tr:last-child td { border-bottom: none; }
+
+    /* Leave balance */
+    .leave-row { display: flex; gap: 12px; }
+    .leave-box { flex: 1; background: var(--cream); border-radius: 9px; padding: 14px 16px; text-align: center; }
+    .leave-type { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .leave-days { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .leave-label { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+    /* Announcement */
+    .announce-item { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+    .announce-item:last-child { border-bottom: none; }
+    .announce-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .announce-date  { font-size: 11px; color: var(--text-light); margin-top: 3px; }
+
+    /* Loading */
+    #loadingOverlay { position: fixed; inset: 0; background: var(--navy); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 14px; }
+    .loading-logo { font-size: 32px; font-weight: 800; color: #fff; }
+    .loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.15); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-text { font-size: 13px; color: rgba(255,255,255,0.5); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { padding: 28px 18px; text-align: center; color: var(--text-light); font-size: 13px; }
+
+    /* ── Notification Bell ── */
+    .notif-bell { position: relative; cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.15s; }
+    .notif-bell:hover { background: var(--cream); }
+    .notif-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid #fff; display: none; }
+    .notif-dot.show { display: block; }
+    .notif-dropdown { display: none; position: absolute; top: 44px; right: 0; width: 320px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 200; }
+    .notif-dropdown.open { display: block; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .notif-header span { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .notif-header button { font-size: 11px; color: var(--green); background: none; border: none; cursor: pointer; font-weight: 600; }
+    .notif-item { padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; max-height: 320px; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: var(--cream); }
+    .notif-item.unread { background: var(--blue-bg, #eff6ff); }
+    .notif-item-title { font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+    .notif-item-msg { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .notif-time { font-size: 10.5px; color: var(--text-light); margin-top: 3px; }
+    .notif-empty { padding: 24px; text-align: center; color: var(--text-light); font-size: 13px; }
+    .notif-list-scroll { max-height: 320px; overflow-y: auto; }
+
+    /* ── Rules sidebar badge ── */
+    .nav-badge { margin-left: auto; background: var(--yellow); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; display: none; }
+    .nav-badge.show { display: inline-block; }
+
+    /* ── Announcement & Holiday items ── */
+    .ann-item { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+    .ann-item:last-child { border-bottom: none; }
+    .ann-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; background: var(--cream); }
+    .ann-icon.priority { background: var(--yellow-bg, #fffbeb); }
+    .ann-title { font-size: 13.5px; font-weight: 700; color: var(--text-main); }
+    .ann-body { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+    .ann-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+    .holiday-item { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .holiday-item:last-child { border-bottom: none; }
+    .holiday-date-box { width: 44px; height: 44px; border-radius: 8px; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 12px; }
+    .holiday-date-day { font-size: 15px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .holiday-date-mon { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .holiday-name { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
+    .holiday-type { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .rule-card-item { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .rule-card-item:last-child { border-bottom: none; }
+    .rule-card-title { font-size: 13.5px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .rule-card-cat { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--blue-bg, #eff6ff); color: var(--blue, #2563eb); margin-bottom: 6px; }
+    .rule-card-body { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+    .lang-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+    .lang-toggle button { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .lang-toggle button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+      .topbar { left: 0; }
+    }
+  
+    /* ── Mobile Sidebar Toggle (added fix) ── */
+    .sidebar-toggle-btn { display:none; background:none; border:none; cursor:pointer; padding:6px; margin-right:8px; align-items:center; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+    @media (max-width: 640px) {
+      .sidebar-toggle-btn { display:flex; }
+      .sidebar.open { transform: translateX(0) !important; }
+    }
+
+    /* ══════════════ Professional redesign polish (2026-08-01) ══════════════ */
+    html, body { font-family: var(--font-body) !important; background: var(--paper) !important; -webkit-font-smoothing: antialiased; }
+    .sidebar { background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep, var(--navy-dark)) 100%) !important; box-shadow: 2px 0 20px rgba(0,0,0,0.18); }
+    .topbar { background: rgba(255,255,255,0.92) !important; backdrop-filter: saturate(180%) blur(10px); }
+    .topbar-title { font-family: var(--font-display) !important; font-weight: 600 !important; letter-spacing: 0.005em; }
+    .card-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
+    .modal-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
+    .sidebar-sys-name { font-family: var(--font-display) !important; font-weight: 700 !important; }
+    .stat-value { font-family: var(--font-display) !important; font-variant-numeric: tabular-nums; }
+    .holiday-date-day { font-family: var(--font-display) !important; }
+    .card { box-shadow: var(--shadow) !important; transition: box-shadow 0.2s; }
+    .stat-card { box-shadow: var(--shadow) !important; position: relative; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--green-light), var(--green)); }
+    .stat-card:hover { box-shadow: var(--shadow-lg, var(--shadow-md)) !important; transform: translateY(-1px); }
+    .stat-card.yellow::before { background: linear-gradient(90deg, #d7a13f, var(--amber)); }
+    .stat-card.red::before { background: linear-gradient(90deg, #c85a52, var(--red)); }
+    .stat-card.blue::before { background: linear-gradient(90deg, #4b78bf, var(--blue)); }
+    .nav-item.active { background: rgba(31,157,95,0.16) !important; border-left: 2.5px solid var(--green-light); font-weight: 600; }
+    .btn-primary { transition: background 0.15s, transform 0.1s; }
+    .btn-primary:active { transform: scale(0.98); }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--green) !important; box-shadow: 0 0 0 3px rgba(20,108,70,0.12); }
+    #loadingOverlay { background: radial-gradient(circle at 30% 20%, var(--navy-mid), var(--navy-dark)) !important; }
+    .loading-logo { font-family: var(--font-display) !important; }
+
+
+    /* ══════════════ Mobile shell overrides (2026-08-01) ══════════════ */
+    * { -webkit-tap-highlight-color: transparent; }
+    html, body { font-size: 15px; overscroll-behavior-y: none; }
+    .sidebar, .sidebar-overlay, .sidebar-toggle-btn { display: none !important; }
+    .topbar { left: 0 !important; padding: 0 14px !important; padding-top: env(safe-area-inset-top) !important; height: calc(var(--topbar-h) + env(safe-area-inset-top)) !important; }
+    .topbar-date { display: none !important; }
+    .main { margin-left: 0 !important; padding-bottom: calc(64px + env(safe-area-inset-bottom) + 10px) !important; }
+    .content { padding: 14px 14px 6px !important; max-width: 720px; margin: 0 auto; }
+    .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 11px !important; }
+    .two-col, .three-col { display: flex !important; flex-direction: column !important; gap: 14px !important; }
+    table { min-width: 540px; }
+    .card-header { flex-wrap: wrap; gap: 8px; }
+    .form-input, .form-select, .form-textarea { min-height: 46px; font-size: 15px !important; }
+    .btn-primary, .btn-secondary { min-height: 46px; }
+    .modal-overlay { align-items: flex-end !important; }
+    .modal-box { border-radius: 18px 18px 0 0 !important; width: 100% !important; max-width: 100% !important; max-height: 92vh; padding-bottom: calc(22px + env(safe-area-inset-bottom)) !important; }
+
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 150; background: var(--white); border-top: 1px solid var(--border); display: flex; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 16px rgba(14,27,51,0.08); }
+    .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 9px 2px 8px; color: var(--text-muted); cursor: pointer; position: relative; min-height: 62px; }
+    .bn-item svg { flex-shrink: 0; }
+    .bn-item span { font-size: 10px; font-weight: 600; }
+    .bn-item.active { color: var(--green); }
+    .bn-item.active::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 2.5px; background: var(--green); border-radius: 0 0 3px 3px; }
+    .bn-dot { position: absolute; top: 5px; right: 22%; width: 8px; height: 8px; border-radius: 50%; background: var(--red); border: 2px solid var(--white); display: none; }
+    .bn-dot.show { display: block; }
+
+    .more-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(8,16,32,0.5); z-index: 400; }
+    .more-sheet-overlay.open { display: block; }
+    .more-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 401; background: var(--navy); border-radius: 20px 20px 0 0; max-height: 82vh; overflow-y: auto; padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 0.25s ease; }
+    .more-sheet-overlay.open .more-sheet { transform: translateY(0); }
+    .more-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.25); border-radius: 3px; margin: 10px auto 14px; }
+    .more-sheet-user { display: flex; align-items: center; gap: 12px; padding: 6px 4px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
+    .more-sheet-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--green-light), var(--green)); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; overflow: hidden; flex-shrink: 0; }
+    .more-sheet-uname { font-size: 14px; font-weight: 600; color: #fff; }
+    .more-sheet-utier { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .more-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .more-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; background: rgba(255,255,255,0.06); border-radius: 13px; padding: 14px 6px; color: rgba(255,255,255,0.85); cursor: pointer; text-align: center; position: relative; min-height: 74px; }
+    .more-tile:active { background: rgba(255,255,255,0.12); }
+    .more-tile span { font-size: 10.5px; font-weight: 600; line-height: 1.25; }
+    .more-tile .more-badge { position: absolute; top: 6px; right: 8px; background: var(--red); color: #fff; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+    .more-sheet-logout { margin-top: 18px; width: 100%; padding: 13px; background: rgba(172,43,38,0.15); color: #f5b8b3; border: 1px solid rgba(172,43,38,0.3); border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+
+    .bn-badge { position: absolute; top: 4px; right: 20%; background: var(--green); color: #fff; font-size: 9px; font-weight: 700; min-width: 15px; height: 15px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingOverlay">
+  <div class="loading-logo">BWAPMS</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading your dashboard...</div>
+</div>
+
+<!-- Mobile Top App Bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title" id="topbarTitle">My Dashboard</div>
+  </div>
+  <div class="topbar-right" style="display:flex;align-items:center;gap:6px;">
+    <div class="topbar-date" id="topbarDate"></div>
+    <div class="notif-bell" onclick="toggleNotif()" id="notifBellWrap">
+      <svg width="19" height="19" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="notif-dot" id="notifDot"></div>
+      <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-header"><span>Notifications</span><button onclick="markAllRead(event)">Mark all read</button></div>
+        <div class="notif-list-scroll" id="notifList"><div class="notif-empty">No notifications</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="bn-item active" id="bn-dashboard" onclick="showMobileSection('dashboard', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>Dashboard</span>
+  </div>
+  <div class="bn-item" id="bn-checkin" onclick="openCheckin()">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <span>Check-In</span>
+  </div>
+  <div class="bn-item" id="bn-tasks" onclick="showMobileSection('tasks', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>Tasks</span>
+  </div>
+  <div class="bn-item" id="bn-attendance" onclick="showMobileSection('attendance', this)">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span>Attendance</span>
+  </div>
+  <div class="bn-item" id="bn-more" onclick="openMoreSheet()">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    <span>More</span>
+  </div>
+</nav>
+
+<div class="more-sheet-overlay" id="moreSheetOverlay" onclick="if(event.target===this) closeMoreSheet()">
+  <div class="more-sheet">
+    <div class="more-sheet-handle"></div>
+    <div class="more-sheet-user">
+      <div class="more-sheet-avatar" id="sidebarAvatar" onclick="triggerChangeMyPhoto()" style="cursor:pointer;">—</div>
+      <input type="file" id="myPhotoFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="handleMyPhotoChange(event)" />
+      <div>
+        <div class="more-sheet-uname" id="sidebarName">Loading...</div>
+        <div class="more-sheet-utier">Tier 4 — Staff</div>
+      </div>
+    </div>
+    <div class="more-grid">
+      <div class="more-tile" onclick="showMobileSection('report', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Report</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('leave', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Leave</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('kpi', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <span>KPI</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('meetings', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Meetings</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('announcements', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
+        <span>Announcements</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('holidays', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Holidays</span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('rules', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+        <span>Rules</span>
+        <span class="more-badge" id="rulesBadge" style="display:none;"></span>
+      </div>
+      <div class="more-tile" onclick="showMobileSection('salary', null); closeMoreSheet();">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 012.5-2.5h1a2.5 2.5 0 010 5h-2a2.5 2.5 0 000 5h1.5a2.5 2.5 0 002.5-2.5"/></svg>
+        <span>Salary</span>
+      </div>
+    </div>
+    <button class="more-sheet-logout" onclick="handleLogout()">Log Out</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard">
+
+      <!-- Today's status card -->
+      <div class="today-card" style="margin-bottom: 20px;">
+        <div class="today-left">
+          <h2>Today's Status</h2>
+          <div class="today-status" id="todayStatusText">Loading...</div>
+          <div class="today-time" id="todayCheckinTime"></div>
+        </div>
+        <a href="attendance.html" class="btn-checkin-big">📍 Check-In / Out</a>
+      </div>
+
+      <!-- Stat cards -->
+      <p class="section-title">This Month at a Glance</p>
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Present Days</div>
+          <div class="stat-value" id="statPresent">—</div>
+          <div class="stat-sub">this month</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Late Arrivals</div>
+          <div class="stat-value" id="statLate">—</div>
+          <div class="stat-sub">after 10:10 AM</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Tasks Active</div>
+          <div class="stat-value" id="statTasks">—</div>
+          <div class="stat-sub">pending + in progress</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Leave Balance</div>
+          <div class="stat-value" id="statLeave">—</div>
+          <div class="stat-sub">casual days remaining</div>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top: 20px;">
+
+        <!-- Active Tasks -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My Active Tasks</div>
+            <span class="card-badge badge-blue" id="taskBadge">—</span>
+          </div>
+          <div id="taskListHome"><div class="empty-state">Loading...</div></div>
+        </div>
+
+        <!-- KPI Summary -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My KPI — Latest</div>
+            <span class="card-badge badge-gray" id="kpiBadge">—</span>
+          </div>
+          <div class="card-body" id="kpiHome"><div class="empty-state">Loading...</div></div>
+        </div>
+
+      </div>
+
+      <!-- Leave Balance -->
+      <p class="section-title" style="margin-top:20px;">Leave Balance — 2026</p>
+      <div class="card">
+        <div class="card-body">
+          <div class="leave-row">
+            <div class="leave-box">
+              <div class="leave-type">Casual Leave</div>
+              <div class="leave-days" id="clBalance">—</div>
+              <div class="leave-label">days remaining</div>
+            </div>
+            <div class="leave-box">
+              <div class="leave-type">Sick Leave</div>
+              <div class="leave-days" id="slBalance">—</div>
+              <div class="leave-label">days remaining</div>
+            </div>
+            <div class="leave-box">
+              <div class="leave-type">Used (CL)</div>
+              <div class="leave-days" id="clUsed">—</div>
+              <div class="leave-label">days used</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sec-dashboard -->
+
+    <!-- TASKS -->
+    <div id="sec-tasks" style="display:none;">
+      <p class="section-title">My Tasks</p>
+
+      <!-- Task Stat Cards -->
+      <div class="stats-grid" style="margin-bottom:20px;">
+        <div class="stat-card blue">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value" id="tStatPending">—</div>
+          <div class="stat-sub">not started</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value" id="tStatInProgress">—</div>
+          <div class="stat-sub">currently working</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="tStatCompleted">—</div>
+          <div class="stat-sub">this month</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Overdue</div>
+          <div class="stat-value" id="tStatOverdue">—</div>
+          <div class="stat-sub">past due date</div>
+        </div>
+      </div>
+
+      <!-- Active Tasks -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-title">Active Tasks</div>
+          <span class="card-badge badge-blue" id="allTaskBadge">—</span>
+        </div>
+        <div id="allTaskList"><div class="empty-state">Loading...</div></div>
+      </div>
+
+      <!-- Completed Tasks History -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Completed Tasks (Last 30 Days)</div>
+          <span class="card-badge badge-green" id="completedTaskBadge">—</span>
+        </div>
+        <div id="completedTaskList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ── TASK ACTION MODALS ──────────────────────────────── -->
+
+    <!-- Start Task Modal -->
+    <div id="modalStartTask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);">▶ Start Task</h3>
+          <button onclick="closeModal('modalStartTask')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">✕</button>
+        </div>
+        <div id="startTaskInfo" style="background:var(--cream);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13.5px;color:var(--text-main);"></div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">এই task শুরু করতে চান? Status "In Progress" হয়ে যাবে।</p>
+        <div style="display:flex;gap:10px;">
+          <button onclick="closeModal('modalStartTask')" style="flex:1;padding:11px;background:var(--cream);color:var(--text-main);border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">বাতিল</button>
+          <button onclick="confirmStartTask()" style="flex:1;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;" id="btnConfirmStart">✅ Start Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Update Modal -->
+    <div id="modalProgress" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);">📝 Progress Update</h3>
+          <button onclick="closeModal('modalProgress')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">✕</button>
+        </div>
+        <div id="progressTaskInfo" style="background:var(--cream);border-radius:8px;padding:14px;margin-bottom:18px;font-size:13.5px;color:var(--text-main);"></div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Progress % *</label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="range" id="progressPercent" min="0" max="100" value="25" oninput="document.getElementById('progressPercentVal').textContent=this.value+'%'" style="flex:1;" />
+              <span id="progressPercentVal" style="font-size:14px;font-weight:700;color:var(--navy);min-width:40px;">25%</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">আজকে কী কাজ হয়েছে? *</label>
+            <textarea id="progressWorkDone" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="আজকের কাজের বিবরণ দিন"></textarea>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">সমস্যা বা চ্যালেঞ্জ? *</label>
+            <textarea id="progressChallenges" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কোনো চ্যালেঞ্জ আছে?"></textarea>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">সহায়তা দরকার? <span style="font-weight:400;color:var(--text-light);">(optional)</span></label>
+            <textarea id="progressSupport" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কোনো সহায়তা প্রয়োজন?"></textarea>
+          </div>
+          <div id="progressMsg" style="display:none;padding:12px;border-radius:8px;font-size:13.5px;"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <button onclick="closeModal('modalProgress')" style="flex:1;padding:11px;background:var(--cream);color:var(--text-main);border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">বাতিল</button>
+          <button onclick="submitProgressUpdate()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;" id="btnSubmitProgress">📤 Submit Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complete Task Modal -->
+    <div id="modalComplete" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--green);">✅ Complete Task</h3>
+          <button onclick="closeModal('modalComplete')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">✕</button>
+        </div>
+        <div id="completeTaskInfo" style="background:var(--green-dim);border-radius:8px;padding:14px;margin-bottom:18px;font-size:13.5px;color:var(--text-main);"></div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">সম্পন্ন কাজের বিবরণ *</label>
+            <textarea id="completeNote" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কাজটি কীভাবে সম্পন্ন হলো তার সারসংক্ষেপ"></textarea>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Evidence URL <span id="evidenceRequired" style="color:var(--red);">(Critical task — mandatory)</span></label>
+            <input type="url" id="completeEvidence" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" placeholder="https://drive.google.com/... (Google Drive, Dropbox, etc.)" />
+          </div>
+          <div id="completeMsg" style="display:none;padding:12px;border-radius:8px;font-size:13.5px;"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <button onclick="closeModal('modalComplete')" style="flex:1;padding:11px;background:var(--cream);color:var(--text-main);border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">বাতিল</button>
+          <button onclick="submitTaskComplete()" style="flex:1;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;" id="btnSubmitComplete">✅ Mark as Completed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Entry Sub-task Modal -->
+    <div id="modalDataEntry" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);">🏥 Data Entry — Clinic-wise Details</h3>
+          <button onclick="closeModal('modalDataEntry')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">✕</button>
+        </div>
+        <div id="dataEntryTaskInfo" style="background:var(--blue-bg);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13.5px;color:var(--text-main);"></div>
+
+        <div id="clinicsList" style="display:flex;flex-direction:column;gap:14px;"></div>
+
+        <button onclick="addClinicRow()" style="margin-top:14px;width:100%;padding:10px;background:var(--blue-bg);color:var(--blue);border:1.5px dashed var(--blue);border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;">+ Add Another Clinic</button>
+
+        <!-- Summary -->
+        <div id="dataEntrySummary" style="margin-top:16px;background:var(--cream);border-radius:8px;padding:14px;display:none;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Summary</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
+            <div><div style="font-size:22px;font-weight:800;color:var(--navy);" id="summaryPatients">0</div><div style="font-size:11px;color:var(--text-muted);">Total Patients</div></div>
+            <div><div style="font-size:22px;font-weight:800;color:var(--navy);" id="summaryTime">0 min</div><div style="font-size:11px;color:var(--text-muted);">Total Time</div></div>
+            <div><div style="font-size:22px;font-weight:800;color:var(--navy);" id="summaryAvg">— min</div><div style="font-size:11px;color:var(--text-muted);">Avg / Patient</div></div>
+          </div>
+        </div>
+
+        <div id="dataEntryMsg" style="display:none;padding:12px;border-radius:8px;font-size:13.5px;margin-top:12px;"></div>
+
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <button onclick="closeModal('modalDataEntry')" style="flex:1;padding:11px;background:var(--cream);color:var(--text-main);border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;">বাতিল</button>
+          <button onclick="submitDataEntry()" style="flex:1;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;" id="btnSubmitDataEntry">✅ Submit Data Entry</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY REPORT -->
+    <div id="sec-report" style="display:none;">
+      <p class="section-title">Daily Report</p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Submit Today's Report</div>
+          <span class="card-badge badge-gray" id="reportDate"></span>
+        </div>
+        <div class="card-body">
+          <div id="reportMsg" style="margin-bottom:14px;display:none;padding:12px 14px;border-radius:8px;font-size:13.5px;"></div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">✅ Completed Tasks Today *</label>
+              <textarea id="rCompleted" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="আজকে কোন কোন কাজ শেষ হয়েছে?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">⏳ Pending Tasks *</label>
+              <textarea id="rPending" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কোন কাজগুলো এখনো বাকি?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">🏆 Key Achievements *</label>
+              <textarea id="rAchievements" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="আজকের উল্লেখযোগ্য অর্জন কী?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">⚠️ Problems Faced *</label>
+              <textarea id="rProblems" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কোনো সমস্যা বা চ্যালেঞ্জ?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">🤝 Support Needed <span style="font-weight:400;color:var(--text-light);">(optional)</span></label>
+              <textarea id="rSupport" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কোনো সহায়তা দরকার?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">📅 Tomorrow's Plan *</label>
+              <textarea id="rTomorrow" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="আগামীকাল কী করার পরিকল্পনা?"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">🎯 Priority Activities *</label>
+              <textarea id="rPriority" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="সর্বোচ্চ অগ্রাধিকারের কাজ কোনগুলো?"></textarea>
+            </div>
+          </div>
+
+          <button onclick="submitDailyReport()" style="margin-top:18px;width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:14.5px;font-weight:700;cursor:pointer;" id="reportSubmitBtn">
+            Submit Daily Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE HISTORY -->
+    <div id="sec-attendance" style="display:none;">
+      <p class="section-title">My Attendance History</p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Last 30 Days</div>
+          <span class="card-badge badge-green" id="attSummaryBadge">—</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="att-table">
+            <thead><tr><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Minutes Late</th></tr></thead>
+            <tbody id="attHistoryBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEAVE -->
+    <div id="sec-leave" style="display:none;">
+      <p class="section-title">Leave Management</p>
+
+      <!-- Balance -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title">Leave Balance — 2026</div></div>
+        <div class="card-body">
+          <div class="leave-row">
+            <div class="leave-box"><div class="leave-type">Casual Leave</div><div class="leave-days" id="clBalance2">—</div><div class="leave-label">remaining</div></div>
+            <div class="leave-box"><div class="leave-type">Sick Leave</div><div class="leave-days" id="slBalance2">—</div><div class="leave-label">remaining</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request Form -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-title">Apply for Leave</div></div>
+        <div class="card-body">
+          <div id="leaveMsg" style="display:none;margin-bottom:12px;padding:12px 14px;border-radius:8px;font-size:13.5px;"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Leave Type *</label>
+              <select id="leaveType" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;">
+                <option value="">— Select —</option>
+                <option value="Casual">Casual Leave (CL)</option>
+                <option value="Sick">Sick Leave (SL)</option>
+                <option value="Emergency">Emergency Leave</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Start Date *</label>
+                <input type="date" id="leaveStart" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" />
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">End Date *</label>
+                <input type="date" id="leaveEnd" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" />
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Reason *</label>
+              <textarea id="leaveReason" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="Leave-এর কারণ লিখুন"></textarea>
+            </div>
+            <button onclick="submitLeave()" style="padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;" id="leaveBtn">Submit Leave Request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leave history -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">My Leave Requests</div></div>
+        <div id="leaveHistoryList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div id="sec-kpi" style="display:none;">
+      <p class="section-title">My KPI & Performance</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Performance Score</div><span class="card-badge badge-gray">Latest</span></div>
+        <div class="card-body" id="kpiFull"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- MEETINGS -->
+    <div id="sec-meetings" style="display:none;">
+      <p class="section-title">My Meetings & Action Items</p>
+      <div class="two-col" style="margin-bottom:16px;">
+        <div class="stat-card blue">
+          <div class="stat-label">Upcoming Meetings</div>
+          <div class="stat-value" id="myMtgUpcoming">—</div>
+          <div class="stat-sub">scheduled</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">My Action Items</div>
+          <div class="stat-value" id="myActionCount">—</div>
+          <div class="stat-sub">pending / overdue</div>
+        </div>
+      </div>
+
+      <!-- Meetings List -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-title">Meetings I Attend</div>
+          <span class="card-badge badge-blue" id="myMtgBadge">—</span>
+        </div>
+        <div id="myMtgList"><div class="empty-state">Loading...</div></div>
+      </div>
+
+      <!-- Action Items -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">My Action Items</div>
+          <span class="card-badge badge-yellow" id="myActionBadge">—</span>
+        </div>
+        <div id="myActionList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="sec-announcements" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Announcements & Notices</div>
+          <span class="card-badge badge-gray" id="annCountBadge">—</span>
+        </div>
+        <div id="annList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- HOLIDAY CALENDAR -->
+    <div id="sec-holidays" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Holiday Calendar — <span id="holidayYearLabel"></span></div>
+          <span class="card-badge badge-gray" id="holidayCountBadge">—</span>
+        </div>
+        <div id="holidayList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- RULES & REGULATIONS -->
+    <div id="sec-rules" style="display:none;">
+      <div class="lang-toggle">
+        <button id="ruleLangBn" class="active" onclick="setRuleLang('bn')">বাংলা</button>
+        <button id="ruleLangEn" onclick="setRuleLang('en')">English</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Rules & Regulations</div>
+          <span class="card-badge badge-gray" id="rulesCountBadge">—</span>
+        </div>
+        <div id="rulesList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- SALARY SLIP -->
+    <div id="sec-salary" style="display:none;">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div>
+            <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Select Month</label>
+            <input type="month" id="salaryMonth" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" />
+          </div>
+          <button onclick="loadSalarySlip()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:18px;">Load Slip</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Salary Slip</div></div>
+        <div id="salarySlipBody" style="padding:20px;"><div class="empty-state">একটি মাস সিলেক্ট করে "Load Slip" চাপুন।</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL  = 'https://lznqbrynniziquzawpfs.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6bnFicnlubml6aXF1emF3cGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNzQ3NTMsImV4cCI6MjA5Nzg1MDc1M30.LBCQP8cH0QJYZqF4ieu3rMGObslTSI2lpW9pjkuYfmc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let myEmployeeId = null;
+let myData = null;
+// ══════════════════════════════════════════════════════
+// SESSION SECURITY — Blueprint §3.1
+// Session Timeout: auto-logout after 15 min of inactivity
+// Single Active Session: a newer login elsewhere force-logs-out this tab
+// (Uses a lightweight `user_sessions` table — see attendance_automation_cron.sql)
+// ══════════════════════════════════════════════════════
+const SESSION_IDLE_LIMIT_MS = 15 * 60 * 1000; // §3.1 — 15 minutes
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;  // poll every 1 minute
+function safeUUID() {
+  if (window.crypto && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) { /* fall through to manual UUID */ }
+  }
+  // Fallback RFC4122-v4-style UUID for contexts where Web Crypto's
+  // randomUUID is unavailable (e.g. some file:// / non-secure contexts)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+let lastActivityAt = Date.now();
+let mySessionToken = null;
+let sessionCheckTimer = null;
+
+function resetActivityTimer() { lastActivityAt = Date.now(); }
+
+function startIdleWatcher() {
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    window.addEventListener(evt, resetActivityTimer, { passive: true })
+  );
+  setInterval(() => {
+    if (Date.now() - lastActivityAt > SESSION_IDLE_LIMIT_MS) {
+      forceLogout('১৫ মিনিট নিষ্ক্রিয় থাকার কারণে স্বয়ংক্রিয়ভাবে লগ-আউট হয়েছে। নিরাপত্তার জন্য আবার লগইন করুন।');
+    }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Registers this tab's session token in `user_sessions` on load.
+ * If another login happens elsewhere for the same employee, that
+ * login overwrites the row — so this tab's periodic check will see a
+ * mismatched token and force-logout (§3.1 — Single Active Session).
+ */
+async function registerSession() {
+  if (!myEmployeeId) return;
+  // Reuse the same device/tab token across page navigations within this tab
+  // (full page reloads used to call safeUUID() fresh every time, which made
+  // every internal page navigation overwrite user_sessions and force-logout
+  // the very page the user just came from). Only generate a new token when
+  // this tab has never had one — sessionStorage is per-tab, so other tabs /
+  // devices still correctly trigger the single-active-session logout.
+  mySessionToken = localStorage.getItem('bwapms_device_token');
+  if (!mySessionToken) {
+    mySessionToken = safeUUID();
+    localStorage.setItem('bwapms_device_token', mySessionToken);
+  }
+  try {
+    await db.from('user_sessions').upsert({
+      employee_id: myEmployeeId,
+      session_token: mySessionToken,
+      last_seen_at: new Date().toISOString(),
+    }, { onConflict: 'employee_id' });
+  } catch (e) { /* network hiccup on register — non-fatal */ }
+
+  sessionCheckTimer = setInterval(async () => {
+    try {
+      const { data } = await db.from('user_sessions')
+        .select('session_token')
+        .eq('employee_id', myEmployeeId)
+        .maybeSingle();
+      if (data && data.session_token && data.session_token !== mySessionToken) {
+        forceLogout('অন্য একটি ডিভাইস/ব্রাউজার থেকে লগইন করা হয়েছে — নিরাপত্তার জন্য এই সেশনটি বন্ধ করা হলো।');
+      } else if (data) {
+        // heartbeat — keep last_seen_at fresh
+        try {
+          await db.from('user_sessions').update({ last_seen_at: new Date().toISOString() })
+            .eq('employee_id', myEmployeeId).eq('session_token', mySessionToken);
+        } catch (e2) { /* network hiccup on heartbeat — non-fatal */ }
+      }
+    } catch (e) { /* network hiccup — don't force logout over this */ }
+  }, SESSION_CHECK_INTERVAL_MS);
+}
+
+async function forceLogout(reason) {
+  if (sessionCheckTimer) clearInterval(sessionCheckTimer);
+  localStorage.removeItem('bwapms_device_token');
+  try { await db.auth.signOut(); } catch (e) {}
+  alert(reason);
+  window.location.href = 'index.html';
+}
+
+
+// ── Init ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const now = new Date();
+  document.getElementById('topbarDate').textContent =
+    now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('reportDate').textContent =
+    now.toLocaleDateString('en-GB');
+
+  // Auth check
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  // Tier check — only Tier 4 (Tier 3 has own dashboard)
+  const { data: tierData } = await db.rpc('get_my_tier');
+  if (tierData === 1) { window.location.href = 'dashboard-tier1.html'; return; }
+  if (tierData === 2) { window.location.href = 'dashboard-tier2.html'; return; }
+  if (tierData === 3) { window.location.href = 'dashboard-tier3.html'; return; }
+
+  // Load profile
+  await loadProfile(session.user.id);
+  startIdleWatcher();
+  await registerSession();
+
+  // Load all data
+  await Promise.all([
+    loadTodayStatus(),
+    loadMonthStats(),
+    loadTasks(),
+    loadKPI(),
+    loadLeaveBalance(),
+    loadNotifications(),
+    loadRulesBadge(),
+  ]);
+
+  // Embed logos as base64 fallback handled by CSS
+  document.getElementById('loadingOverlay').style.display = 'none';
+
+  // Deep-link support: ?section=rules opens that section directly
+  // (used by attendance.html's "View Full Rules & Regulations" link)
+  const deepLinkSection = new URLSearchParams(window.location.search).get('section');
+  if (deepLinkSection) showSection(deepLinkSection);
+});
+
+// ── Load Profile ──────────────────────────────────────────────
+async function loadProfile(uid) {
+  const { data } = await db
+    .from('employee_master')
+    .select('employee_id, full_name, designation, department, photo_url')
+    .eq('auth_user_id', uid)
+    .single();
+  if (data) {
+    myData = data;
+    myEmployeeId = data.employee_id;
+    renderMyAvatar(data.full_name, data.photo_url);
+    document.getElementById('sidebarName').textContent = data.full_name;
+  }
+}
+
+// ── My Photo (self-service change) ────────────────────────
+function renderMyAvatar(fullName, photoUrl) {
+  const el = document.getElementById('sidebarAvatar');
+  if (photoUrl) {
+    el.innerHTML = `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+  } else {
+    const initials = (fullName || '').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    el.textContent = initials || '—';
+  }
+}
+
+function triggerChangeMyPhoto() {
+  document.getElementById('myPhotoFileInput').click();
+}
+
+async function handleMyPhotoChange(event) {
+  const file = event.target.files[0];
+  if (!file || !myEmployeeId) return;
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `${myEmployeeId}/photo.${ext}`;
+
+    const { error: upErr } = await db.storage
+      .from('employee-photos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) throw upErr;
+
+    const { data: pub } = db.storage.from('employee-photos').getPublicUrl(path);
+
+    const { error: rpcErr } = await db.rpc('update_my_photo', { p_photo_url: pub.publicUrl });
+    if (rpcErr) throw rpcErr;
+
+    renderMyAvatar(myData?.full_name, pub.publicUrl);
+  } catch (e) {
+    alert('Photo update failed: ' + (e.message || e));
+  }
+}
+
+// ── Today's Status ────────────────────────────────────────────
+async function loadTodayStatus() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await db
+    .from('attendance')
+    .select('status, check_in_time, check_out_time')
+    .eq('employee_id', myEmployeeId)
+    .eq('attendance_date', today)
+    .maybeSingle();
+
+  const statusEl = document.getElementById('todayStatusText');
+  const timeEl   = document.getElementById('todayCheckinTime');
+
+  if (!data || !data.check_in_time) {
+    statusEl.textContent = 'Not checked in yet';
+    statusEl.style.color = 'rgba(255,255,255,0.5)';
+    return;
+  }
+
+  const statusMap = { 'Present':'✅ Present', 'Late':'⏰ Late', 'Absent':'❌ Absent' };
+  statusEl.textContent = statusMap[data.status] || data.status;
+  const checkIn = new Date(data.check_in_time).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+  const checkOut = data.check_out_time
+    ? ' → ' + new Date(data.check_out_time).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})
+    : ' (not checked out yet)';
+  timeEl.textContent = 'Check-in: ' + checkIn + checkOut;
+}
+
+// ── Month Stats ───────────────────────────────────────────────
+async function loadMonthStats() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const today = now.toISOString().split('T')[0];
+
+  const { data } = await db
+    .from('attendance')
+    .select('status, minutes_late')
+    .eq('employee_id', myEmployeeId)
+    .gte('attendance_date', monthStart)
+    .lte('attendance_date', today);
+
+  const present = data?.filter(a => ['Present','Late','Field / Official Visit'].includes(a.status)).length || 0;
+  const late    = data?.filter(a => a.status === 'Late').length || 0;
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statLate').textContent    = late;
+}
+
+// ── Tasks ─────────────────────────────────────────────────────
+let allActiveTasks = [];   // global for modals to reference
+let currentTaskId  = null; // task being acted on
+let currentTaskObj = null; // full task object
+
+async function loadTasks() {
+  // Load active tasks (sorted by order_index for sequential lock)
+  const { data: active } = await db
+    .from('task_master')
+    .select('task_id, title, priority, status, due_date, task_type, order_index, description, performance_impact_score')
+    .eq('primary_assignee', myEmployeeId)
+    .in('status', ['Pending','In Progress'])
+    .order('order_index', { ascending: true });
+
+  allActiveTasks = active || [];
+
+  const today = new Date().toISOString().split('T')[0];
+  const pending    = allActiveTasks.filter(t => t.status === 'Pending').length;
+  const inProgress = allActiveTasks.filter(t => t.status === 'In Progress').length;
+  const overdue    = allActiveTasks.filter(t => t.due_date && t.due_date < today).length;
+
+  document.getElementById('tStatPending').textContent    = pending;
+  document.getElementById('tStatInProgress').textContent = inProgress;
+  document.getElementById('tStatOverdue').textContent    = overdue;
+  document.getElementById('allTaskBadge').textContent    = allActiveTasks.length + ' active';
+  document.getElementById('taskBadge').textContent       = allActiveTasks.length + ' active';
+  document.getElementById('statTasks').textContent       = allActiveTasks.length;
+
+  // Sequential lock: find first non-completed task index
+  // Any task AFTER the first "Pending" task is locked if that pending task is not In Progress
+  // Rule: only the first Pending task (by order_index) can be started; all others after it are locked
+  // If there's an In Progress task, it must be updated/completed before the next Pending can start
+  const hasInProgress = allActiveTasks.some(t => t.status === 'In Progress');
+  let lockedAfterIndex = -1;
+  if (hasInProgress) {
+    // The In Progress task must be dealt with — all Pending tasks are locked
+    lockedAfterIndex = 0; // first pending is also locked (must complete in-progress first)
+  } else {
+    // No in-progress: first Pending can start, rest are locked
+    const firstPendingIdx = allActiveTasks.findIndex(t => t.status === 'Pending');
+    lockedAfterIndex = firstPendingIdx; // tasks AFTER this index are locked
+  }
+
+  const el = document.getElementById('allTaskList');
+  if (allActiveTasks.length === 0) {
+    el.innerHTML = '<div class="empty-state">No active tasks assigned 🎉</div>';
+  } else {
+    el.innerHTML = allActiveTasks.map((t, idx) => {
+      const pClass = t.priority === 'Critical' ? 'critical' : t.priority === 'High' ? 'high' : t.priority === 'Medium' ? 'medium' : 'low';
+      const isOverdue = t.due_date && t.due_date < today;
+
+      // Determine lock state
+      let isLocked = false;
+      if (hasInProgress) {
+        isLocked = t.status === 'Pending'; // all pending locked when there's an in-progress
+      } else {
+        isLocked = t.status === 'Pending' && idx > lockedAfterIndex;
+      }
+
+      // Action buttons
+      let actionBtns = '';
+      if (isLocked) {
+        actionBtns = '<span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">🔒 <span style="font-size:11px;">আগের task শেষ করুন</span></span>';
+      } else if (t.status === 'Pending') {
+        actionBtns = '<button onclick="openStartTask(\'' + t.task_id + '\')" style="padding:6px 14px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">▶ Start</button>';
+      } else if (t.status === 'In Progress') {
+        if (t.task_type === 'Data Entry') {
+          actionBtns =
+            '<button onclick="openDataEntry(\'' + t.task_id + '\')" style="padding:6px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">🏥 Data Entry</button>' +
+            '<button onclick="openComplete(\'' + t.task_id + '\')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✅ Complete</button>';
+        } else {
+          actionBtns =
+            '<button onclick="openProgress(\'' + t.task_id + '\')" style="padding:6px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">📝 Update</button>' +
+            '<button onclick="openComplete(\'' + t.task_id + '\')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">✅ Complete</button>';
+        }
+      }
+
+      return '<div class="task-item" style="' + (isLocked ? 'opacity:0.6;' : '') + 'flex-wrap:wrap;gap:8px;">' +
+        '<div class="task-priority priority-' + pClass + '" style="' + (isLocked ? 'background:#94a3b8;' : '') + '"></div>' +
+        '<div class="task-info" style="flex:1;min-width:180px;">' +
+          '<div class="task-name">' + (isLocked ? '🔒 ' : '') + (t.title || 'Untitled') + (t.task_type === 'Data Entry' ? ' <span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:10px;font-weight:700;">Data Entry</span>' : '') + '</div>' +
+          '<div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date || '—') + (isOverdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') + (t.task_type ? ' · ' + t.task_type : '') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span class="pill ' + (t.status === 'In Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
+          actionBtns +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Dashboard home task list (simple, no lock controls)
+  const homeEl = document.getElementById('taskListHome');
+  if (allActiveTasks.length === 0) {
+    homeEl.innerHTML = '<div class="empty-state">No active tasks 🎉</div>';
+  } else {
+    homeEl.innerHTML = allActiveTasks.slice(0, 5).map(t => {
+      const pClass = t.priority === 'Critical' ? 'critical' : t.priority === 'High' ? 'high' : t.priority === 'Medium' ? 'medium' : 'low';
+      const isOverdue = t.due_date && t.due_date < today;
+      return '<div class="task-item">' +
+        '<div class="task-priority priority-' + pClass + '"></div>' +
+        '<div class="task-info">' +
+          '<div class="task-name">' + (t.title || 'Untitled') + '</div>' +
+          '<div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date || '—') + (isOverdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') + '</div>' +
+        '</div>' +
+        '<span class="pill ' + (t.status === 'In Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Completed tasks
+  await loadCompletedTasks();
+}
+
+async function loadCompletedTasks() {
+  const thirtyAgo = new Date(); thirtyAgo.setDate(thirtyAgo.getDate() - 30);
+  const { data } = await db
+    .from('task_master')
+    .select('task_id, title, priority, status, due_date, updated_at')
+    .eq('primary_assignee', myEmployeeId)
+    .in('status', ['Completed On Time','Completed Late'])
+    .gte('updated_at', thirtyAgo.toISOString())
+    .order('updated_at', { ascending: false });
+
+  document.getElementById('tStatCompleted').textContent = data?.length || 0;
+  document.getElementById('completedTaskBadge').textContent = (data?.length || 0) + ' tasks';
+
+  const el = document.getElementById('completedTaskList');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state">গত ৩০ দিনে কোনো task সম্পন্ন হয়নি।</div>';
+    return;
+  }
+  el.innerHTML = data.map(t => {
+    const late = t.status === 'Completed Late';
+    return '<div class="task-item">' +
+      '<div class="task-priority" style="background:' + (late ? 'var(--yellow)' : 'var(--green)') + ';width:4px;height:32px;border-radius:2px;flex-shrink:0;"></div>' +
+      '<div class="task-info">' +
+        '<div class="task-name">' + (t.title || 'Untitled') + '</div>' +
+        '<div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date || '—') + '</div>' +
+      '</div>' +
+      '<span class="pill ' + (late ? 'late' : 'present') + '">' + (late ? 'Late ✓' : 'On Time ✓') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Task Modal Helpers ────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function getTaskById(taskId) {
+  return allActiveTasks.find(t => t.task_id === taskId) || null;
+}
+
+function taskInfoHTML(t) {
+  return '<strong>' + (t.title || 'Untitled') + '</strong><br>' +
+    '<span style="font-size:12px;color:var(--text-muted);">' +
+    t.priority + ' Priority · Due: ' + (t.due_date || '—') +
+    (t.task_type ? ' · ' + t.task_type : '') +
+    '</span>';
+}
+
+// ── Start Task ─────────────────────────────────────────────────
+function openStartTask(taskId) {
+  const t = getTaskById(taskId);
+  if (!t) return;
+  currentTaskId  = taskId;
+  currentTaskObj = t;
+  document.getElementById('startTaskInfo').innerHTML = taskInfoHTML(t);
+  const modal = document.getElementById('modalStartTask');
+  modal.style.display = 'flex';
+}
+
+async function confirmStartTask() {
+  const btn = document.getElementById('btnConfirmStart');
+  btn.disabled = true; btn.textContent = 'শুরু হচ্ছে...';
+
+  const { error } = await db.from('task_master')
+    .update({ status: 'In Progress', updated_at: new Date().toISOString() })
+    .eq('task_id', currentTaskId);
+
+  if (error) {
+    alert('সমস্যা হয়েছে: ' + error.message);
+  } else {
+    closeModal('modalStartTask');
+    await loadTasks();
+  }
+  btn.disabled = false; btn.textContent = '✅ Start Task';
+}
+
+// ── Progress Update ────────────────────────────────────────────
+function openProgress(taskId) {
+  const t = getTaskById(taskId);
+  if (!t) return;
+  currentTaskId  = taskId;
+  currentTaskObj = t;
+  document.getElementById('progressTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('progressPercent').value = '25';
+  document.getElementById('progressPercentVal').textContent = '25%';
+  document.getElementById('progressWorkDone').value = '';
+  document.getElementById('progressChallenges').value = '';
+  document.getElementById('progressSupport').value = '';
+  document.getElementById('progressMsg').style.display = 'none';
+  document.getElementById('modalProgress').style.display = 'flex';
+}
+
+async function submitProgressUpdate() {
+  const workDone    = document.getElementById('progressWorkDone').value.trim();
+  const challenges  = document.getElementById('progressChallenges').value.trim();
+  const support     = document.getElementById('progressSupport').value.trim();
+  const progress    = parseInt(document.getElementById('progressPercent').value);
+
+  if (!workDone || !challenges) {
+    showModalMsg('progressMsg', 'error', 'কাজের বিবরণ এবং চ্যালেঞ্জ field পূরণ করুন।');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitProgress');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const { error } = await db.from('task_updates').insert({
+    task_id:            currentTaskId,
+    progress_percentage: progress,
+    status:             'In Progress',
+    work_completed:     workDone,
+    challenges_faced:   challenges,
+    support_required:   support || null,
+    submitted_by:       myEmployeeId,
+    submitted_at:       new Date().toISOString(),
+  });
+
+  if (error) {
+    showModalMsg('progressMsg', 'error', 'সমস্যা হয়েছে: ' + error.message);
+  } else {
+    closeModal('modalProgress');
+    await loadTasks();
+  }
+  btn.disabled = false; btn.textContent = '📤 Submit Update';
+}
+
+// ── Complete Task ──────────────────────────────────────────────
+function openComplete(taskId) {
+  const t = getTaskById(taskId);
+  if (!t) return;
+  currentTaskId  = taskId;
+  currentTaskObj = t;
+  document.getElementById('completeTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('completeNote').value = '';
+  document.getElementById('completeEvidence').value = '';
+  document.getElementById('completeMsg').style.display = 'none';
+  // Show "mandatory" label only for Critical tasks
+  document.getElementById('evidenceRequired').style.display = (t.priority === 'Critical') ? 'inline' : 'none';
+  document.getElementById('modalComplete').style.display = 'flex';
+}
+
+async function submitTaskComplete() {
+  const note     = document.getElementById('completeNote').value.trim();
+  const evidence = document.getElementById('completeEvidence').value.trim();
+
+  if (!note) {
+    showModalMsg('completeMsg', 'error', 'সম্পন্ন কাজের বিবরণ লিখুন।');
+    return;
+  }
+  if (currentTaskObj && currentTaskObj.priority === 'Critical' && !evidence) {
+    showModalMsg('completeMsg', 'error', 'Critical task-এর জন্য Evidence URL mandatory।');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitComplete');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const today = new Date().toISOString().split('T')[0];
+  const isLate = currentTaskObj && currentTaskObj.due_date && currentTaskObj.due_date < today;
+  const finalStatus = isLate ? 'Completed Late' : 'Completed On Time';
+
+  // Insert task update
+  const { error: updateErr } = await db.from('task_updates').insert({
+    task_id:          currentTaskId,
+    progress_percentage: 100,
+    status:           'Completed',
+    work_completed:   note,
+    evidence_url:     evidence || null,
+    submitted_by:     myEmployeeId,
+    submitted_at:     new Date().toISOString(),
+  });
+
+  if (updateErr) {
+    showModalMsg('completeMsg', 'error', 'সমস্যা হয়েছে: ' + updateErr.message);
+    btn.disabled = false; btn.textContent = '✅ Mark as Completed';
+    return;
+  }
+
+  // Update task status
+  const { error: taskErr } = await db.from('task_master')
+    .update({ status: finalStatus, updated_at: new Date().toISOString() })
+    .eq('task_id', currentTaskId);
+
+  if (taskErr) {
+    showModalMsg('completeMsg', 'error', 'Status update-এ সমস্যা: ' + taskErr.message);
+  } else {
+    closeModal('modalComplete');
+    await loadTasks();
+  }
+  btn.disabled = false; btn.textContent = '✅ Mark as Completed';
+}
+
+// ── Data Entry Sub-task ────────────────────────────────────────
+let clinicRowCount = 0;
+
+function openDataEntry(taskId) {
+  const t = getTaskById(taskId);
+  if (!t) return;
+  currentTaskId  = taskId;
+  currentTaskObj = t;
+  document.getElementById('dataEntryTaskInfo').innerHTML = taskInfoHTML(t);
+  document.getElementById('clinicsList').innerHTML = '';
+  document.getElementById('dataEntryMsg').style.display = 'none';
+  document.getElementById('dataEntrySummary').style.display = 'none';
+  clinicRowCount = 0;
+  addClinicRow();
+  document.getElementById('modalDataEntry').style.display = 'flex';
+}
+
+function addClinicRow() {
+  clinicRowCount++;
+  const id = clinicRowCount;
+  const el = document.createElement('div');
+  el.id = 'clinicRow' + id;
+  el.style.cssText = 'background:var(--cream);border-radius:8px;padding:14px;position:relative;';
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--navy);">Clinic #' + id + '</div>' +
+      (id > 1 ? '<button onclick="removeClinicRow(' + id + ')" style="background:var(--red-bg);color:var(--red);border:none;border-radius:5px;padding:3px 8px;font-size:12px;cursor:pointer;">✕ Remove</button>' : '') +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr;gap:10px;">' +
+      '<div>' +
+        '<label style="font-size:11.5px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Clinic Name *</label>' +
+        '<input type="text" id="cName' + id + '" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" placeholder="Clinic-এর নাম" />' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div>' +
+          '<label style="font-size:11.5px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Row From (শুরু) *</label>' +
+          '<input type="number" id="cFrom' + id + '" min="1" oninput="calcClinicRows(' + id + ')" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" placeholder="e.g. 2" />' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11.5px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Row To (শেষ) *</label>' +
+          '<input type="number" id="cTo' + id + '" min="1" oninput="calcClinicRows(' + id + ')" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" placeholder="e.g. 45" />' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#fff;border-radius:6px;padding:8px 12px;font-size:12.5px;color:var(--text-muted);">Total Rows: <strong id="cRows' + id + '" style="color:var(--navy);">—</strong></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<div>' +
+          '<label style="font-size:11.5px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Start Time *</label>' +
+          '<input type="time" id="cStart' + id + '" oninput="calcClinicTime(' + id + ')" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" />' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size:11.5px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">End Time *</label>' +
+          '<input type="time" id="cEnd' + id + '" oninput="calcClinicTime(' + id + ')" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;" />' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#fff;border-radius:6px;padding:8px 12px;font-size:12.5px;color:var(--text-muted);">Time Taken: <strong id="cTime' + id + '" style="color:var(--navy);">—</strong></div>' +
+    '</div>';
+
+  document.getElementById('clinicsList').appendChild(el);
+  updateDataEntrySummary();
+}
+
+function removeClinicRow(id) {
+  const el = document.getElementById('clinicRow' + id);
+  if (el) el.remove();
+  updateDataEntrySummary();
+}
+
+function calcClinicRows(id) {
+  const from = parseInt(document.getElementById('cFrom' + id)?.value) || 0;
+  const to   = parseInt(document.getElementById('cTo'   + id)?.value) || 0;
+  const rows = (to >= from && from > 0) ? (to - from + 1) : 0;
+  const el = document.getElementById('cRows' + id);
+  if (el) el.textContent = rows > 0 ? rows + ' rows' : '—';
+  updateDataEntrySummary();
+}
+
+function calcClinicTime(id) {
+  const start = document.getElementById('cStart' + id)?.value;
+  const end   = document.getElementById('cEnd'   + id)?.value;
+  const el = document.getElementById('cTime' + id);
+  if (start && end && end > start) {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (el) el.textContent = mins + ' min';
+  } else {
+    if (el) el.textContent = '—';
+  }
+  updateDataEntrySummary();
+}
+
+function updateDataEntrySummary() {
+  let totalPatients = 0, totalMinutes = 0, validRows = 0;
+  for (let i = 1; i <= clinicRowCount; i++) {
+    const row = document.getElementById('clinicRow' + i);
+    if (!row) continue;
+    const from  = parseInt(document.getElementById('cFrom' + i)?.value) || 0;
+    const to    = parseInt(document.getElementById('cTo'   + i)?.value) || 0;
+    const start = document.getElementById('cStart' + i)?.value;
+    const end   = document.getElementById('cEnd'   + i)?.value;
+    if (from > 0 && to >= from) { totalPatients += (to - from + 1); validRows++; }
+    if (start && end && end > start) {
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      totalMinutes += (eh * 60 + em) - (sh * 60 + sm);
+    }
+  }
+  if (validRows > 0 || totalMinutes > 0) {
+    document.getElementById('dataEntrySummary').style.display = 'block';
+    document.getElementById('summaryPatients').textContent = totalPatients;
+    document.getElementById('summaryTime').textContent = totalMinutes + ' min';
+    document.getElementById('summaryAvg').textContent = totalPatients > 0 ? (totalMinutes / totalPatients).toFixed(1) + ' min' : '—';
+  }
+}
+
+async function submitDataEntry() {
+  const clinics = [];
+  for (let i = 1; i <= clinicRowCount; i++) {
+    const row = document.getElementById('clinicRow' + i);
+    if (!row) continue;
+    const name  = document.getElementById('cName'  + i)?.value.trim();
+    const from  = parseInt(document.getElementById('cFrom'  + i)?.value);
+    const to    = parseInt(document.getElementById('cTo'    + i)?.value);
+    const start = document.getElementById('cStart' + i)?.value;
+    const end   = document.getElementById('cEnd'   + i)?.value;
+
+    if (!name || !from || !to || !start || !end) {
+      showModalMsg('dataEntryMsg', 'error', 'সব clinic-এর সব field পূরণ করুন।');
+      return;
+    }
+    if (to < from) {
+      showModalMsg('dataEntryMsg', 'error', 'Row To অবশ্যই Row From-এর বেশি বা সমান হতে হবে।');
+      return;
+    }
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    clinics.push({ name, row_from: from, row_to: to, total_rows: to - from + 1, start_time: start, end_time: end, minutes: mins });
+  }
+
+  if (clinics.length === 0) {
+    showModalMsg('dataEntryMsg', 'error', 'কমপক্ষে একটি clinic যোগ করুন।');
+    return;
+  }
+
+  const totalPatients = clinics.reduce((s, c) => s + c.total_rows, 0);
+  const totalMins     = clinics.reduce((s, c) => s + c.minutes,    0);
+  const dataDetails = { clinics, total_patients: totalPatients, total_minutes: totalMins, avg_minutes_per_patient: totalPatients > 0 ? parseFloat((totalMins / totalPatients).toFixed(2)) : 0 };
+
+  const btn = document.getElementById('btnSubmitDataEntry');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const { error } = await db.from('task_updates').insert({
+    task_id:             currentTaskId,
+    progress_percentage: 100,
+    status:              'Completed',
+    work_completed:      'Data Entry completed: ' + totalPatients + ' patients across ' + clinics.length + ' clinic(s) in ' + totalMins + ' minutes.',
+    data_entry_details:  dataDetails,
+    submitted_by:        myEmployeeId,
+    submitted_at:        new Date().toISOString(),
+  });
+
+  if (error) {
+    showModalMsg('dataEntryMsg', 'error', 'সমস্যা হয়েছে: ' + error.message);
+    btn.disabled = false; btn.textContent = '✅ Submit Data Entry';
+    return;
+  }
+
+  // Update task status
+  const today = new Date().toISOString().split('T')[0];
+  const isLate = currentTaskObj && currentTaskObj.due_date && currentTaskObj.due_date < today;
+  await db.from('task_master')
+    .update({ status: isLate ? 'Completed Late' : 'Completed On Time', updated_at: new Date().toISOString() })
+    .eq('task_id', currentTaskId);
+
+  closeModal('modalDataEntry');
+  await loadTasks();
+  btn.disabled = false; btn.textContent = '✅ Submit Data Entry';
+}
+
+// ── Modal message helper ───────────────────────────────────────
+function showModalMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? 'var(--red-bg)' : 'var(--green-dim)';
+  el.style.color = type === 'error' ? 'var(--red)' : 'var(--green)';
+  el.textContent = text;
+}
+
+// ── KPI ───────────────────────────────────────────────────────
+async function loadKPI() {
+  const { data } = await db
+    .from('kpi_scores')
+    .select('total_score, component_scores, period')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const renderKPI = (containerId, badge) => {
+    const el = document.getElementById(containerId);
+    if (!data) {
+      el.innerHTML = '<div class="empty-state">No KPI data yet. Scores are calculated monthly.</div>';
+      if (badge) document.getElementById(badge).textContent = '—';
+      return;
+    }
+    const score = parseFloat(data.total_score) || 0;
+    const cls   = score >= 90 ? 'ex' : score >= 80 ? 'good' : score >= 60 ? 'mid' : 'low';
+    const label = score >= 90 ? 'Excellent' : score >= 80 ? 'Good' : score >= 70 ? 'Satisfactory' : score >= 60 ? 'Needs Improvement' : 'Unsatisfactory';
+    if (badge) document.getElementById(badge).textContent = score.toFixed(1) + '%';
+
+    const components = data.component_scores || {};
+    const comps = [
+      { name: 'Attendance (15%)',         key: 'attendance' },
+      { name: 'Task Performance (35%)',   key: 'task_performance' },
+      { name: 'Reporting Discipline (15%)', key: 'reporting_discipline' },
+      { name: 'Issue Resolution (10%)',   key: 'issue_resolution' },
+      { name: 'Work Efficiency (10%)',    key: 'work_efficiency' },
+      { name: 'Management Eval (15%)',    key: 'management_evaluation' },
+    ];
+
+    el.innerHTML =
+      '<div style="text-align:center;margin-bottom:16px;">' +
+        '<div style="font-size:40px;font-weight:800;color:var(--navy);">' + score.toFixed(1) + '%</div>' +
+        '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">' + label + ' · Period: ' + (data.period || '—') + '</div>' +
+      '</div>' +
+      comps.map(c => {
+        const s = parseFloat(components[c.key]) || 0;
+        const cc = s >= 90 ? 'ex' : s >= 80 ? 'good' : s >= 60 ? 'mid' : 'low';
+        return '<div class="kpi-item">' +
+          '<div class="kpi-top"><span class="kpi-name">' + c.name + '</span><span class="kpi-score">' + s.toFixed(1) + '%</span></div>' +
+          '<div class="kpi-bar-bg"><div class="kpi-bar-fill ' + cc + '" style="width:' + s + '%"></div></div>' +
+          '</div>';
+      }).join('');
+  };
+
+  renderKPI('kpiHome', 'kpiBadge');
+  renderKPI('kpiFull', null);
+}
+
+// ── Leave Balance ─────────────────────────────────────────────
+async function loadLeaveBalance() {
+  const year = new Date().getFullYear();
+  const { data } = await db
+    .from('leave_balance')
+    .select('leave_type, total_allocated, used, balance')
+    .eq('employee_id', myEmployeeId)
+    .eq('year', year);
+
+  const cl = data?.find(d => d.leave_type === 'Casual') || {};
+  const sl = data?.find(d => d.leave_type === 'Sick')   || {};
+
+  document.getElementById('clBalance').textContent  = cl.balance ?? '—';
+  document.getElementById('slBalance').textContent  = sl.balance ?? '—';
+  document.getElementById('clUsed').textContent     = cl.used    ?? '—';
+  document.getElementById('clBalance2').textContent = cl.balance ?? '—';
+  document.getElementById('slBalance2').textContent = sl.balance ?? '—';
+  document.getElementById('statLeave').textContent  = cl.balance ?? '—';
+
+  await loadLeaveHistory();
+}
+
+async function loadLeaveHistory() {
+  const { data } = await db
+    .from('leave_request')
+    .select('leave_type, start_date, end_date, status, created_at')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const el = document.getElementById('leaveHistoryList');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state">No leave requests yet.</div>';
+    return;
+  }
+  el.innerHTML = data.map(r => {
+    const pillClass = r.status === 'Approved' ? 'present' : r.status === 'Rejected' ? 'absent' : 'pending';
+    return '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
+      '<div>' +
+        '<div style="font-size:13px;font-weight:600;">' + r.leave_type + ' Leave</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + r.start_date + ' → ' + r.end_date + '</div>' +
+      '</div>' +
+      '<span class="pill ' + pillClass + '">' + r.status + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Submit Leave ──────────────────────────────────────────────
+async function submitLeave() {
+  const leaveType = document.getElementById('leaveType').value;
+  const startDate = document.getElementById('leaveStart').value;
+  const endDate   = document.getElementById('leaveEnd').value;
+  const reason    = document.getElementById('leaveReason').value.trim();
+
+  if (!leaveType || !startDate || !endDate || !reason) {
+    showLeaveMsg('error', 'সব required field পূরণ করুন।');
+    return;
+  }
+  if (endDate < startDate) {
+    showLeaveMsg('error', 'End date, start date-এর আগে হতে পারে না।');
+    return;
+  }
+
+  // Bug fix: total_days ক্যালকুলেট করা (NOT NULL কলাম — এটা না পাঠালে database error হয়)
+  const start = new Date(startDate);
+  const end   = new Date(endDate);
+  const totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+  document.getElementById('leaveBtn').disabled = true;
+  document.getElementById('leaveBtn').textContent = 'Submitting...';
+
+  const { error } = await db.from('leave_request').insert({
+    employee_id: myEmployeeId,
+    leave_type:  leaveType,
+    start_date:  startDate,
+    end_date:    endDate,
+    total_days:  totalDays,
+    reason:      reason,
+    status:      'Pending',
+  });
+
+  if (error) {
+    showLeaveMsg('error', 'Submit করতে সমস্যা হয়েছে: ' + error.message);
+  } else {
+    showLeaveMsg('success', '✅ Leave request submit হয়েছে! (' + totalDays + ' দিন) Supervisor অনুমোদন করলে নিশ্চিত হবে।');
+    document.getElementById('leaveType').value   = '';
+    document.getElementById('leaveStart').value  = '';
+    document.getElementById('leaveEnd').value    = '';
+    document.getElementById('leaveReason').value = '';
+    await loadLeaveHistory();
+  }
+
+  document.getElementById('leaveBtn').disabled = false;
+  document.getElementById('leaveBtn').textContent = 'Submit Leave Request';
+}
+
+function showLeaveMsg(type, text) {
+  const el = document.getElementById('leaveMsg');
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'var(--green-dim)' : 'var(--red-bg)';
+  el.style.color = type === 'success' ? 'var(--green)' : 'var(--red)';
+  el.textContent = text;
+}
+
+// ── Submit Daily Report ───────────────────────────────────────
+async function submitDailyReport() {
+  const fields = {
+    completed_tasks:  document.getElementById('rCompleted').value.trim(),
+    pending_tasks:    document.getElementById('rPending').value.trim(),
+    key_achievements: document.getElementById('rAchievements').value.trim(),
+    problems_faced:   document.getElementById('rProblems').value.trim(),
+    support_needed:   document.getElementById('rSupport').value.trim(),
+    tomorrow_plan:    document.getElementById('rTomorrow').value.trim(),
+    priority_activities: document.getElementById('rPriority').value.trim(),
+  };
+
+  const required = ['completed_tasks','pending_tasks','key_achievements','problems_faced','tomorrow_plan','priority_activities'];
+  for (const f of required) {
+    if (!fields[f]) {
+      showReportMsg('error', 'সব required (*) field পূরণ করুন।');
+      return;
+    }
+  }
+
+  const btn = document.getElementById('reportSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { error } = await db.from('daily_reports').upsert({
+    employee_id: myEmployeeId,
+    report_date: today,
+    ...fields,
+    status: 'Submitted',
+    submitted_at: new Date().toISOString(),
+  }, { onConflict: 'employee_id,report_date' });
+
+  if (error) {
+    showReportMsg('error', 'Submit করতে সমস্যা: ' + error.message);
+  } else {
+    showReportMsg('success', '✅ Daily report সফলভাবে submit হয়েছে!');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Submit Daily Report';
+}
+
+function showReportMsg(type, text) {
+  const el = document.getElementById('reportMsg');
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'var(--green-dim)' : 'var(--red-bg)';
+  el.style.color = type === 'success' ? 'var(--green)' : 'var(--red)';
+  el.textContent = text;
+}
+
+// ── Attendance History ────────────────────────────────────────
+async function loadAttHistory() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const fromStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+  const { data } = await db
+    .from('attendance')
+    .select('attendance_date, check_in_time, check_out_time, status, minutes_late')
+    .eq('employee_id', myEmployeeId)
+    .gte('attendance_date', fromStr)
+    .order('attendance_date', { ascending: false });
+
+  const tbody = document.getElementById('attHistoryBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">No attendance records found.</td></tr>';
+    document.getElementById('attSummaryBadge').textContent = '0 records';
+    return;
+  }
+
+  document.getElementById('attSummaryBadge').textContent = data.length + ' records';
+  const pillClass = { 'Present':'present','Late':'late','Absent':'absent','Leave':'leave' };
+
+  tbody.innerHTML = data.map(r => {
+    const cin  = r.check_in_time  ? new Date(r.check_in_time).toLocaleTimeString('en-GB',  {hour:'2-digit',minute:'2-digit'}) : '—';
+    const cout = r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '—';
+    const pc   = pillClass[r.status] || 'pending';
+    return '<tr>' +
+      '<td>' + r.attendance_date + '</td>' +
+      '<td>' + cin + '</td>' +
+      '<td>' + cout + '</td>' +
+      '<td><span class="pill ' + pc + '">' + r.status + '</span></td>' +
+      '<td>' + (r.minutes_late || 0) + ' min</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ── Section Navigation ────────────────────────────────────────
+const sectionTitles = {
+  dashboard:  'My Dashboard',
+  tasks:      'My Tasks',
+  report:     'Daily Report',
+  attendance: 'Attendance History',
+  leave:      'Leave Management',
+  kpi:        'My KPI & Performance',
+  meetings:   'Meetings & Action Items',
+  announcements: 'Announcements & Notices',
+  holidays:   'Holiday Calendar',
+  rules:      'Rules & Regulations',
+  salary:     'Salary Slip',
+};
+
+function showSection(name, el) {
+  document.querySelectorAll('[id^="sec-"]').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.style.display = 'block';
+  document.getElementById('topbarTitle').textContent = sectionTitles[name] || name;
+  const navEl = el || document.querySelector(`.nav-item[onclick*="showSection('${name}'"]`);
+  if (navEl) navEl.classList.add('active');
+
+  // Lazy load attendance history
+  if (name === 'attendance') loadAttHistory();
+  if (name === 'tasks') loadTasks();
+  if (name === 'meetings') loadMyMeetings();
+  if (name === 'announcements') loadAnnouncements();
+  if (name === 'holidays') loadHolidays();
+  if (name === 'rules') loadRules();
+}
+
+function openCheckin() {
+  window.location.href = 'attendance.html';
+}
+
+// ── Meetings ──────────────────────────────────────────────────
+async function loadMyMeetings() {
+  if (!myEmployeeId) return;
+
+  // আমি যে meetings-এ participant সেগুলো
+  const { data: allMtg } = await db
+    .from('meetings')
+    .select('meeting_id, title, meeting_type, scheduled_date, status, field_visit_compliance_status')
+    .eq('is_active', true)
+    .order('scheduled_date', { ascending: false });
+
+  // participant JSON-এ আমার employee_id আছে কিনা filter
+  const myMtgs = (allMtg || []).filter(m => {
+    try {
+      const parts = typeof m.participants === 'string' ? JSON.parse(m.participants) : (m.participants || []);
+      return parts.includes(myEmployeeId);
+    } catch { return false; }
+  });
+
+  const upcoming = myMtgs.filter(m => m.status === 'Scheduled').length;
+  document.getElementById('myMtgUpcoming').textContent = upcoming;
+  document.getElementById('myMtgBadge').textContent = myMtgs.length + ' total';
+
+  const mtgList = document.getElementById('myMtgList');
+  if (myMtgs.length === 0) {
+    mtgList.innerHTML = '<div class="empty-state">No meetings assigned to you yet.</div>';
+  } else {
+    const statusColor = { 'Scheduled':'present','In Progress':'field','Completed':'pending','Closed':'pending' };
+    mtgList.innerHTML = myMtgs.map(m => {
+      const d = m.scheduled_date ? new Date(m.scheduled_date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const sc = statusColor[m.status] || 'pending';
+      const compliance = m.meeting_type === 'Field_Visit' ?
+        '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status === 'VERIFIED' ? 'var(--green)' : 'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status || 'UNVERIFIED') + '</span>' : '';
+      return '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:600;">' + (m.title || 'Untitled') + compliance + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + m.meeting_type + ' · ' + d + '</div>' +
+        '</div>' +
+        '<span class="pill ' + sc + '">' + m.status + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Action items
+  const { data: actions } = await db
+    .from('meeting_action_items')
+    .select('action_id, action_description, due_date, priority, status, meetings(title)')
+    .eq('assigned_to', myEmployeeId)
+    .eq('is_active', true)
+    .order('due_date', { ascending: true });
+
+  const pendingActions = (actions || []).filter(a => !['Completed'].includes(a.status));
+  document.getElementById('myActionCount').textContent = pendingActions.length;
+  document.getElementById('myActionBadge').textContent = (actions?.length || 0) + ' total';
+
+  const actionList = document.getElementById('myActionList');
+  if (!actions || actions.length === 0) {
+    actionList.innerHTML = '<div class="empty-state">No action items assigned to you.</div>';
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const prioColor = { 'Critical':'var(--red)','High':'var(--yellow)','Medium':'var(--blue)','Low':'var(--green)' };
+
+  actionList.innerHTML = actions.map(a => {
+    const overdue = a.due_date && a.due_date < today && a.status !== 'Completed';
+    const statusOpts = ['Pending','In Progress','Completed'].map(s =>
+      '<option value="' + s + '"' + (a.status === s ? ' selected' : '') + '>' + s + '</option>'
+    ).join('');
+    return '<div style="padding:13px 18px;border-bottom:1px solid var(--border);' + (overdue ? 'background:#fff8f8;' : '') + '">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:600;">' + (overdue ? '⚠️ ' : '') + (a.action_description || '—') + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' +
+            'Meeting: ' + (a.meetings?.title || '—') + ' · Due: ' + (a.due_date || '—') +
+            ' · <span style="font-weight:700;color:' + (prioColor[a.priority] || 'var(--text-muted)') + ';">' + (a.priority || '—') + '</span>' +
+            (overdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<select onchange="updateActionStatus(\'' + a.action_id + '\', this.value)" ' +
+          'style="font-size:12px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;background:var(--white);cursor:pointer;">' +
+          statusOpts +
+        '</select>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function updateActionStatus(actionId, newStatus) {
+  const { error } = await db.from('meeting_action_items')
+    .update({ status: newStatus })
+    .eq('action_id', actionId);
+  if (!error) await loadMyMeetings();
+}
+
+// ── Announcements ────────────────────────────────────────────
+async function loadAnnouncements() {
+  // Announcements are notifications with type='Announcement' (Blueprint §16) — one row per recipient.
+  const { data, error } = await db.from('notifications')
+    .select('notification_id, type, title, message, created_at')
+    .eq('employee_id', myEmployeeId)
+    .eq('type', 'Announcement')
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('annList');
+  const badge = document.getElementById('annCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Announcement নেই।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = data.length;
+  list.innerHTML = data.map(a => `
+    <div class="ann-item">
+      <div class="ann-icon">📢</div>
+      <div style="flex:1;">
+        <div class="ann-title">${a.title}</div>
+        <div class="ann-body">${a.message}</div>
+        <div class="ann-meta">${fmtDateTime(a.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function fmtDateTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) +
+    ' · ' + new Date(ts).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ── Holiday Calendar ─────────────────────────────────────────
+async function loadHolidays() {
+  const year = new Date().getFullYear();
+  document.getElementById('holidayYearLabel').textContent = year;
+  const { data, error } = await db.from('holiday_master')
+    .select('holiday_id, holiday_type, holiday_date, is_recurring')
+    .eq('is_active', true)
+    .gte('holiday_date', `${year}-01-01`)
+    .lte('holiday_date', `${year}-12-31`)
+    .order('holiday_date', { ascending: true });
+
+  const list = document.getElementById('holidayList');
+  const badge = document.getElementById('holidayCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">এই বছরের জন্য কোনো Holiday যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  badge.textContent = data.length;
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  list.innerHTML = data.map(h => {
+    const d = new Date(h.holiday_date);
+    return `
+    <div class="holiday-item">
+      <div style="display:flex;align-items:center;">
+        <div class="holiday-date-box">
+          <div class="holiday-date-day">${d.getDate()}</div>
+          <div class="holiday-date-mon">${months[d.getMonth()]}</div>
+        </div>
+        <div>
+          <div class="holiday-name">${h.holiday_type}</div>
+          <div class="holiday-type">${h.is_recurring ? 'প্রতি বছর' : 'এই বছরের জন্য'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Rules & Regulations (view-only for Tier 4) ───────────────
+let currentRuleLang = 'bn';
+let cachedRules = [];
+
+async function loadRules() {
+  const { data, error } = await db.from('rules_regulations')
+    .select('rule_id, category, title_en, title_bn, content_en, content_bn, legal_reference')
+    .eq('is_active', true)
+    .order('category', { ascending: true });
+
+  const list = document.getElementById('rulesList');
+  const badge = document.getElementById('rulesCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Rule যুক্ত করা হয়নি।</div>';
+    badge.textContent = '0';
+    cachedRules = [];
+    return;
+  }
+  cachedRules = data;
+  badge.textContent = data.length;
+  renderRules();
+}
+
+function renderRules() {
+  const list = document.getElementById('rulesList');
+  list.innerHTML = cachedRules.map(r => `
+    <div class="rule-card-item">
+      <span class="rule-card-cat">${r.category}</span>
+      <div class="rule-card-title">${currentRuleLang === 'bn' ? r.title_bn : r.title_en}</div>
+      <div class="rule-card-body">${currentRuleLang === 'bn' ? r.content_bn : r.content_en}</div>
+      ${r.legal_reference ? `<div style="font-size:11px;color:var(--text-light);margin-top:6px;">Ref: ${r.legal_reference}</div>` : ''}
+    </div>`).join('');
+}
+
+function setRuleLang(lang) {
+  currentRuleLang = lang;
+  document.getElementById('ruleLangBn').classList.toggle('active', lang === 'bn');
+  document.getElementById('ruleLangEn').classList.toggle('active', lang === 'en');
+  renderRules();
+}
+
+async function loadRulesBadge() {
+  const { count } = await db.from('rules_regulations')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  const badgeEl = document.getElementById('rulesBadge');
+  if (badgeEl && count > 0) {
+    badgeEl.textContent = count;
+    badgeEl.classList.add('show');
+  }
+}
+
+// ── Salary Slip Download ──────────────────────────────────────
+async function loadSalarySlip() {
+  const month = document.getElementById('salaryMonth').value;
+  const body  = document.getElementById('salarySlipBody');
+  if (!month) { body.innerHTML = '<div class="empty-state">একটি মাস সিলেক্ট করুন।</div>'; return; }
+  body.innerHTML = '<div class="empty-state">Loading...</div>';
+
+  const { data, error } = await db.from('payroll')
+    .select('*')
+    .eq('employee_id', myEmployeeId)
+    .eq('payroll_month', month)
+    .single();
+
+  if (error || !data) {
+    body.innerHTML = '<div class="empty-state">এই মাসের জন্য কোনো Salary Slip পাওয়া যায়নি।</div>';
+    return;
+  }
+
+  const rows = [
+    ['Gross Salary', data.gross_salary],
+    ['Pro-Rata Late Deduction', -data.pro_rata_late_deduction],
+    ['Absent Deduction', -data.absent_deduction],
+    ['Other Deductions', -(data.other_deductions || 0)],
+  ];
+  body.innerHTML = `
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-muted);">
+      <b>${myData?.full_name || ''}</b> — ${new Date(month + '-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
+      <span class="pill ${data.is_locked ? 'absent' : 'pending'}" style="margin-left:8px;">${data.is_locked ? 'Locked / Final' : 'Draft'}</span>
+    </div>
+    <table class="att-table" style="width:100%;">
+      <tbody>
+        ${rows.map(([label, val]) => `<tr><td>${label}</td><td style="text-align:right;${val < 0 ? 'color:var(--red);' : ''}">${val < 0 ? '−' : ''}৳${Math.abs(val).toLocaleString()}</td></tr>`).join('')}
+        <tr style="font-weight:800;"><td>Net Salary</td><td style="text-align:right;color:var(--green);">৳${Math.round(data.net_salary).toLocaleString()}</td></tr>
+      </tbody>
+    </table>
+    <button onclick="window.print()" style="margin-top:16px;padding:10px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Print / Save as PDF</button>
+  `;
+}
+
+// ── Notifications ────────────────────────────────────────────
+async function loadNotifications() {
+  if (!myEmployeeId) return;
+  const { data } = await db.from('notifications')
+    .select('notification_id, type, title, message, is_read, created_at')
+    .eq('employee_id', myEmployeeId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const unread = (data || []).filter(n => !n.is_read);
+  const dot = document.getElementById('notifDot');
+  if (dot) dot.classList.toggle('show', unread.length > 0);
+
+  const listEl = document.getElementById('notifList');
+  if (!listEl) return;
+  if (!data || data.length === 0) {
+    listEl.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markNotifRead('${n.notification_id}')">
+      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-msg">${n.message}</div>
+      <div class="notif-time">${fmtDateTime(n.created_at)}</div>
+    </div>`).join('');
+}
+
+function toggleNotif() {
+  document.getElementById('notifDropdown').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('notifBellWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
+});
+
+async function markNotifRead(id) {
+  await db.from('notifications').update({ is_read: true }).eq('notification_id', id);
+  await loadNotifications();
+}
+async function markAllRead(e) {
+  e.stopPropagation();
+  await db.from('notifications').update({ is_read: true }).eq('employee_id', myEmployeeId).eq('is_read', false);
+  await loadNotifications();
+}
+
+// ── Logout ────────────────────────────────────────────────────
+async function handleLogout() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+// ── (Desktop sidebar-toggle removed — this build uses the bottom-nav/more-sheet shell) ──
+
+const BOTTOM_NAV_SECTIONS = ['dashboard', 'tasks', 'attendance'];
+
+function showMobileSection(name, el) {
+  showSection(name, null);
+  document.querySelectorAll('.bn-item').forEach(n => n.classList.remove('active'));
+  if (BOTTOM_NAV_SECTIONS.includes(name)) {
+    const navEl = el || document.getElementById('bn-' + name);
+    if (navEl) navEl.classList.add('active');
+  }
+  window.scrollTo(0, 0);
+}
+function openMoreSheet() { document.getElementById('moreSheetOverlay').classList.add('open'); }
+function closeMoreSheet() { document.getElementById('moreSheetOverlay').classList.remove('open'); }
+</script>
+</body>
+</html>
