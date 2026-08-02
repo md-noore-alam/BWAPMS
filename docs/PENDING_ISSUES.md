@@ -62,6 +62,17 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Tier 1 professional redesign (desktop) + dedicated mobile build
+
+- [x] **Desktop redesign** — `dashboard-tier1.html`'s `<style>` block rewritten with a refined GramGP navy+forest-green palette (was flat/generic navy+green) and a Fraunces (serif display) + Inter (body) + JetBrains Mono (data) typography pairing. Sidebar gradient + left-accent-bar active state, stat-card top accent bars + hover lift, frosted-glass topbar, refined shadows/buttons/forms/modals throughout. All class names/IDs kept identical to the existing markup — zero JS changes needed.
+- [x] **New `dashboard-tier1-mobile.html`** — a genuinely separate mobile-optimized build (not a responsive breakpoint), per GP Bhai's explicit request. Sidebar replaced with a 5-item bottom tab bar (Dashboard/Alerts/Approvals/Employees/More) + a slide-up "More" sheet holding the remaining 8 sections as an icon grid. Reuses the entire JS business logic verbatim from the desktop file (same queries, same function/element-ID contracts) — only the shell is mobile-native, so all 21 report/slip downloads from earlier in this session work unchanged. Verified: all 117 `getElementById()` calls resolve, div tags balance exactly, `node --check` passes.
+  → `dashboard-tier1.html`, `dashboard-tier1-mobile.html` (new)
+
+**Follow-ups not yet done:**
+- Tier 2/3/4 dashboards still use the old design — same redesign treatment needed there if GP Bhai wants visual consistency across tiers.
+- `index.html` (login page) doesn't yet detect mobile and redirect to `dashboard-tier1-mobile.html` automatically — currently the person has to know the URL.
+- Mobile build's data-heavy tables (Employee directory, report result tables) currently render as horizontally-scrollable tables rather than true stacked cards — acceptable mobile pattern but could be upgraded per-section later if desired.
+
 ### 2026-08-01 — CRITICAL: Dashboard "Approve" button silently rejected leave requests (bug)
 
 - [x] **GP Bhai reported "Tier 2 feels helpless"** — traced to a duplicate `approveLeave()` function definition in `dashboard-tier2.html`: an old 1-argument version (`approveLeave(id)`) and a newer 2-argument version (`approveLeave(id, approve)`) both existed. JS silently lets the later declaration win, so only the 2-arg version was ever active — but the Dashboard's "Pending Approvals" widget (the very first thing Tier 2 sees on login, per GP Bhai's screenshot) called it with just 1 argument. `approve` resolved to `undefined` → falsy → the leave request status was always set to `'Rejected'`, regardless of whether "Approve" or "Reject" was clicked. The dedicated Leave section's buttons were unaffected (already passed `true`/`false` explicitly) — only the Dashboard shortcut was broken. Fixed the widget's `onclick` handlers to pass `true`/`false` explicitly and removed the dead duplicate function pair entirely. Also swept the whole codebase (`dashboard-tier1/2/3/4.html`, `attendance.html`, `leave.html`, `tasks.html`, `index.html`, `app.js`) for other duplicate function names — none found; this was isolated to Tier 2.
