@@ -486,6 +486,16 @@
         </div>
       </div>
 
+      <!-- Retention Risk — Blueprint §13.5 -->
+      <p class="section-title" style="margin-top:24px;">Staff Turnover Trend Analyzer <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Informational only</span></p>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🟠 Retention Risk Flags</div>
+          <span class="card-badge badge-yellow" id="riskFlagBadge">—</span>
+        </div>
+        <div id="riskFlagList"><div class="empty-state">Loading...</div></div>
+      </div>
+
       <!-- System Health -->
       <p class="section-title" style="margin-top:24px;">System Health</p>
       <div class="three-col">
@@ -858,7 +868,7 @@
         </div>
         <div style="overflow-x:auto;">
           <table class="forecast-table">
-            <thead><tr><th>Employee</th><th>Gross</th><th>Late Days (this month)</th><th>Est. Late Deduction</th><th>Est. Net</th></tr></thead>
+            <thead><tr><th>Employee</th><th>Gross</th><th>Late Deduction</th><th>Absent Deduction</th><th>Net</th></tr></thead>
             <tbody id="fullForecastBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
           </table>
         </div>
@@ -1428,6 +1438,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadTier2Approvals(),
     loadKPI(),
     loadPayrollForecast(),
+    loadRetentionRisk(),
     loadEmployees(),
     loadAttendance(),
     loadAudit(),
@@ -1610,38 +1621,71 @@ async function loadKPI() {
 }
 
 async function loadPayrollForecast() {
-  const { data: emps } = await db.from('employee_master')
-    .select('employee_id, full_name, monthly_gross_salary')
-    .eq('is_active', true).neq('tier', 1);
-
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+
+  const { data: forecasts } = await db.from('payroll_forecast')
+    .select('employee_id, projected_gross_salary, projected_late_deduction, projected_absent_deduction, projected_net_salary, forecast_label, employee_master(full_name)')
+    .eq('forecast_month', nextMonthStart)
+    .eq('is_active', true);
 
   const render = (tbodyId, cols) => {
     const el = document.getElementById(tbodyId);
-    if (!emps || emps.length === 0) { el.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:20px;color:var(--text-light);">No employee data.</td></tr>'; return; }
-    el.innerHTML = emps.map(e => {
-      const gross = parseFloat(e.monthly_gross_salary) || 0;
-      const dailyGross = gross / 26;
-      const estLateDays = 2;
-      const estLateDeduct = ((estLateDays * 30) / 480 * dailyGross).toFixed(0);
-      const estNet = (gross - parseFloat(estLateDeduct)).toFixed(0);
+    if (!forecasts || forecasts.length === 0) {
+      el.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:20px;color:var(--text-light);">এই মাসের forecast এখনও generate হয়নি (daily cron রাতে চলে)।</td></tr>';
+      return;
+    }
+    el.innerHTML = forecasts.map(f => {
+      const gross = parseFloat(f.projected_gross_salary) || 0;
+      const lateDeduct = parseFloat(f.projected_late_deduction) || 0;
+      const absentDeduct = parseFloat(f.projected_absent_deduction) || 0;
+      const net = parseFloat(f.projected_net_salary) || 0;
+      const name = f.employee_master?.full_name || f.employee_id;
       if (cols === 4) {
-        return '<tr><td style="font-weight:600;">' + e.full_name + '</td>' +
+        return '<tr><td style="font-weight:600;">' + name + '</td>' +
           '<td>৳' + gross.toLocaleString() + '</td>' +
-          '<td style="color:var(--red);">−৳' + parseInt(estLateDeduct).toLocaleString() + ' <span style="font-size:11px;color:var(--text-light);">(est.)</span></td>' +
-          '<td style="font-weight:700;color:var(--green);">৳' + parseInt(estNet).toLocaleString() + '</td></tr>';
+          '<td style="color:var(--red);">−৳' + lateDeduct.toLocaleString() + '</td>' +
+          '<td style="font-weight:700;color:var(--green);">৳' + net.toLocaleString() + '</td></tr>';
       } else {
-        return '<tr><td style="font-weight:600;">' + e.full_name + '</td>' +
+        return '<tr><td style="font-weight:600;">' + name + '</td>' +
           '<td>৳' + gross.toLocaleString() + '</td>' +
-          '<td>' + estLateDays + ' days (est.)</td>' +
-          '<td style="color:var(--red);">−৳' + parseInt(estLateDeduct).toLocaleString() + '</td>' +
-          '<td style="font-weight:700;color:var(--green);">৳' + parseInt(estNet).toLocaleString() + '</td></tr>';
+          '<td style="color:var(--red);">−৳' + lateDeduct.toLocaleString() + '</td>' +
+          '<td style="color:var(--red);">−৳' + absentDeduct.toLocaleString() + '</td>' +
+          '<td style="font-weight:700;color:var(--green);">৳' + net.toLocaleString() + '</td></tr>';
       }
     }).join('');
   };
   render('payrollForecastBody', 4);
   render('fullForecastBody', 5);
+}
+
+// ── Staff Turnover Trend Analyzer — Blueprint §13.5 ──
+async function loadRetentionRisk() {
+  const { data } = await db.from('turnover_risk_flags')
+    .select('flag_id, trigger_date, absence_count_30d, productivity_3m_avg, current_productivity, status, employee_master(full_name, designation, tier)')
+    .eq('is_active', true)
+    .in('status', ['Active', 'Under_Review'])
+    .order('trigger_date', { ascending: false });
+
+  const badge = document.getElementById('riskFlagBadge');
+  const list = document.getElementById('riskFlagList');
+  const count = data?.length || 0;
+  badge.textContent = count + ' open';
+  badge.className = count > 0 ? 'card-badge badge-yellow' : 'card-badge badge-green';
+
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো Retention Risk flag নেই ✓</div>';
+    return;
+  }
+  list.innerHTML = data.map(f => `
+    <div class="ann-item">
+      <div class="ann-icon" style="background:var(--amber-bg);">🟠</div>
+      <div style="flex:1;">
+        <div class="ann-title">${f.employee_master?.full_name || '—'} <span style="font-weight:500;color:var(--text-muted);">(${f.employee_master?.designation || 'Tier ' + f.employee_master?.tier})</span></div>
+        <div class="ann-body">Productivity ${f.current_productivity} — 3-month avg ${f.productivity_3m_avg}-এর ৫০%-এর নিচে। গত ৩০ দিনে ${f.absence_count_30d}টি unapproved absence।</div>
+        <div class="ann-meta">Flagged: ${f.trigger_date} · Status: ${f.status}</div>
+      </div>
+    </div>`).join('');
 }
 
 async function loadEmployees() {
@@ -2483,23 +2527,27 @@ async function downloadFieldVisitCompliance(fmt) {
 
 // ── Next-Month Payroll Forecast — PDF export — Blueprint §12.8 ──
 async function downloadPayrollForecastPDF() {
-  const { data: emps } = await db.from('employee_master')
-    .select('employee_id, full_name, monthly_gross_salary')
-    .eq('is_active', true).neq('tier', 1);
-  if (!emps || emps.length === 0) { alert('কোনো Employee ডেটা পাওয়া যায়নি।'); return; }
   const now = new Date();
-  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+  const monthLabel = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+  const { data: forecasts } = await db.from('payroll_forecast')
+    .select('projected_gross_salary, projected_late_deduction, projected_absent_deduction, projected_net_salary, employee_master(full_name)')
+    .eq('forecast_month', nextMonthStart)
+    .eq('is_active', true);
+
+  if (!forecasts || forecasts.length === 0) { alert('এই মাসের forecast এখনও generate হয়নি। Daily cron রাত ৮টায় চলে — কাল আবার চেষ্টা করুন।'); return; }
+
   let rowsHtml = '';
-  emps.forEach(e => {
-    const gross = parseFloat(e.monthly_gross_salary) || 0;
-    const dailyGross = gross / 26;
-    const estLateDays = 2;
-    const estLateDeduct = ((estLateDays * 30) / 480 * dailyGross);
-    const estNet = gross - estLateDeduct;
-    rowsHtml += `<tr><td>${e.full_name}</td><td>৳${gross.toLocaleString()}</td><td>৳${estLateDeduct.toFixed(0)}</td><td>৳${estNet.toFixed(0)}</td></tr>`;
+  forecasts.forEach(f => {
+    const gross = parseFloat(f.projected_gross_salary) || 0;
+    const lateDeduct = parseFloat(f.projected_late_deduction) || 0;
+    const absentDeduct = parseFloat(f.projected_absent_deduction) || 0;
+    const net = parseFloat(f.projected_net_salary) || 0;
+    rowsHtml += `<tr><td>${f.employee_master?.full_name || '—'}</td><td>৳${gross.toLocaleString()}</td><td>৳${lateDeduct.toLocaleString()}</td><td>৳${absentDeduct.toLocaleString()}</td><td>৳${net.toLocaleString()}</td></tr>`;
   });
-  const body = `<table><tr><th>Employee</th><th>Gross</th><th>Est. Late Deduction</th><th>Est. Net</th></tr>${rowsHtml}</table>
-    <p style="font-size:11px;color:#999;margin-top:10px;">Projected estimate — non-binding. Actual payroll depends on real attendance for the month.</p>`;
+  const body = `<table><tr><th>Employee</th><th>Gross</th><th>Late Deduction</th><th>Absent Deduction</th><th>Net</th></tr>${rowsHtml}</table>
+    <p style="font-size:11px;color:#999;margin-top:10px;">Projected estimate — non-binding, based on the trailing 30-day attendance trend and approved leave overrunning balance (Blueprint §12.8). Actual payroll depends on real attendance for the month.</p>`;
   openSlipWindow('Next-Month Payroll Forecast', body, monthLabel);
 }
 
