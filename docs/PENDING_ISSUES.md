@@ -58,11 +58,12 @@
 
 ## ✅ Resolved
 
-### 2026-08-01 — Casual Leave Backfill admin tool (no-SQL UI)
+### 2026-08-01 — Casual Leave Backfill admin tool (no-SQL UI) — on Tier 2
 
-- [x] Added a **"Casual Leave Backfill"** card to Tier 1's More Reports → Admin Tools: pick an employee (or all active employees), pick a starting month, click Preview to see the computed months-missed × 1.5 days, then Apply. Backed by a new `backfill_casual_leave(p_employee_id, p_days)` RPC (Tier 1/2 only, enforced server-side via `get_my_tier()`, `GRANT EXECUTE ... TO authenticated`), so GP Bhai never has to write or remember SQL when he's ready to backfill Jan–Jul 2026 (or handle any future gap).
+- [x] Added a **"Casual Leave Backfill"** tool (Admin Tools tab, Leave section): pick an employee (or all active employees), pick a starting month, click Preview to see the computed months-missed × 1.5 days, then Apply. Backed by the `backfill_casual_leave(p_employee_id, p_days)` RPC (Tier 1/2 only, enforced server-side via `get_my_tier()`, `GRANT EXECUTE ... TO authenticated`), so GP Bhai never has to write or remember SQL when he's ready to backfill Jan–Jul 2026 (or handle any future gap).
+- [x] **Built on Tier 1 first, then moved to Tier 2 per GP Bhai's correction** — Tier 2 is his own operational/developer account (he monitors and fixes issues himself from there), so hands-on admin tools belong there, not on Tier 1 (Executive, monitoring-only per Blueprint §2.1). Lesson for future sessions: default new admin/operational tools to Tier 2 unless the person explicitly wants Tier 1 too.
 - [x] Verified with a real employee (+3.0 days test, confirmed 1.5→4.5, then reverted). Caught and fixed a bug during testing: the function's `RETURNS TABLE(employee_id UUID, ...)` column name collided with the `employee_id` table column inside the function body ("column reference is ambiguous") — renamed the output columns to `out_employee_id` etc.
-  → `dashboard-tier1.html`, new `backfill_casual_leave()` RPC in Supabase
+  → `dashboard-tier2.html`, new `backfill_casual_leave()` RPC in Supabase
 
 ### 2026-08-01 — Leave Balance auto-credit/reset automated (Blueprint §6.1)
 
