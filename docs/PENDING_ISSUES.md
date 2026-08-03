@@ -34,11 +34,7 @@
   - [x] KPI Score + Performance Ranking reports added to Tier 1 dashboard (2026-07-31), CSV/Excel/PDF each — pulls from existing `kpi_scores` table. See Resolved below.
   - [x] Salary History, Task, Meeting & Action Items, Issue, Monthly Donor Audit Readiness, and Audit Log reports all added to Tier 1 dashboard (2026-07-31) in a new "More Reports" nav section, CSV/Excel/PDF each. See Resolved below.
 
-- [ ] **Leave Balance auto-credit/reset not automated** (Blueprint §6.1) — 1.5 days/month CL, 14 days/year SL, 31 Dec expiry + 1 Jan fresh allocation. `leave_balance` table exists, no cron job updates it.
-
 - [ ] **Field Visit Compliance cross-reference not automated** (Blueprint §10.2) — should auto-set `meetings.field_visit_compliance_status` to VERIFIED/UNVERIFIED by matching meeting minutes against GPS check-ins at the same whitelisted location/day. Nothing populates this today.
-
-- [ ] **Next-Month Payroll Forecast + Turnover Risk Analyzer have no backend calculation** (Blueprint §12.8, §13.5) — `payroll_forecast` and `turnover_risk_flags` tables exist, and the Tier 2 dashboard already has a `payrollforecast` UI section, but no function generates the data, so it will render empty. Quick win since the frontend already exists.
 
 - [ ] **Leaked Password Protection disabled** in Supabase Auth — cannot be toggled via SQL/API, no MCP tool covers Auth config either. Still needs manual action.
   **Action needed (GP Bhai):** Supabase Dashboard → Authentication → Providers → Email → enable "Leaked password protection" (HaveIBeenPwned check).
@@ -61,6 +57,24 @@
 ---
 
 ## ✅ Resolved
+
+### 2026-08-01 — Leave Balance auto-credit/reset automated (Blueprint §6.1)
+
+- [x] **`initialize_yearly_leave_balances()`** — runs via `pg_cron` on Jan 1 each year (`bwapms-yearly-leave-init`, `5 0 1 1 *`). Opens fresh CL (starts 0, accrues monthly) and SL (starts 14, full annual allocation) rows for every active non-Tier-1 employee. Idempotent (`ON CONFLICT DO NOTHING`).
+- [x] **`credit_monthly_casual_leave()`** — runs via `pg_cron` on the 1st of every month (`bwapms-monthly-cl-credit`, `10 0 1 * *`). Adds 1.5 days to CL `total_allocated` for every active non-Tier-1 employee. Upserts, so a mid-year new hire who doesn't have a current-year row yet still gets credited instead of being silently skipped.
+- [x] Both manually run once for 2026 and verified: all 3 active employees now have SL=14, CL=1.5 (this month's credit) for the current year.
+- [x] Year-end expiry needs no separate cron job — every leave query in the app already filters by `year = <current year>` (established in the Leave Balance Slip / Monthly / Yearly Leave Summary reports built earlier this session), so a previous year's balance simply stops being read once the new year's rows exist. No carry-forward occurs because CL/SL always start fresh (0 / 14) each Jan 1, matching Blueprint §6.1 exactly.
+- ⚠️ **Needs GP Bhai's decision:** since this automation is being added mid-year (August), CL for Jan–Jul 2026 was never credited. Backfilling those ~7 months (≈10.5 more days per employee) is a real entitlement decision, not something to decide unilaterally — GP Bhai to confirm whether to backfill or start accrual from August.
+  → New functions in Supabase (no frontend changes needed — existing Leave Balance Slip/reports already read `leave_balance` correctly)
+
+### 2026-08-01 — Payroll Forecast + Turnover Risk Analyzer backend (Blueprint §12.8, §13.5)
+
+- [x] **`generate_payroll_forecast()`** — runs via `pg_cron` nightly (`bwapms-payroll-forecast-daily`, 8:00 PM UTC). Projects next month's Gross/Late Deduction/Absent Deduction/Net per employee from their trailing-30-day attendance trend (late-day rate × avg minutes late, absent-day rate) plus any already-approved leave next month that would exceed their remaining balance (treated as unpaid). Upserts into `payroll_forecast` (unique on employee+month).
+- [x] **`generate_turnover_risk_flags()`** — runs via `pg_cron` nightly (`bwapms-turnover-risk-daily`, 8:15 PM UTC). Flags "RETENTION RISK" when an employee's latest monthly productivity is below 50% of their trailing-3-month average AND they have 3+ unapproved absences in the last 30 days. De-duplicates (won't re-flag someone with an existing Active/Under_Review flag). Logs to `audit_logs`.
+- [x] **Found and fixed an RLS bug in the process:** `turnover_risk_flags` had a Tier 3/4 *deny* policy but no corresponding Tier 1/2 *allow* policy, so nobody — including Tier 1, who this feature is built for — could actually read it.
+- [x] **Tier 1 dashboard wired to the real data:** `loadPayrollForecast()` and `downloadPayrollForecastPDF()` previously computed a fake client-side estimate (hardcoded `estLateDays = 2` for every employee regardless of their actual attendance) — both now read from `payroll_forecast`. Added a new "Retention Risk Flags" card to the Dashboard (Blueprint §13.5 requires this display and no UI existed for it at all before now).
+- [x] Verified end-to-end with real + synthetic test data (synthetic data deleted after); de-duplication confirmed on second run.
+  → `dashboard-tier1.html`, new Supabase functions + cron jobs
 
 ### 2026-08-01 — Login page: mobile-aware routing + design refresh
 
