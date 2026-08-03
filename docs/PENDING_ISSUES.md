@@ -58,13 +58,19 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Casual Leave Backfill admin tool (no-SQL UI)
+
+- [x] Added a **"Casual Leave Backfill"** card to Tier 1's More Reports → Admin Tools: pick an employee (or all active employees), pick a starting month, click Preview to see the computed months-missed × 1.5 days, then Apply. Backed by a new `backfill_casual_leave(p_employee_id, p_days)` RPC (Tier 1/2 only, enforced server-side via `get_my_tier()`, `GRANT EXECUTE ... TO authenticated`), so GP Bhai never has to write or remember SQL when he's ready to backfill Jan–Jul 2026 (or handle any future gap).
+- [x] Verified with a real employee (+3.0 days test, confirmed 1.5→4.5, then reverted). Caught and fixed a bug during testing: the function's `RETURNS TABLE(employee_id UUID, ...)` column name collided with the `employee_id` table column inside the function body ("column reference is ambiguous") — renamed the output columns to `out_employee_id` etc.
+  → `dashboard-tier1.html`, new `backfill_casual_leave()` RPC in Supabase
+
 ### 2026-08-01 — Leave Balance auto-credit/reset automated (Blueprint §6.1)
 
 - [x] **`initialize_yearly_leave_balances()`** — runs via `pg_cron` on Jan 1 each year (`bwapms-yearly-leave-init`, `5 0 1 1 *`). Opens fresh CL (starts 0, accrues monthly) and SL (starts 14, full annual allocation) rows for every active non-Tier-1 employee. Idempotent (`ON CONFLICT DO NOTHING`).
 - [x] **`credit_monthly_casual_leave()`** — runs via `pg_cron` on the 1st of every month (`bwapms-monthly-cl-credit`, `10 0 1 * *`). Adds 1.5 days to CL `total_allocated` for every active non-Tier-1 employee. Upserts, so a mid-year new hire who doesn't have a current-year row yet still gets credited instead of being silently skipped.
 - [x] Both manually run once for 2026 and verified: all 3 active employees now have SL=14, CL=1.5 (this month's credit) for the current year.
 - [x] Year-end expiry needs no separate cron job — every leave query in the app already filters by `year = <current year>` (established in the Leave Balance Slip / Monthly / Yearly Leave Summary reports built earlier this session), so a previous year's balance simply stops being read once the new year's rows exist. No carry-forward occurs because CL/SL always start fresh (0 / 14) each Jan 1, matching Blueprint §6.1 exactly.
-- ⚠️ **Needs GP Bhai's decision:** since this automation is being added mid-year (August), CL for Jan–Jul 2026 was never credited. Backfilling those ~7 months (≈10.5 more days per employee) is a real entitlement decision, not something to decide unilaterally — GP Bhai to confirm whether to backfill or start accrual from August.
+- ⚠️ **GP Bhai's decision (2026-08-01): no backfill for now.** August 2026 onward accrual is correct as-is; Jan–Jul will be backfilled manually later when he's ready. A no-SQL-needed UI tool for this now exists — see "Casual Leave Backfill" below.
   → New functions in Supabase (no frontend changes needed — existing Leave Balance Slip/reports already read `leave_balance` correctly)
 
 ### 2026-08-01 — Payroll Forecast + Turnover Risk Analyzer backend (Blueprint §12.8, §13.5)
