@@ -1003,7 +1003,32 @@
     <div id="sec-reports" style="display:none;">
       <p class="section-title">More Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §15.2</span></p>
 
-      <p class="section-title" style="margin-top:0;">Leave Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §6.3</span></p>
+      <p class="section-title" style="margin-top:0;">Admin Tools</p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Casual Leave Backfill</div><span class="card-badge badge-gray">Manual Adjustment</span></div>
+        <div class="card-body">
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+            Monthly CL auto-credit (1.5 দিন/মাস) শুরু হয়েছে আগস্ট ২০২৬ থেকে। এর আগের কোনো মাসের জন্য
+            backfill দিতে চাইলে এখান থেকে দিন — SQL লাগবে না। একজন Employee বা সবার জন্য একসাথে করা যাবে।
+          </p>
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+              <select id="clBackfillEmployee" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px; min-width:200px;">
+                <option value="ALL">— সব Active Employee —</option>
+              </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label style="font-size:11px; color:var(--text-muted); font-weight:600;">এই মাস থেকে credit দিন</label>
+              <input type="month" id="clBackfillFromMonth" style="padding:8px 10px; border:1px solid #d8dde6; border-radius:8px; font-size:13px;" />
+            </div>
+            <button class="btn-secondary" onclick="previewCLBackfill()">Preview করুন</button>
+          </div>
+          <div id="clBackfillPreview" style="display:none; margin-top:16px; padding:14px; background:var(--cream); border-radius:8px;"></div>
+        </div>
+      </div>
+
+      <p class="section-title" style="margin-top:24px;">Leave Reports <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §6.3</span></p>
 
       <div class="card">
         <div class="card-header"><div class="card-title">Leave Balance Slip</div><span class="card-badge badge-gray">Current Snapshot, PDF</span></div>
@@ -2358,7 +2383,7 @@ async function downloadAuditLogReport(fmt) {
 async function populateReportEmployeeDropdowns() {
   const { data: emps } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).order('full_name');
   if (!emps) return;
-  ['dlSlipEmployee', 'dlSlipEmployeePay', 'dlLeaveBalEmployee'].forEach(id => {
+  ['dlSlipEmployee', 'dlSlipEmployeePay', 'dlLeaveBalEmployee', 'clBackfillEmployee'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel || sel.options.length > 1) return;
     emps.forEach(e => {
@@ -2368,6 +2393,58 @@ async function populateReportEmployeeDropdowns() {
       sel.appendChild(opt);
     });
   });
+}
+
+// ── Casual Leave Backfill (admin tool) ──
+function previewCLBackfill() {
+  const empId = document.getElementById('clBackfillEmployee').value;
+  const fromMonth = document.getElementById('clBackfillFromMonth').value; // "YYYY-MM"
+  const box = document.getElementById('clBackfillPreview');
+
+  if (!fromMonth) { alert('মাস নির্বাচন করুন।'); return; }
+
+  const [fy, fm] = fromMonth.split('-').map(Number);
+  const now = new Date();
+  const cy = now.getFullYear(), cm = now.getMonth() + 1;
+  const monthsCount = (cy - fy) * 12 + (cm - fm);
+
+  if (monthsCount <= 0) { alert('ভবিষ্যতের বা চলতি মাস থেকে backfill দেওয়া যাবে না — অতীতের একটা মাস নির্বাচন করুন।'); return; }
+
+  const days = Math.round(monthsCount * 1.5 * 10) / 10;
+  const empLabel = empId === 'ALL'
+    ? 'সব Active Employee (Tier 2/3/4)'
+    : document.getElementById('clBackfillEmployee').selectedOptions[0].textContent;
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="font-size:13px; line-height:1.8;">
+      <div><b>${empLabel}</b></div>
+      <div>${fromMonth} থেকে চলতি মাসের আগ পর্যন্ত = <b>${monthsCount} মাস</b> মিস হয়েছে</div>
+      <div>প্রতি মাস ১.৫ দিন হিসেবে যোগ হবে: <b style="color:var(--green);">+${days} দিন</b> Casual Leave</div>
+    </div>
+    <button class="btn-primary" style="margin-top:12px;" onclick="applyCLBackfill('${empId}', ${days})">✓ Apply করুন — Total Allocated-এ যোগ হবে</button>
+  `;
+}
+
+async function applyCLBackfill(empId, days) {
+  if (!confirm(`নিশ্চিত? ${days} দিন Casual Leave যোগ হবে ${empId === 'ALL' ? 'সব active employee-র' : 'এই employee-র'} current allocated balance-এ। এই কাজ undo করা যাবে না (manual SQL ছাড়া)।`)) return;
+
+  const { data, error } = await db.rpc('backfill_casual_leave', {
+    p_employee_id: empId === 'ALL' ? null : empId,
+    p_days: days,
+  });
+
+  const box = document.getElementById('clBackfillPreview');
+  if (error) {
+    box.innerHTML = `<div style="color:var(--red);">সমস্যা হয়েছে: ${error.message}</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div style="color:var(--green); font-weight:700; margin-bottom:8px;">✓ Backfill সম্পন্ন হয়েছে — ${data.length} জন employee আপডেট হয়েছে</div>
+    <div style="font-size:12.5px; max-height:200px; overflow-y:auto;">
+      ${data.map(r => `<div style="padding:4px 0; border-bottom:1px solid var(--border);">${r.out_full_name} — নতুন Total Allocated: <b>${r.out_new_total_allocated}</b> দিন</div>`).join('')}
+    </div>
+  `;
 }
 
 function openSlipWindow(title, bodyHtml, periodLabel) {
