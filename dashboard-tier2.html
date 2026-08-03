@@ -784,6 +784,7 @@
         <button class="tab-btn active" onclick="showLeaveTab('pending')" id="leaveTab-pending">⏳ Pending Approvals</button>
         <button class="tab-btn" onclick="showLeaveTab('history')" id="leaveTab-history">📋 All History</button>
         <button class="tab-btn" onclick="showLeaveTab('myLeave')" id="leaveTab-myLeave">🙋 My Leave</button>
+        <button class="tab-btn" onclick="showLeaveTab('admin')" id="leaveTab-admin">🛠 Admin Tools</button>
       </div>
 
       <!-- Pending Tab -->
@@ -871,6 +872,34 @@
               <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Applied</th></tr></thead>
               <tbody id="myLeaveBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab -->
+      <div id="leavePane-admin" style="display:none;">
+        <p class="section-title">Casual Leave Backfill</p>
+        <div class="card" style="max-width:640px;">
+          <div class="card-header"><div class="card-title">Manual Adjustment</div><span class="card-badge badge-gray">No SQL Needed</span></div>
+          <div class="card-body">
+            <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+              Monthly CL auto-credit (1.5 দিন/মাস) শুরু হয়েছে আগস্ট ২০২৬ থেকে। এর আগের কোনো মাসের জন্য
+              backfill দিতে চাইলে এখান থেকে দিন — একজন Employee বা সবার জন্য একসাথে করা যাবে।
+            </p>
+            <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Employee</label>
+                <select id="clBackfillEmployee" style="padding:9px 12px; border:1px solid var(--border); border-radius:7px; font-size:13px; min-width:200px;">
+                  <option value="ALL">— সব Active Employee —</option>
+                </select>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <label style="font-size:11px; color:var(--text-muted); font-weight:600;">এই মাস থেকে credit দিন</label>
+                <input type="month" id="clBackfillFromMonth" style="padding:9px 12px; border:1px solid var(--border); border-radius:7px; font-size:13px;" />
+              </div>
+              <button class="btn-secondary" onclick="previewCLBackfill()">Preview করুন</button>
+            </div>
+            <div id="clBackfillPreview" style="display:none; margin-top:16px; padding:14px; background:var(--cream); border-radius:8px;"></div>
           </div>
         </div>
       </div>
@@ -3754,6 +3783,70 @@ async function generatePayrollForecast() {
   await loadPayrollForecastView();
 }
 
+// ── Casual Leave Backfill (admin tool) ──
+async function populateCLBackfillDropdown() {
+  const sel = document.getElementById('clBackfillEmployee');
+  if (!sel || sel.options.length > 1) return;
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).order('full_name');
+  (emps || []).forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.employee_id;
+    opt.textContent = `${e.full_name} (Tier ${e.tier})`;
+    sel.appendChild(opt);
+  });
+}
+
+function previewCLBackfill() {
+  const empId = document.getElementById('clBackfillEmployee').value;
+  const fromMonth = document.getElementById('clBackfillFromMonth').value; // "YYYY-MM"
+  const box = document.getElementById('clBackfillPreview');
+
+  if (!fromMonth) { alert('মাস নির্বাচন করুন।'); return; }
+
+  const [fy, fm] = fromMonth.split('-').map(Number);
+  const now = new Date();
+  const cy = now.getFullYear(), cm = now.getMonth() + 1;
+  const monthsCount = (cy - fy) * 12 + (cm - fm);
+
+  if (monthsCount <= 0) { alert('ভবিষ্যতের বা চলতি মাস থেকে backfill দেওয়া যাবে না — অতীতের একটা মাস নির্বাচন করুন।'); return; }
+
+  const days = Math.round(monthsCount * 1.5 * 10) / 10;
+  const empLabel = empId === 'ALL'
+    ? 'সব Active Employee (Tier 2/3/4)'
+    : document.getElementById('clBackfillEmployee').selectedOptions[0].textContent;
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="font-size:13px; line-height:1.8;">
+      <div><b>${empLabel}</b></div>
+      <div>${fromMonth} থেকে চলতি মাসের আগ পর্যন্ত = <b>${monthsCount} মাস</b> মিস হয়েছে</div>
+      <div>প্রতি মাস ১.৫ দিন হিসেবে যোগ হবে: <b style="color:var(--green);">+${days} দিন</b> Casual Leave</div>
+    </div>
+    <button class="btn-primary" style="margin-top:12px;" onclick="applyCLBackfill('${empId}', ${days})">✓ Apply করুন — Total Allocated-এ যোগ হবে</button>
+  `;
+}
+
+async function applyCLBackfill(empId, days) {
+  if (!confirm(`নিশ্চিত? ${days} দিন Casual Leave যোগ হবে ${empId === 'ALL' ? 'সব active employee-র' : 'এই employee-র'} current allocated balance-এ। এই কাজ undo করা যাবে না (manual SQL ছাড়া)।`)) return;
+
+  const { data, error } = await db.rpc('backfill_casual_leave', {
+    p_employee_id: empId === 'ALL' ? null : empId,
+    p_days: days,
+  });
+
+  const box = document.getElementById('clBackfillPreview');
+  if (error) {
+    box.innerHTML = `<div style="color:var(--red);">সমস্যা হয়েছে: ${error.message}</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div style="color:var(--green); font-weight:700; margin-bottom:8px;">✓ Backfill সম্পন্ন হয়েছে — ${data.length} জন employee আপডেট হয়েছে</div>
+    <div style="font-size:12.5px; max-height:200px; overflow-y:auto;">
+      ${data.map(r => `<div style="padding:4px 0; border-bottom:1px solid var(--border);">${r.out_full_name} — নতুন Total Allocated: <b>${r.out_new_total_allocated}</b> দিন</div>`).join('')}
+    </div>
+  `;
+}
+
 async function handleLogout() {
   await db.auth.signOut();
   window.location.href = 'index.html';
@@ -3892,12 +3985,13 @@ async function loadAttendanceSection() {
 // ══════════════════════════════════════════════════════════
 
 function showLeaveTab(tab) {
-  ['pending','history','myLeave'].forEach(t => {
+  ['pending','history','myLeave','admin'].forEach(t => {
     document.getElementById('leavePane-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('leaveTab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'history') loadLeaveHistory();
   if (tab === 'myLeave') loadMyLeaveData();
+  if (tab === 'admin') populateCLBackfillDropdown();
 }
 
 async function loadLeaveSection() {
