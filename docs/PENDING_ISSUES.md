@@ -58,6 +58,26 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Full Blueprint compliance audit + 3 more bugs found & fixed
+
+- [x] **Tier 1 System Health page stuck on "Loading..." forever** — `#sysRecords`/`#sysAlerts` had zero JS references anywhere; added `loadSystemHealthPage()` showing live record counts and alert indicators. GP Bhai spotted this from a screenshot.
+- [x] **`recurring-task-generator` cron job (pre-existing, not built this session) had a dormant crash bug** — its `INSERT INTO task_master` referenced a column called `title`, but the actual column is `task_title`, and it omitted `task_type` entirely despite it being `NOT NULL` with a CHECK constraint. Never triggered a visible failure because `recurring_task_schedule` has 0 rows today — but the moment anyone adds a recurring task template, it would have failed silently every night at 2 AM. Fixed and verified end-to-end with synthetic test data (deleted after).
+- [x] **`tier1_unlock_payroll()` RPC (pre-existing) — same class of bug** — its `audit_logs` INSERT omitted `module`, which is `NOT NULL`. No frontend currently calls this RPC (Blueprint §12.6 EMERGENCY_BD_OVERRIDE / payroll-unlock UI isn't built yet), so it's dormant, but would have failed the instant it was wired up. Fixed.
+- [x] **Full line-by-line Blueprint compliance pass** across all 22 sections, cross-referencing all 49 database tables, all 14 SQL functions, all 9 cron jobs, and all frontend files. Findings below.
+
+**What's fully built and verified working:** Auth/RLS (§3.1), GPS attendance incl. fraud detection points #2/#3/#4 (§3.2 — points #1/#6/#7/#8/#9/#10 need native-app-level device signals or an IP-geolocation API and are architecturally out of scope for a pure web app, already documented as such in `attendance.html`), whitelisted locations, offline cache, all attendance reports/slips (§5.8), Leave (§6.1-6.3, now automated), Holiday Calendar, Task management + delay penalty engine + assignment matrix + sequential lock (§9), Meetings + Field Visit Compliance (§10, cross-reference itself still manual — see below), Issue tracking + Disciplinary (§11, Tier 2 only), Payroll calculation/processing/reports (§12, forecast now automated), KPI scoring + rankings (§13, turnover analyzer now automated), Risk scoring + Red/Yellow Alerts (§14), all 21 report/slip types across dashboards + downloads (§15), Notifications (§16, all 4 tiers), Audit trail (§17.1), Version control via git/GitHub (§18 partial — no in-app backup UI).
+
+**Confirmed genuinely NOT built (0 rows, 0 frontend references anywhere):**
+- Responsibility Management (§8) — `responsibility_master`/`responsibility_assignment` tables exist, no UI on any tier.
+- Duty Schedule — `duty_schedule` table exists, no UI.
+- Employee Exit/Offboarding workflow (§4.4) — `employee_exit` table exists, no UI.
+- Help Desk (§19.1) — `helpdesk_tickets` table exists, no UI on any tier.
+- Task Timer (§9.6, time-tracking on tasks) — `task_timer` table exists, no UI.
+- User module-level permissions (`user_access` table) — exists but empty/unreferenced; all access control is actually done via `employee_master.tier` + RLS, which works, but this table is dead weight.
+- Notification preferences (per-user opt-out settings) — `notification_preferences` table exists, no UI.
+
+These are all legitimate "not yet built" gaps rather than bugs — flagging for prioritization, not fixing unprompted given the scope.
+
 ### 2026-08-01 — Casual Leave Backfill admin tool (no-SQL UI) — on Tier 2
 
 - [x] Added a **"Casual Leave Backfill"** tool (Admin Tools tab, Leave section): pick an employee (or all active employees), pick a starting month, click Preview to see the computed months-missed × 1.5 days, then Apply. Backed by the `backfill_casual_leave(p_employee_id, p_days)` RPC (Tier 1/2 only, enforced server-side via `get_my_tier()`, `GRANT EXECUTE ... TO authenticated`), so GP Bhai never has to write or remember SQL when he's ready to backfill Jan–Jul 2026 (or handle any future gap).
