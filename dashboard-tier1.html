@@ -2674,6 +2674,57 @@ function showSection(name, el) {
   if (name === 'announcements') loadAnnouncements();
   if (name === 'holidays')      loadHolidays();
   if (name === 'rules')         loadRules();
+  if (name === 'system')        loadSystemHealthPage();
+}
+
+// ── System Health page — Records & Alerts (was stuck on "Loading..." forever, no JS populated it) ──
+async function loadSystemHealthPage() {
+  const [
+    { count: empCount },
+    { count: attCount },
+    { count: payrollCount },
+    { count: leaveCount },
+    { count: taskCount },
+    { count: issueCount },
+  ] = await Promise.all([
+    db.from('employee_master').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    db.from('attendance').select('*', { count: 'exact', head: true }),
+    db.from('payroll').select('*', { count: 'exact', head: true }),
+    db.from('leave_request').select('*', { count: 'exact', head: true }),
+    db.from('task_master').select('*', { count: 'exact', head: true }),
+    db.from('issues').select('*', { count: 'exact', head: true }),
+  ]);
+
+  document.getElementById('sysRecords').innerHTML = `
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Active Employees</div><div class="health-value">${empCount ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Attendance Records</div><div class="health-value">${attCount ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Payroll Records</div><div class="health-value">${payrollCount ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Leave Requests</div><div class="health-value">${leaveCount ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Tasks</div><div class="health-value">${taskCount ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ok"></div><div class="health-name">Issues</div><div class="health-value">${issueCount ?? 0}</div></div>
+  `;
+
+  const [
+    { count: openRedAlerts },
+    { count: highRiskAudit7d },
+    { count: retentionFlags },
+    { data: missingCheckout },
+  ] = await Promise.all([
+    db.from('intelligence_alerts').select('*', { count: 'exact', head: true }).eq('alert_tier', 'Red').eq('status', 'Open'),
+    db.from('audit_logs').select('*', { count: 'exact', head: true }).gte('risk_score', 8).gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
+    db.from('turnover_risk_flags').select('*', { count: 'exact', head: true }).eq('is_active', true).in('status', ['Active', 'Under_Review']),
+    db.from('attendance').select('attendance_date').eq('attendance_date', new Date().toISOString().split('T')[0]).not('check_in_time', 'is', null).is('check_out_time', null),
+  ]);
+
+  const missingCount = missingCheckout?.length || 0;
+  const alertDot = (n) => n > 0 ? 'warn' : 'ok';
+
+  document.getElementById('sysAlerts').innerHTML = `
+    <div class="health-item"><div class="health-dot ${alertDot(openRedAlerts)}"></div><div class="health-name">Open Red Alerts</div><div class="health-value">${openRedAlerts ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ${alertDot(highRiskAudit7d)}"></div><div class="health-name">High-Risk Events (7d)</div><div class="health-value">${highRiskAudit7d ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ${alertDot(retentionFlags)}"></div><div class="health-name">Retention Risk Flags</div><div class="health-value">${retentionFlags ?? 0}</div></div>
+    <div class="health-item"><div class="health-dot ${alertDot(missingCount)}"></div><div class="health-name">Missing Check-Outs (today)</div><div class="health-value">${missingCount}</div></div>
+  `;
 }
 
 // ── Announcements (Blueprint §16) — Tier 1 manage ─────────────
