@@ -324,6 +324,10 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       Meetings
     </a>
+    <a class="nav-item" onclick="showSection('helpdesk', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Help Desk
+    </a>
   </div>
 
   <div class="nav-section">
@@ -853,6 +857,55 @@
       <div class="card">
         <div class="card-header"><div class="card-title">Salary Slip</div></div>
         <div id="salarySlipBody" style="padding:20px;"><div class="empty-state">একটি মাস সিলেক্ট করে "Load Slip" চাপুন।</div></div>
+      </div>
+    </div>
+
+    <!-- HELP DESK — Blueprint §19.1 -->
+    <div id="sec-helpdesk" style="display:none;">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <div class="card-title">নতুন Ticket তৈরি করুন</div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div>
+              <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Category</label>
+              <select id="hdCategory" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;">
+                <option value="Login_Access">Login / Access</option>
+                <option value="GPS_Attendance">GPS / Attendance</option>
+                <option value="Payroll">Payroll</option>
+                <option value="Task_Reporting">Task / Reporting</option>
+                <option value="System_Errors">System Errors</option>
+                <option value="Feature_Request">Feature Request</option>
+                <option value="Data_Correction">Data Correction</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Priority</label>
+              <select id="hdPriority" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium (48hr)</option>
+                <option value="High">High (24hr)</option>
+                <option value="Critical">Critical — System Down (4hr)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">বিষয় (Subject)</label>
+            <input type="text" id="hdSubject" placeholder="সংক্ষেপে সমস্যার বিষয়..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" />
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="form-label" style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">বিস্তারিত (Description)</label>
+            <textarea id="hdDescription" rows="4" placeholder="সমস্যাটা বিস্তারিত লিখুন..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;resize:vertical;"></textarea>
+          </div>
+          <div id="hdSubmitMsg" style="display:none;font-size:13px;margin-bottom:10px;"></div>
+          <button onclick="submitHelpdeskTicket()" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;">Ticket জমা দিন</button>
+        </div>
+      </div>
+
+      <p class="section-title">আমার Tickets</p>
+      <div class="card">
+        <div id="hdMyTicketsList"><div class="empty-state">Loading...</div></div>
       </div>
     </div>
 
@@ -1856,6 +1909,7 @@ const sectionTitles = {
   holidays:   'Holiday Calendar',
   rules:      'Rules & Regulations',
   salary:     'Salary Slip',
+  helpdesk:   'Help Desk',
 };
 
 function showSection(name, el) {
@@ -1874,6 +1928,7 @@ function showSection(name, el) {
   if (name === 'announcements') loadAnnouncements();
   if (name === 'holidays') loadHolidays();
   if (name === 'rules') loadRules();
+  if (name === 'helpdesk') loadMyHelpdeskTickets();
 }
 
 function openCheckin() {
@@ -2183,6 +2238,65 @@ async function markAllRead(e) {
   e.stopPropagation();
   await db.from('notifications').update({ is_read: true }).eq('employee_id', myEmployeeId).eq('is_read', false);
   await loadNotifications();
+}
+
+// ── Help Desk — Blueprint §19.1 ──
+async function submitHelpdeskTicket() {
+  const category = document.getElementById('hdCategory').value;
+  const priority = document.getElementById('hdPriority').value;
+  const subject = document.getElementById('hdSubject').value.trim();
+  const description = document.getElementById('hdDescription').value.trim();
+  const msg = document.getElementById('hdSubmitMsg');
+
+  if (!subject || !description) {
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
+    msg.textContent = 'বিষয় এবং বিস্তারিত দুটোই দিন।';
+    return;
+  }
+
+  const { error } = await db.from('helpdesk_tickets').insert({
+    employee_id: myEmployeeId, category, priority, subject, description, status: 'Open',
+  });
+
+  msg.style.display = 'block';
+  if (error) {
+    msg.style.color = 'var(--red)'; msg.textContent = 'সমস্যা হয়েছে: ' + error.message;
+  } else {
+    msg.style.color = 'var(--green)'; msg.textContent = '✓ Ticket জমা হয়েছে।';
+    document.getElementById('hdSubject').value = '';
+    document.getElementById('hdDescription').value = '';
+    loadMyHelpdeskTickets();
+  }
+}
+
+async function loadMyHelpdeskTickets() {
+  const { data } = await db.from('helpdesk_tickets')
+    .select('ticket_id, category, priority, subject, status, sla_deadline, resolution_notes, created_at')
+    .eq('employee_id', myEmployeeId).eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  const el = document.getElementById('hdMyTicketsList');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state">এখনো কোনো Ticket তৈরি করেননি।</div>'; return; }
+
+  const statusColor = { Open: 'blue', In_Progress: 'yellow', Escalated: 'red', Resolved: 'green', Closed: 'gray', Reopened: 'yellow' };
+  const iconBg = { blue: 'var(--blue-bg)', yellow: 'var(--amber-bg)', red: 'var(--red-bg)', green: 'var(--green-dim)', gray: 'var(--cream)' };
+  el.innerHTML = data.map(t => `
+    <div class="ann-item">
+      <div class="ann-icon" style="background:${iconBg[statusColor[t.status]]};">🎫</div>
+      <div style="flex:1;">
+        <div class="ann-title">${t.subject} <span class="card-badge badge-${statusColor[t.status]}" style="margin-left:6px;">${t.status.replace('_',' ')}</span></div>
+        <div class="ann-body">${t.category.replace('_',' ')} · Priority: ${t.priority}${t.resolution_notes ? '<br><b>সমাধান:</b> ' + t.resolution_notes : ''}</div>
+        <div class="ann-meta">তৈরি: ${new Date(t.created_at).toLocaleDateString('en-GB')} · SLA: ${t.sla_deadline ? new Date(t.sla_deadline).toLocaleString('en-GB') : '—'}
+          ${t.status === 'Closed' ? `<button onclick="reopenHelpdeskTicket('${t.ticket_id}')" style="margin-left:10px;padding:3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--white);font-size:11px;cursor:pointer;">Reopen</button>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function reopenHelpdeskTicket(ticketId) {
+  if (!confirm('এই Ticket-টা আবার Open করতে চান?')) return;
+  await db.from('helpdesk_tickets').update({ status: 'Reopened' }).eq('ticket_id', ticketId);
+  loadMyHelpdeskTickets();
 }
 
 // ── Logout ────────────────────────────────────────────────────
