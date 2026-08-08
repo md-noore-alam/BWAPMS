@@ -58,6 +58,16 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Help Desk built across all 4 tiers (Blueprint §19.1) — was completely missing
+
+- [x] **Backend**: `set_helpdesk_sla_deadline()` trigger auto-calculates `sla_deadline` on ticket creation by priority (Critical=4hr, High=24hr, Medium=48hr, Low=72hr). `auto_close_helpdesk_tickets()` runs via `pg_cron` daily (`bwapms-helpdesk-autoclose-daily`, 7 PM UTC) — Resolved tickets auto-close after 7 days with no update, matching the blueprint. Both verified end-to-end with test data (deleted after).
+- [x] **Tier 3 & 4** (staff): New Ticket form (category/priority/subject/description) + My Tickets list (status, SLA, resolution notes, reopen-if-closed).
+- [x] **Tier 2** (operational): full management — stat cards (Open/In Progress/Overdue SLA/Resolved), filterable all-tickets table, Manage modal (status/assignee/resolution notes), plus a New Ticket modal to raise their own.
+- [x] **Tier 1** (oversight): Critical & Escalated tickets surfaced prominently at the top with a Respond/Resolve action (matches blueprint: Critical → immediate Tier 1 escalation), read-only overview table + stat cards for everything else, sidebar badge showing open Critical count.
+- [x] Avoided the ambiguous-FK embed issue (`helpdesk_tickets` has both `employee_id` and `assigned_to` pointing to `employee_master`) by fetching an employee map client-side, per the pattern learned earlier this session with `salary_history`.
+- [x] Full workflow verified end-to-end with real test data (Critical ticket → appears in Tier 1's urgent list → resolved with notes → confirmed in DB), then cleaned up.
+  → `dashboard-tier1.html`, `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html`, new SQL trigger/function/cron job
+
 ### 2026-08-01 — Full Blueprint compliance audit + 3 more bugs found & fixed
 
 - [x] **Tier 1 System Health page stuck on "Loading..." forever** — `#sysRecords`/`#sysAlerts` had zero JS references anywhere; added `loadSystemHealthPage()` showing live record counts and alert indicators. GP Bhai spotted this from a screenshot.
@@ -71,7 +81,6 @@
 - Responsibility Management (§8) — `responsibility_master`/`responsibility_assignment` tables exist, no UI on any tier.
 - Duty Schedule — `duty_schedule` table exists, no UI.
 - Employee Exit/Offboarding workflow (§4.4) — `employee_exit` table exists, no UI.
-- Help Desk (§19.1) — `helpdesk_tickets` table exists, no UI on any tier.
 - Task Timer (§9.6, time-tracking on tasks) — `task_timer` table exists, no UI.
 - User module-level permissions (`user_access` table) — exists but empty/unreferenced; all access control is actually done via `employee_master.tier` + RLS, which works, but this table is dead weight.
 - Notification preferences (per-user opt-out settings) — `notification_preferences` table exists, no UI.
