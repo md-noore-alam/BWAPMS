@@ -478,6 +478,11 @@
       Issue Tracker
       <span class="nav-badge-rules" id="issueBadge"></span>
     </a>
+    <a class="nav-item" onclick="showSection('helpdesk')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Help Desk
+      <span class="nav-badge-rules" id="helpdeskBadge"></span>
+    </a>
     <a class="nav-item" onclick="showSection('liveactivity')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Live Activity
@@ -1628,6 +1633,109 @@
       </div>
     </div>
 
+    <!-- ══ HELP DESK — Blueprint §19.1 ══ -->
+    <div id="sec-helpdesk" style="display:none;">
+      <p class="section-title">Help Desk</p>
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;">
+        <div class="stat-card blue"><div class="stat-label">Open</div><div class="stat-value" id="hdOpenCount">—</div></div>
+        <div class="stat-card yellow"><div class="stat-label">In Progress</div><div class="stat-value" id="hdProgressCount">—</div></div>
+        <div class="stat-card red"><div class="stat-label">Overdue SLA</div><div class="stat-value" id="hdOverdueCount">—</div></div>
+        <div class="stat-card green"><div class="stat-label">Resolved (30d)</div><div class="stat-value" id="hdResolvedCount">—</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="lang-toggle">
+          <button class="tab-btn active" onclick="filterHelpdesk('all', this)">All</button>
+          <button class="tab-btn" onclick="filterHelpdesk('Open', this)">Open</button>
+          <button class="tab-btn" onclick="filterHelpdesk('In_Progress', this)">In Progress</button>
+          <button class="tab-btn" onclick="filterHelpdesk('Escalated', this)">Escalated</button>
+          <button class="tab-btn" onclick="filterHelpdesk('Resolved', this)">Resolved</button>
+        </div>
+        <button class="btn-primary" onclick="openHelpdeskNewModal()">+ New Ticket</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Tickets</div><span class="card-badge badge-gray" id="hdCountBadge">—</span></div>
+        <div style="overflow-x:auto;">
+          <table class="att-table">
+            <thead><tr><th>Employee</th><th>Category</th><th>Subject</th><th>Priority</th><th>Status</th><th>SLA Deadline</th><th>Reported</th><th>Action</th></tr></thead>
+            <tbody id="hdTableBody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-light);">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Desk: New Ticket Modal -->
+    <div class="modal-overlay" id="hdNewModalBackdrop" onclick="if(event.target===this) closeHelpdeskNewModal()">
+      <div class="modal-box" style="width:520px;">
+        <div class="modal-title">নতুন Ticket তৈরি করুন</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label class="form-label">Category</label>
+            <select id="hdNewCategory" class="form-select">
+              <option value="Login_Access">Login / Access</option>
+              <option value="GPS_Attendance">GPS / Attendance</option>
+              <option value="Payroll">Payroll</option>
+              <option value="Task_Reporting">Task / Reporting</option>
+              <option value="System_Errors">System Errors</option>
+              <option value="Feature_Request">Feature Request</option>
+              <option value="Data_Correction">Data Correction</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Priority</label>
+            <select id="hdNewPriority" class="form-select">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium (48hr)</option>
+              <option value="High">High (24hr)</option>
+              <option value="Critical">Critical (4hr)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="form-label">বিষয় (Subject)</label>
+          <input type="text" id="hdNewSubject" class="form-input" />
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">বিস্তারিত (Description)</label>
+          <textarea id="hdNewDescription" rows="4" class="form-textarea"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-secondary" onclick="closeHelpdeskNewModal()" style="flex:1;">Cancel</button>
+          <button class="btn-primary" onclick="submitHelpdeskTicketTier2()" style="flex:1;">জমা দিন</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Desk: Manage Ticket Modal -->
+    <div class="modal-overlay" id="hdManageModalBackdrop" onclick="if(event.target===this) closeHelpdeskManageModal()">
+      <div class="modal-box" style="width:520px;">
+        <div class="modal-title" id="hdManageTitle">Ticket Manage করুন</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;" id="hdManageDesc"></div>
+        <div style="margin-bottom:12px;">
+          <label class="form-label">Status</label>
+          <select id="hdManageStatus" class="form-select">
+            <option value="Open">Open</option>
+            <option value="In_Progress">In Progress</option>
+            <option value="Escalated">Escalated (→ Tier 1)</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="form-label">Assign To (optional)</label>
+          <select id="hdManageAssignee" class="form-select"><option value="">— কাউকে assign করা হয়নি —</option></select>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">Resolution Notes</label>
+          <textarea id="hdManageNotes" rows="3" class="form-textarea" placeholder="কী করা হয়েছে / সমাধান কী..."></textarea>
+        </div>
+        <input type="hidden" id="hdManageTicketId" />
+        <div style="display:flex;gap:10px;">
+          <button class="btn-secondary" onclick="closeHelpdeskManageModal()" style="flex:1;">Cancel</button>
+          <button class="btn-primary" onclick="saveHelpdeskManage()" style="flex:1;">Update করুন</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ PERFORMANCE RANKINGS (Blueprint v1.2 §13.7) ══ -->
     <div id="sec-rankings" style="display:none;">
       <p class="section-title">Performance Rankings — <span id="rankPeriodLabel"></span></p>
@@ -2606,6 +2714,7 @@ const sectionTitles = {
   disciplinary:    'Disciplinary Action Process',
   liveactivity:    'Live Activity Dashboard',
   payrollforecast: 'Next-Month Payroll Forecast',
+  helpdesk:        'Help Desk',
 };
 
 function showSection(name) {
@@ -2636,6 +2745,7 @@ function showSection(name) {
   if (name === 'liveactivity')    { loadLiveActivity(); startLiveActivityRefresh(); }
   else { stopLiveActivityRefresh(); }
   if (name === 'payrollforecast') loadPayrollForecastView();
+  if (name === 'helpdesk')        loadHelpdeskSection();
 }
 
 // ── Logout ────────────────────────────────────────────────
@@ -3379,6 +3489,152 @@ async function updateIssueStatus(issueId, newStatus) {
     risk_score: 1, risk_level: 'Low', new_value: JSON.stringify({ issueId, newStatus }),
   });
   await loadIssues();
+}
+
+// ══════════════════════════════════════════════════════════
+// HELP DESK — Blueprint §19.1
+// ══════════════════════════════════════════════════════════
+let cachedHelpdesk = [];
+let hdFilterStatus = 'all';
+let hdEmployeeMapCache = null;
+
+async function getHdEmployeeMap() {
+  if (hdEmployeeMapCache) return hdEmployeeMapCache;
+  const { data } = await db.from('employee_master').select('employee_id, full_name, tier');
+  const map = {};
+  (data || []).forEach(e => { map[e.employee_id] = e; });
+  hdEmployeeMapCache = map;
+  return map;
+}
+
+async function loadHelpdeskSection() {
+  const { data, error } = await db.from('helpdesk_tickets')
+    .select('ticket_id, employee_id, category, priority, subject, description, status, sla_deadline, assigned_to, resolution_notes, created_at, resolved_at')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) {
+    document.getElementById('hdTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-light);">কোনো Ticket পাওয়া যায়নি।</td></tr>';
+    return;
+  }
+  await getHdEmployeeMap();
+  cachedHelpdesk = data;
+
+  document.getElementById('hdOpenCount').textContent = data.filter(t => t.status === 'Open').length;
+  document.getElementById('hdProgressCount').textContent = data.filter(t => t.status === 'In_Progress' || t.status === 'Escalated').length;
+  document.getElementById('hdOverdueCount').textContent = data.filter(t => t.sla_deadline && new Date(t.sla_deadline) < new Date() && !['Resolved', 'Closed'].includes(t.status)).length;
+  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  document.getElementById('hdResolvedCount').textContent = data.filter(t => t.status === 'Resolved' && t.resolved_at && new Date(t.resolved_at) >= thirtyDaysAgo).length;
+
+  renderHelpdeskTable();
+  populateHelpdeskAssigneeDropdown();
+}
+
+function renderHelpdeskTable() {
+  const filtered = hdFilterStatus === 'all' ? cachedHelpdesk : cachedHelpdesk.filter(t => t.status === hdFilterStatus);
+  const tbody = document.getElementById('hdTableBody');
+  document.getElementById('hdCountBadge').textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-light);">কোনো Ticket নেই।</td></tr>';
+    return;
+  }
+  const map = hdEmployeeMapCache || {};
+  const priorityColor = { Critical: 'var(--red)', High: '#ea580c', Medium: 'var(--amber)', Low: 'var(--text-muted)' };
+  const statusPill = { Open: 'pending', In_Progress: 'late', Escalated: 'absent', Resolved: 'present', Closed: 'present', Reopened: 'late' };
+  const overdue = (t) => t.sla_deadline && new Date(t.sla_deadline) < new Date() && !['Resolved', 'Closed'].includes(t.status);
+
+  tbody.innerHTML = filtered.map(t => `
+    <tr>
+      <td>${map[t.employee_id]?.full_name || '—'}</td>
+      <td>${t.category.replace(/_/g, ' ')}</td>
+      <td style="max-width:220px;">${t.subject}</td>
+      <td style="color:${priorityColor[t.priority] || 'var(--text-muted)'};font-weight:700;">${t.priority}</td>
+      <td><span class="pill ${statusPill[t.status] || 'pending'}">${t.status.replace('_', ' ')}</span></td>
+      <td style="font-size:12px;${overdue(t) ? 'color:var(--red);font-weight:700;' : 'color:var(--text-muted);'}">${t.sla_deadline ? new Date(t.sla_deadline).toLocaleString('en-GB') : '—'}${overdue(t) ? ' ⚠️' : ''}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${new Date(t.created_at).toLocaleDateString('en-GB')}</td>
+      <td><button class="btn-icon-sm" onclick="openHelpdeskManageModal('${t.ticket_id}')">Manage</button></td>
+    </tr>`).join('');
+}
+
+function filterHelpdesk(status, el) {
+  hdFilterStatus = status;
+  document.querySelectorAll('#sec-helpdesk .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderHelpdeskTable();
+}
+
+async function populateHelpdeskAssigneeDropdown() {
+  const { data } = await db.from('employee_master').select('employee_id, full_name, tier').eq('is_active', true).in('tier', [2, 3, 4]);
+  const sel = document.getElementById('hdManageAssignee');
+  if (!sel || !data) return;
+  sel.innerHTML = '<option value="">— কাউকে assign করা হয়নি —</option>' +
+    data.map(e => `<option value="${e.employee_id}">${e.full_name} (Tier ${e.tier})</option>`).join('');
+}
+
+function openHelpdeskNewModal() {
+  document.getElementById('hdNewCategory').value = 'System_Errors';
+  document.getElementById('hdNewPriority').value = 'Medium';
+  document.getElementById('hdNewSubject').value = '';
+  document.getElementById('hdNewDescription').value = '';
+  document.getElementById('hdNewModalBackdrop').classList.add('open');
+}
+function closeHelpdeskNewModal() {
+  document.getElementById('hdNewModalBackdrop').classList.remove('open');
+}
+
+async function submitHelpdeskTicketTier2() {
+  const category = document.getElementById('hdNewCategory').value;
+  const priority = document.getElementById('hdNewPriority').value;
+  const subject = document.getElementById('hdNewSubject').value.trim();
+  const description = document.getElementById('hdNewDescription').value.trim();
+  if (!subject || !description) { alert('বিষয় এবং বিস্তারিত দুটোই দিন।'); return; }
+
+  const { error } = await db.from('helpdesk_tickets').insert({
+    employee_id: employeeData.employee_id, category, priority, subject, description, status: 'Open',
+  });
+  if (error) { alert('সমস্যা হয়েছে: ' + error.message); return; }
+  closeHelpdeskNewModal();
+  await loadHelpdeskSection();
+}
+
+function openHelpdeskManageModal(ticketId) {
+  const t = cachedHelpdesk.find(x => x.ticket_id === ticketId);
+  if (!t) return;
+  const map = hdEmployeeMapCache || {};
+  document.getElementById('hdManageTicketId').value = ticketId;
+  document.getElementById('hdManageTitle').textContent = t.subject;
+  document.getElementById('hdManageDesc').textContent = `${map[t.employee_id]?.full_name || '—'} · ${t.category.replace(/_/g, ' ')} · ${t.priority} — ${t.description}`;
+  document.getElementById('hdManageStatus').value = t.status;
+  document.getElementById('hdManageAssignee').value = t.assigned_to || '';
+  document.getElementById('hdManageNotes').value = t.resolution_notes || '';
+  document.getElementById('hdManageModalBackdrop').classList.add('open');
+}
+function closeHelpdeskManageModal() {
+  document.getElementById('hdManageModalBackdrop').classList.remove('open');
+}
+
+async function saveHelpdeskManage() {
+  const ticketId = document.getElementById('hdManageTicketId').value;
+  const status = document.getElementById('hdManageStatus').value;
+  const assignedTo = document.getElementById('hdManageAssignee').value || null;
+  const notes = document.getElementById('hdManageNotes').value.trim() || null;
+
+  const updatePayload = { status, assigned_to: assignedTo, resolution_notes: notes };
+  if (status === 'Resolved' && !cachedHelpdesk.find(t => t.ticket_id === ticketId)?.resolved_at) {
+    updatePayload.resolved_at = new Date().toISOString();
+  }
+
+  const { error } = await db.from('helpdesk_tickets').update(updatePayload).eq('ticket_id', ticketId);
+  if (error) { alert('সমস্যা হয়েছে: ' + error.message); return; }
+
+  await db.from('audit_logs').insert({
+    user_id: employeeData.employee_id, action: 'Helpdesk_Ticket_Updated', module: 'Helpdesk',
+    risk_score: 1, risk_level: 'Low', new_value: JSON.stringify({ ticketId, status, assignedTo }),
+  });
+
+  closeHelpdeskManageModal();
+  await loadHelpdeskSection();
 }
 
 // ══════════════════════════════════════════════════════════
