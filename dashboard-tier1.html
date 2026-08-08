@@ -1636,8 +1636,7 @@ async function approveLeave(id) {
 
     if (bal) {
       await db.from('leave_balance').update({
-        used:    (bal.used    || 0) + days,
-        balance: (bal.balance || 0) - days,
+        used: (bal.used || 0) + days,
       }).eq('balance_id', bal.balance_id);
     }
   }
