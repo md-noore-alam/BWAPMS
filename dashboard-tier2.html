@@ -2942,7 +2942,7 @@ async function loadPayrollData() {
       absentDeduct, otherDeduct, net,
       isLocked: ex?.is_locked || false,
       payrollId: ex?.payroll_id || null,
-      otherReason: ex?.other_deduction_reason || '',
+      otherReason: ex?.other_deductions_reason || '',
     };
   });
 
@@ -3000,10 +3000,11 @@ async function savePayroll() {
 
   const record = {
     employee_id: p.employee_id, payroll_month: monthVal,
-    gross_salary: gross, pro_rata_late_deduction: p.lateDeduct,
+    total_working_days: workingDays, present_days: workingDays - absentDays, late_days: p.lateDays,
+    gross_salary: gross, prorata_late_deduction: p.lateDeduct,
     absent_days: absentDays, absent_deduction: absentDeduct,
-    other_deductions: otherDeduct, other_deduction_reason: otherReason,
-    net_salary: net, is_locked: false, is_active: true,
+    other_deductions: otherDeduct, other_deductions_reason: otherReason,
+    is_locked: false, is_active: true,
   };
 
   let error;
