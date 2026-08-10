@@ -2827,7 +2827,8 @@ function showEvalForm() {
 
 async function loadEvalHistory() {
   const { data } = await db.from('performance_evaluation')
-    .select('evaluation_id, work_quality, initiative, teamwork, communication, total_score, period, created_at, employee_master(full_name)')
+    .select('evaluation_id, employee_id, work_quality_score, initiative_score, teamwork_score, communication_score, total_score, evaluation_quarter, evaluation_year, created_at')
+    .eq('is_active', true)
     .order('created_at', { ascending: false }).limit(20);
 
   const tbody = document.getElementById('evalHistBody');
@@ -2838,13 +2839,17 @@ async function loadEvalHistory() {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light);">No evaluations submitted yet.</td></tr>';
     return;
   }
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name');
+  const empMap = {};
+  (emps || []).forEach(e => { empMap[e.employee_id] = e.full_name; });
+
   tbody.innerHTML = data.map(r => '<tr>' +
-    '<td style="font-weight:600;">' + (r.employee_master?.full_name || '—') + '</td>' +
-    '<td>' + (r.period || '—') + '</td>' +
-    '<td>' + (r.work_quality || 0) + '</td>' +
-    '<td>' + (r.initiative || 0) + '</td>' +
-    '<td>' + (r.teamwork || 0) + '</td>' +
-    '<td>' + (r.communication || 0) + '</td>' +
+    '<td style="font-weight:600;">' + (empMap[r.employee_id] || '—') + '</td>' +
+    '<td>' + (r.evaluation_quarter || '—') + ' ' + (r.evaluation_year || '') + '</td>' +
+    '<td>' + (r.work_quality_score || 0) + '</td>' +
+    '<td>' + (r.initiative_score || 0) + '</td>' +
+    '<td>' + (r.teamwork_score || 0) + '</td>' +
+    '<td>' + (r.communication_score || 0) + '</td>' +
     '<td style="font-weight:800;color:var(--green);">' + parseFloat(r.total_score || 0).toFixed(1) + '%</td>' +
     '<td style="font-size:12px;color:var(--text-muted);">' + new Date(r.created_at).toLocaleDateString('en-GB') + '</td>' +
     '</tr>').join('');
@@ -2864,10 +2869,13 @@ async function submitEvaluation() {
   const btn = document.getElementById('evalSubmitBtn');
   btn.disabled = true; btn.textContent = 'Submitting...';
 
+  const [evalQuarter, evalYear] = quarter.split('-'); // "Q2-2026" -> "Q2", "2026"
+
   const { error } = await db.from('performance_evaluation').insert({
-    employee_id: empId, evaluator_tier: 2, period: quarter,
-    work_quality: wq, initiative: ini, teamwork: tm, communication: com,
-    total_score: total, is_active: true,
+    employee_id: empId, evaluator_id: employeeData.employee_id, evaluator_tier: 2,
+    evaluation_quarter: evalQuarter, evaluation_year: parseInt(evalYear, 10),
+    work_quality_score: wq, initiative_score: ini, teamwork_score: tm, communication_score: com,
+    is_active: true,
   });
 
   if (error) { showEvalMsg('error', 'Error: ' + error.message); }
