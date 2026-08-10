@@ -3826,8 +3826,11 @@ async function saveDisciplinary() {
 
   const { error } = await db.from('disciplinary_actions').insert({
     employee_id: employeeId, stage, reason,
-    initiated_by_tier: 2, approved_by_tier: needsTier1 ? null : 2,
-    status: needsTier1 ? 'Pending_Tier1_Approval' : 'Approved',
+    initiated_by: employeeData.employee_id, initiated_by_tier: 2,
+    approved_by_tier: needsTier1 ? null : 2,
+    approved_by: needsTier1 ? null : employeeData.employee_id,
+    approved_at: needsTier1 ? null : new Date().toISOString(),
+    status: 'Active',
     is_active: true,
   });
   if (error) { alert('Error: ' + error.message); return; }
@@ -3851,7 +3854,7 @@ async function saveDisciplinary() {
 
 async function loadDisciplinary() {
   const { data, error } = await db.from('disciplinary_actions')
-    .select('action_id, employee_id, stage, reason, initiated_by_tier, approved_by_tier, status, created_at, employee_master(full_name)')
+    .select('action_id, employee_id, stage, reason, initiated_by_tier, approved_by_tier, status, created_at')
     .eq('is_active', true)
     .order('created_at', { ascending: false });
 
@@ -3863,21 +3866,29 @@ async function loadDisciplinary() {
     return;
   }
   badge.textContent = data.length;
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name');
+  const empMap = {};
+  (emps || []).forEach(e => { empMap[e.employee_id] = e.full_name; });
+
   const stageLabel = { Verbal_Warning: 'Verbal Warning', Written_Warning: 'Written Warning', Show_Cause_Notice: 'Show Cause Notice', Suspension: 'Suspension (Pending Hearing)', Termination: 'Termination' };
   const stageColor = { Verbal_Warning: 'var(--text-muted)', Written_Warning: 'var(--yellow)', Show_Cause_Notice: '#ea580c', Suspension: 'var(--red)', Termination: 'var(--red)' };
 
-  list.innerHTML = data.map(d => `
+  list.innerHTML = data.map(d => {
+    const isPending = d.approved_by_tier === null;
+    const statusLabel = isPending ? 'Pending Tier 1 Approval' : d.status;
+    return `
     <div class="ann-item">
-      <div class="ann-icon" style="background:${d.status==='Pending_Tier1_Approval' ? 'var(--yellow-bg)' : 'var(--cream)'};">⚠️</div>
+      <div class="ann-icon" style="background:${isPending ? 'var(--yellow-bg)' : 'var(--cream)'};">⚠️</div>
       <div style="flex:1;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div class="ann-title" style="color:${stageColor[d.stage]||'var(--text-main)'};">${stageLabel[d.stage] || d.stage}</div>
-          <span class="pill ${d.status === 'Approved' ? 'present' : d.status === 'Pending_Tier1_Approval' ? 'pending' : 'absent'}">${d.status.replace(/_/g,' ')}</span>
+          <span class="pill ${isPending ? 'pending' : d.status === 'Active' ? 'present' : 'absent'}">${statusLabel}</span>
         </div>
-        <div class="ann-body">${d.employee_master?.full_name || '—'} — ${d.reason}</div>
+        <div class="ann-body">${empMap[d.employee_id] || '—'} — ${d.reason}</div>
         <div class="ann-meta">${new Date(d.created_at).toLocaleDateString('en-GB')} · Initiated by Tier ${d.initiated_by_tier}${d.approved_by_tier ? ` · Approved by Tier ${d.approved_by_tier}` : ''}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
