@@ -1612,9 +1612,13 @@ async function submitLeaveRequest() {
   if (!type||!from||!to||!reason) { showFormMsg('leaveMsg','error','সব field পূরণ করুন।'); return; }
   if (from > to) { showFormMsg('leaveMsg','error','Start date end date-এর পরে হতে পারে না।'); return; }
 
+  const start = new Date(from);
+  const end   = new Date(to);
+  const totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
   const { error } = await db.from('leave_request').insert({
     employee_id:myEmployeeId, leave_type:type, start_date:from, end_date:to,
-    reason, status:'Pending', created_at:new Date().toISOString()
+    total_days:totalDays, reason, status:'Pending', created_at:new Date().toISOString()
   });
   if (error) showFormMsg('leaveMsg','error','সমস্যা: '+error.message);
   else {
