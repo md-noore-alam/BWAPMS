@@ -1379,12 +1379,13 @@ async function submitProgressUpdate() {
 
   const { error } = await db.from('task_updates').insert({
     task_id:            currentTaskId,
+    update_type:        'Progress',
     progress_percentage: progress,
-    status:             'In Progress',
+    status:             'In_Progress',
     work_completed:     workDone,
-    challenges_faced:   challenges,
+    challenges:         challenges,
     support_required:   support || null,
-    submitted_by:       myEmployeeId,
+    employee_id:        myEmployeeId,
     submitted_at:       new Date().toISOString(),
   });
 
@@ -1430,16 +1431,17 @@ async function submitTaskComplete() {
 
   const today = new Date().toISOString().split('T')[0];
   const isLate = currentTaskObj && currentTaskObj.due_date && currentTaskObj.due_date < today;
-  const finalStatus = isLate ? 'Completed Late' : 'Completed On Time';
+  const finalStatus = isLate ? 'Completed_Late' : 'Completed_On_Time';
 
   // Insert task update
   const { error: updateErr } = await db.from('task_updates').insert({
     task_id:          currentTaskId,
+    update_type:      'Completion',
     progress_percentage: 100,
     status:           'Completed',
     work_completed:   note,
     evidence_url:     evidence || null,
-    submitted_by:     myEmployeeId,
+    employee_id:      myEmployeeId,
     submitted_at:     new Date().toISOString(),
   });
 
@@ -1615,15 +1617,30 @@ async function submitDataEntry() {
   const btn = document.getElementById('btnSubmitDataEntry');
   btn.disabled = true; btn.textContent = 'Submitting...';
 
+  const today = new Date().toISOString().split('T')[0];
+
   const { error } = await db.from('task_updates').insert({
     task_id:             currentTaskId,
+    update_type:         'Completion',
     progress_percentage: 100,
     status:              'Completed',
     work_completed:      'Data Entry completed: ' + totalPatients + ' patients across ' + clinics.length + ' clinic(s) in ' + totalMins + ' minutes.',
-    data_entry_details:  dataDetails,
-    submitted_by:        myEmployeeId,
+    employee_id:          myEmployeeId,
     submitted_at:        new Date().toISOString(),
   });
+
+  if (!error) {
+    // data_entry_details isn't a real column on task_updates -- the per-clinic
+    // breakdown belongs in data_entry_log (one row per clinic), which is what
+    // that table's schema (clinic_name, row_from/to, minutes_spent) is for.
+    const logRows = clinics.map(c => ({
+      task_id: currentTaskId, employee_id: myEmployeeId, clinic_name: c.name,
+      row_from: c.row_from, row_to: c.row_to,
+      start_time: today + 'T' + c.start_time + ':00', end_time: today + 'T' + c.end_time + ':00',
+      status: 'Completed', is_active: true,
+    }));
+    await db.from('data_entry_log').insert(logRows);
+  }
 
   if (error) {
     showModalMsg('dataEntryMsg', 'error', 'সমস্যা হয়েছে: ' + error.message);
@@ -1632,10 +1649,9 @@ async function submitDataEntry() {
   }
 
   // Update task status
-  const today = new Date().toISOString().split('T')[0];
   const isLate = currentTaskObj && currentTaskObj.due_date && currentTaskObj.due_date < today;
   await db.from('task_master')
-    .update({ status: isLate ? 'Completed Late' : 'Completed On Time', updated_at: new Date().toISOString() })
+    .update({ status: isLate ? 'Completed_Late' : 'Completed_On_Time', updated_at: new Date().toISOString() })
     .eq('task_id', currentTaskId);
 
   closeModal('modalDataEntry');
