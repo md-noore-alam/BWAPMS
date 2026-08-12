@@ -1617,7 +1617,7 @@
         <div class="lang-toggle">
           <button class="tab-btn active" onclick="filterIssues('all', this)">All</button>
           <button class="tab-btn" onclick="filterIssues('Open', this)">Open</button>
-          <button class="tab-btn" onclick="filterIssues('In Progress', this)">In Progress</button>
+          <button class="tab-btn" onclick="filterIssues('In_Progress', this)">In Progress</button>
           <button class="tab-btn" onclick="filterIssues('Resolved', this)">Resolved</button>
         </div>
         <button class="btn-primary" onclick="openIssueModal()">+ New Issue</button>
@@ -2490,7 +2490,7 @@ async function loadTasks() {
   const { data } = await db
     .from('task_master')
     .select('task_id, title, priority, status, due_date, employee_master(full_name)')
-    .in('status', ['Pending', 'In Progress'])
+    .in('status', ['Pending', 'In_Progress'])
     .order('due_date', { ascending: true })
     .limit(6);
 
@@ -2510,7 +2510,7 @@ async function loadTasks() {
         <div class="task-name">${t.title || 'Untitled'}</div>
         <div class="task-meta">${t.employee_master?.full_name || '—'} &nbsp;·&nbsp; Due: ${t.due_date || '—'}</div>
       </div>
-      <span class="pill ${t.status === 'In Progress' ? 'present' : 'pending'}">${t.status}</span>
+      <span class="pill ${t.status === 'In_Progress' ? 'present' : 'pending'}">${t.status}</span>
     </div>`;
   }).join('');
 }
@@ -3389,7 +3389,7 @@ async function loadIssues() {
   cachedIssues = data;
 
   document.getElementById('issueOpenCount').textContent = data.filter(i => i.status === 'Open').length;
-  document.getElementById('issueProgressCount').textContent = data.filter(i => i.status === 'In Progress' || i.status === 'Under Review').length;
+  document.getElementById('issueProgressCount').textContent = data.filter(i => i.status === 'In_Progress' || i.status === 'Under_Review').length;
   document.getElementById('issueCriticalCount').textContent = data.filter(i => i.priority === 'Critical' && i.status !== 'Resolved' && i.status !== 'Closed').length;
   const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   document.getElementById('issueResolvedCount').textContent = data.filter(i => i.status === 'Resolved' && new Date(i.created_at) >= thirtyDaysAgo).length;
@@ -3409,7 +3409,7 @@ function renderIssueTable() {
     return;
   }
   const priorityColor = { Critical: 'var(--red)', High: '#ea580c', Medium: 'var(--yellow)', Low: 'var(--text-muted)' };
-  const statusPill = { Open: 'pending', 'Under Review': 'pending', 'In Progress': 'late', 'Pending External Action': 'late', Resolved: 'present', Closed: 'present', Reopened: 'absent' };
+  const statusPill = { Open: 'pending', 'Under_Review': 'pending', 'In_Progress': 'late', 'Pending_External_Action': 'late', Resolved: 'present', Closed: 'present', Reopened: 'absent' };
 
   tbody.innerHTML = filtered.map(i => `
     <tr>
@@ -4636,7 +4636,7 @@ async function loadTasksSection() {
 async function loadTaskStats() {
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: active }   = await db.from('task_master').select('task_id, priority, due_date').in('status', ['Pending', 'In Progress']);
+  const { data: active }   = await db.from('task_master').select('task_id, priority, due_date').in('status', ['Pending', 'In_Progress']);
   const { data: doneToday } = await db.from('task_master').select('task_id').eq('status', 'Completed').gte('updated_at', today);
 
   const overdue   = (active || []).filter(t => t.due_date && t.due_date < today).length;
@@ -4657,7 +4657,7 @@ async function loadActiveTasksTable() {
   let query = db
     .from('task_master')
     .select('task_id, title, task_type, priority, status, due_date, order_index, primary_assignee, employee_master!task_master_primary_assignee_fkey(full_name)')
-    .in('status', filterStatus ? [filterStatus] : ['Pending', 'In Progress'])
+    .in('status', filterStatus ? [filterStatus] : ['Pending', 'In_Progress'])
     .order('order_index', { ascending: true, nullsFirst: false })
     .order('due_date', { ascending: true });
 
@@ -4671,7 +4671,7 @@ async function loadActiveTasksTable() {
     const { data: tasks2 } = await db
       .from('task_master')
       .select('task_id, title, task_type, priority, status, due_date, order_index, primary_assignee, employee_master(full_name)')
-      .in('status', filterStatus ? [filterStatus] : ['Pending', 'In Progress'])
+      .in('status', filterStatus ? [filterStatus] : ['Pending', 'In_Progress'])
       .order('due_date', { ascending: true })
       .limit(80);
     renderActiveTasksTable(tasks2 || [], today);
@@ -4706,7 +4706,7 @@ function renderActiveTasksTable(tasks, today) {
     let blockingFound = false;
     empTasks.forEach(t => {
       if (blockingFound) lockedIds.add(t.task_id);
-      if (['Pending', 'In Progress'].includes(t.status)) blockingFound = true;
+      if (['Pending', 'In_Progress'].includes(t.status)) blockingFound = true;
       else blockingFound = false; // completed task doesn't block
     });
   });
@@ -4721,7 +4721,7 @@ function renderActiveTasksTable(tasks, today) {
     const isOverdue = t.due_date && t.due_date < today;
     const isLocked  = lockedIds.has(t.task_id);
     const pClass    = t.priority === 'Critical' ? 'critical' : t.priority === 'High' ? 'high' : t.priority === 'Medium' ? 'medium' : 'low';
-    const sClass    = t.status === 'In Progress' ? 'present' : isOverdue ? 'absent' : 'late';
+    const sClass    = t.status === 'In_Progress' ? 'present' : isOverdue ? 'absent' : 'late';
     const statusLabel = isOverdue && t.status === 'Pending' ? 'Overdue' : t.status;
     const typeIcon  = t.task_type === 'Data Entry' ? '📊' : t.task_type === 'Field_Visit' ? '🚗' : t.task_type === 'Meeting_Action' ? '📅' : '📋';
     const lockCell  = isLocked
@@ -4770,7 +4770,7 @@ async function loadAllTasksTable() {
 
   tbody.innerHTML = tasks.map(t => {
     const isOverdue = t.due_date && t.due_date < today && !['Completed','Cancelled'].includes(t.status);
-    const sClass    = t.status === 'Completed' ? 'present' : t.status === 'Cancelled' ? 'pending' : isOverdue ? 'absent' : t.status === 'In Progress' ? 'field' : 'late';
+    const sClass    = t.status === 'Completed' ? 'present' : t.status === 'Cancelled' ? 'pending' : isOverdue ? 'absent' : t.status === 'In_Progress' ? 'field' : 'late';
     const created   = new Date(t.created_at).toLocaleDateString('en-GB');
     return `<tr>
       <td style="font-weight:600;">${t.title || '—'}</td>
@@ -4921,7 +4921,7 @@ async function viewTaskDetail(taskId) {
         }
         return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span class="pill ${u.status==='Completed'?'present':u.status==='In Progress'?'field':'late'}">${u.status || '—'}</span>
+            <span class="pill ${u.status==='Completed'?'present':u.status==='In_Progress'?'field':'late'}">${u.status || '—'}</span>
             <span style="font-size:11.5px;color:var(--text-light);">${new Date(u.created_at).toLocaleString('en-GB')}</span>
           </div>
           ${u.progress_percentage != null ? `<div style="font-size:12.5px;margin-bottom:6px;"><strong>Progress:</strong> ${u.progress_percentage}%
@@ -4953,7 +4953,7 @@ async function viewTaskDetail(taskId) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
       <span style="background:${pColor};color:#fff;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;">${t.priority}</span>
       <span class="pill field">${t.task_type || 'Regular'}</span>
-      <span class="pill ${t.status==='Completed'?'present':t.status==='In Progress'?'field':'late'}">${t.status}</span>
+      <span class="pill ${t.status==='Completed'?'present':t.status==='In_Progress'?'field':'late'}">${t.status}</span>
       ${t.performance_impact_score ? `<span style="background:var(--cream);color:var(--text-muted);padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;">Impact: ${t.performance_impact_score}/10</span>` : ''}
     </div>
     ${t.description ? `<div style="font-size:13.5px;color:var(--text-main);line-height:1.6;background:var(--cream);padding:12px 14px;border-radius:7px;margin-bottom:16px;white-space:pre-wrap;">${t.description}</div>` : ''}
@@ -5014,11 +5014,11 @@ async function loadMeetingsStats() {
   const today = new Date().toISOString().split('T')[0];
   const thirtyAgo = new Date(); thirtyAgo.setDate(thirtyAgo.getDate()-30);
 
-  const { data: all } = await db.from('meetings').select('status, scheduled_date').eq('is_active', true);
+  const { data: all } = await db.from('meetings').select('status, scheduled_start').eq('is_active', true);
   if (!all) return;
 
   const scheduled   = all.filter(m => m.status === 'Scheduled').length;
-  const inProgress  = all.filter(m => m.status === 'In Progress').length;
+  const inProgress  = all.filter(m => m.status === 'In_Progress').length;
   const completed   = all.filter(m => m.status === 'Completed' || m.status === 'Closed').length;
 
   // Overdue action items
@@ -5041,7 +5041,7 @@ async function loadMeetingsList() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light);">Loading...</td></tr>';
 
-  let q = db.from('meetings').select('*').eq('is_active', true).order('scheduled_date', { ascending: false });
+  let q = db.from('meetings').select('*').eq('is_active', true).order('scheduled_start', { ascending: false });
   if (typeFilter)   q = q.eq('meeting_type', typeFilter);
   if (statusFilter) q = q.eq('status', statusFilter);
 
@@ -5053,16 +5053,16 @@ async function loadMeetingsList() {
 
   tbody.innerHTML = mtgs.map(m => {
     const typeColor = m.meeting_type === 'Field_Visit' ? 'field' : m.meeting_type === 'Virtual' ? 'leave' : 'pending';
-    const stColor   = m.status === 'Closed' ? 'present' : m.status === 'Completed' ? 'present' : m.status === 'In Progress' ? 'field' : m.status === 'Scheduled' ? 'leave' : 'pending';
+    const stColor   = m.status === 'Closed' ? 'present' : m.status === 'Completed' ? 'present' : m.status === 'In_Progress' ? 'field' : m.status === 'Scheduled' ? 'leave' : 'pending';
     const compliance = m.field_visit_compliance_status
-      ? `<span class="pill ${m.field_visit_compliance_status === 'VERIFIED' ? 'present' : 'absent'}">${m.field_visit_compliance_status}</span>`
+      ? `<span class="pill ${m.field_visit_compliance_status === 'Verified' ? 'present' : 'absent'}">${m.field_visit_compliance_status}</span>`
       : `<span style="color:var(--text-light);font-size:12px;">N/A</span>`;
     const participants = m.participants ? (Array.isArray(m.participants) ? m.participants : JSON.parse(m.participants || '[]')) : [];
     const canClose = (m.status !== 'Closed');
     return `<tr>
       <td style="font-weight:600;max-width:200px;">${m.title || '—'}</td>
       <td><span class="pill ${typeColor}">${(m.meeting_type||'').replace('_',' ')}</span></td>
-      <td style="font-size:12.5px;white-space:nowrap;">${m.scheduled_date || '—'}${m.scheduled_time ? ' '+m.scheduled_time.slice(0,5) : ''}</td>
+      <td style="font-size:12.5px;white-space:nowrap;">${m.scheduled_start ? new Date(m.scheduled_start).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}</td>
       <td style="font-size:12.5px;max-width:140px;">${m.location || '—'}</td>
       <td style="font-size:12px;color:var(--text-muted);">${participants.length} person${participants.length!==1?'s':''}</td>
       <td><span class="pill ${stColor}">${m.status}</span></td>
@@ -5106,7 +5106,7 @@ async function openMtgDetail(meetingId) {
   }
 
   const typeColor = m.meeting_type === 'Field_Visit' ? 'field' : m.meeting_type === 'Virtual' ? 'leave' : 'pending';
-  const stColor   = m.status === 'Closed' || m.status === 'Completed' ? 'present' : m.status === 'In Progress' ? 'field' : 'leave';
+  const stColor   = m.status === 'Closed' || m.status === 'Completed' ? 'present' : m.status === 'In_Progress' ? 'field' : 'leave';
 
   let actionsHtml = '';
   if (actions && actions.length > 0) {
@@ -5115,7 +5115,7 @@ async function openMtgDetail(meetingId) {
       <tbody>${actions.map(a => {
         const today = new Date().toISOString().split('T')[0];
         const isOverdue = a.due_date < today && a.status !== 'Completed';
-        const stC = a.status === 'Completed' ? 'present' : isOverdue ? 'absent' : a.status === 'In Progress' ? 'field' : 'pending';
+        const stC = a.status === 'Completed' ? 'present' : isOverdue ? 'absent' : a.status === 'In_Progress' ? 'field' : 'pending';
         return `<tr>
           <td style="max-width:200px;">${a.action_description || '—'}</td>
           <td>${a.employee_master?.full_name || '—'}</td>
@@ -5141,13 +5141,13 @@ async function openMtgDetail(meetingId) {
       </div>
       <div style="background:var(--cream);border-radius:8px;padding:12px 14px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Field Compliance</div>
-        <span class="pill ${m.field_visit_compliance_status==='VERIFIED'?'present':'absent'}">${m.field_visit_compliance_status || 'N/A'}</span>
+        <span class="pill ${m.field_visit_compliance_status==='Verified'?'present':'absent'}">${m.field_visit_compliance_status || 'N/A'}</span>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Date & Time</div>
-        <div style="font-size:14px;font-weight:700;color:var(--navy);">${m.scheduled_date || '—'} ${m.scheduled_time ? m.scheduled_time.slice(0,5) : ''}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy);">${m.scheduled_start ? new Date(m.scheduled_start).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'}</div>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Location / Platform</div>
@@ -5244,7 +5244,7 @@ async function loadActionItems() {
   const today = new Date().toISOString().split('T')[0];
   tbody.innerHTML = items.map(a => {
     const isOverdue = a.due_date < today && !['Completed'].includes(a.status);
-    const stC = a.status === 'Completed' ? 'present' : isOverdue ? 'absent' : a.status === 'In Progress' ? 'field' : 'pending';
+    const stC = a.status === 'Completed' ? 'present' : isOverdue ? 'absent' : a.status === 'In_Progress' ? 'field' : 'pending';
     const prC = a.priority === 'Critical' ? 'absent' : a.priority === 'High' ? 'late' : a.priority === 'Medium' ? 'leave' : 'pending';
     return `<tr>
       <td style="max-width:200px;">${a.action_description || '—'}</td>
@@ -5290,16 +5290,21 @@ async function createMeeting() {
 
   msg.style.color='var(--text-muted)'; msg.textContent='Creating meeting...';
 
+  const scheduledStart = new Date(`${date}T${time}:00`);
+  const scheduledEnd = new Date(scheduledStart.getTime() + 60 * 60 * 1000); // default 1hr duration — no end-time field in the form
+
   const { error } = await db.from('meetings').insert({
     title,
     meeting_type: type,
-    scheduled_date: date,
-    scheduled_time: time,
-    location,
+    organizer_id: employeeData.employee_id,
+    organizer_tier: 2,
+    scheduled_start: scheduledStart.toISOString(),
+    scheduled_end: scheduledEnd.toISOString(),
+    location_or_platform: location,
     agenda: agenda || null,
     participants: participants,
     status: 'Scheduled',
-    field_visit_compliance_status: type === 'Field_Visit' ? 'UNVERIFIED' : null,
+    field_visit_compliance_status: type === 'Field_Visit' ? 'Unverified' : null,
     is_active: true,
   });
 
