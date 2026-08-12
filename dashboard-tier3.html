@@ -1516,9 +1516,9 @@ async function submitProgressUpdate() {
   const btn = document.getElementById('btnSubmitProgress');
   btn.disabled = true; btn.textContent = 'Submitting...';
   const { error } = await db.from('task_updates').insert({
-    task_id:currentTaskId, progress_percentage:progress, status:'In Progress',
-    work_completed:workDone, challenges_faced:challenges, support_required:support||null,
-    submitted_by:myEmployeeId, submitted_at:new Date().toISOString()
+    task_id:currentTaskId, update_type: 'Progress', progress_percentage:progress, status:'In_Progress',
+    work_completed:workDone, challenges:challenges, support_required:support||null,
+    employee_id:myEmployeeId, submitted_at:new Date().toISOString()
   });
   if (error) showModalMsg('progressMsg','error','সমস্যা: '+error.message);
   else { closeModal('modalProgress'); await loadMyTasks(); }
@@ -1546,12 +1546,12 @@ async function submitTaskComplete() {
   const today = todayStr();
   const isLate = currentTaskObj?.due_date && currentTaskObj.due_date < today;
   await db.from('task_updates').insert({
-    task_id:currentTaskId, progress_percentage:100, status:'Completed',
+    task_id:currentTaskId, update_type: 'Completion', progress_percentage:100, status:'Completed',
     work_completed:note, evidence_url:evidence||null,
-    submitted_by:myEmployeeId, submitted_at:new Date().toISOString()
+    employee_id:myEmployeeId, submitted_at:new Date().toISOString()
   });
   const { error } = await db.from('task_master').update({
-    status: isLate ? 'Completed Late' : 'Completed On Time',
+    status: isLate ? 'Completed_Late' : 'Completed_On_Time',
     updated_at: new Date().toISOString()
   }).eq('task_id',currentTaskId);
   if (error) showModalMsg('completeMsg','error','সমস্যা: '+error.message);
