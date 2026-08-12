@@ -1957,6 +1957,7 @@
   <div class="modal-box">
     <div class="modal-title">New Issue</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Title</label><input type="text" id="issueTitle" class="form-input" placeholder="সংক্ষেপে বিষয়..." /></div>
       <div><label class="form-label">Category</label>
         <select id="issueCategory" class="form-select">
           <option value="Operational">Operational</option>
@@ -3449,6 +3450,7 @@ async function populateIssueAssigneeDropdown() {
 }
 
 function openIssueModal() {
+  document.getElementById('issueTitle').value = '';
   document.getElementById('issueDescription').value = '';
   document.getElementById('issueCategory').value = 'Operational';
   document.getElementById('issuePriority').value = 'Low';
@@ -3459,15 +3461,17 @@ function closeIssueModal() {
 }
 
 async function saveIssue() {
+  const title = document.getElementById('issueTitle').value.trim();
   const category = document.getElementById('issueCategory').value;
   const description = document.getElementById('issueDescription').value.trim();
   const priority = document.getElementById('issuePriority').value;
   const assignedTo = document.getElementById('issueAssignTo').value || null;
 
-  if (!description) { alert('Description দিতে হবে।'); return; }
+  if (!title || !description) { alert('Title ও Description দুটোই দিতে হবে।'); return; }
 
   const { error } = await db.from('issues').insert({
-    category, description, priority, status: 'Open',
+    title, category, description, priority, status: 'Open',
+    reported_by: employeeData.employee_id,
     assigned_to: assignedTo, is_active: true,
   });
   if (error) { alert('Error: ' + error.message); return; }
