@@ -2995,7 +2995,7 @@ async function saveHoliday() {
   if (!name || !date) { alert('Holiday Name ও Date দুটোই দিতে হবে।'); return; }
 
   const { error } = await db.from('holiday_master').insert({
-    holiday_type: name, holiday_date: date, is_recurring: recurring, is_active: true,
+    holiday_name: name, holiday_type: type, holiday_date: date, is_recurring: recurring, is_active: true, created_by: myEmployeeId,
   });
   if (error) { alert('Error: ' + error.message); return; }
 
