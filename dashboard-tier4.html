@@ -1168,14 +1168,14 @@ async function loadTasks() {
     .from('task_master')
     .select('task_id, title, priority, status, due_date, task_type, order_index, description, performance_impact_score')
     .eq('primary_assignee', myEmployeeId)
-    .in('status', ['Pending','In Progress'])
+    .in('status', ['Pending','In_Progress'])
     .order('order_index', { ascending: true });
 
   allActiveTasks = active || [];
 
   const today = new Date().toISOString().split('T')[0];
   const pending    = allActiveTasks.filter(t => t.status === 'Pending').length;
-  const inProgress = allActiveTasks.filter(t => t.status === 'In Progress').length;
+  const inProgress = allActiveTasks.filter(t => t.status === 'In_Progress').length;
   const overdue    = allActiveTasks.filter(t => t.due_date && t.due_date < today).length;
 
   document.getElementById('tStatPending').textContent    = pending;
@@ -1189,7 +1189,7 @@ async function loadTasks() {
   // Any task AFTER the first "Pending" task is locked if that pending task is not In Progress
   // Rule: only the first Pending task (by order_index) can be started; all others after it are locked
   // If there's an In Progress task, it must be updated/completed before the next Pending can start
-  const hasInProgress = allActiveTasks.some(t => t.status === 'In Progress');
+  const hasInProgress = allActiveTasks.some(t => t.status === 'In_Progress');
   let lockedAfterIndex = -1;
   if (hasInProgress) {
     // The In Progress task must be dealt with — all Pending tasks are locked
@@ -1222,7 +1222,7 @@ async function loadTasks() {
         actionBtns = '<span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">🔒 <span style="font-size:11px;">আগের task শেষ করুন</span></span>';
       } else if (t.status === 'Pending') {
         actionBtns = '<button onclick="openStartTask(\'' + t.task_id + '\')" style="padding:6px 14px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">▶ Start</button>';
-      } else if (t.status === 'In Progress') {
+      } else if (t.status === 'In_Progress') {
         if (t.task_type === 'Data Entry') {
           actionBtns =
             '<button onclick="openDataEntry(\'' + t.task_id + '\')" style="padding:6px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">🏥 Data Entry</button>' +
@@ -1241,7 +1241,7 @@ async function loadTasks() {
           '<div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date || '—') + (isOverdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') + (t.task_type ? ' · ' + t.task_type : '') + '</div>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span class="pill ' + (t.status === 'In Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
+          '<span class="pill ' + (t.status === 'In_Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
           actionBtns +
         '</div>' +
         '</div>';
@@ -1262,7 +1262,7 @@ async function loadTasks() {
           '<div class="task-name">' + (t.title || 'Untitled') + '</div>' +
           '<div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date || '—') + (isOverdue ? ' <span style="color:var(--red);font-weight:700;">OVERDUE</span>' : '') + '</div>' +
         '</div>' +
-        '<span class="pill ' + (t.status === 'In Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
+        '<span class="pill ' + (t.status === 'In_Progress' ? 'present' : 'pending') + '">' + t.status + '</span>' +
         '</div>';
     }).join('');
   }
@@ -1277,7 +1277,7 @@ async function loadCompletedTasks() {
     .from('task_master')
     .select('task_id, title, priority, status, due_date, updated_at')
     .eq('primary_assignee', myEmployeeId)
-    .in('status', ['Completed On Time','Completed Late'])
+    .in('status', ['Completed_On_Time','Completed_Late'])
     .gte('updated_at', thirtyAgo.toISOString())
     .order('updated_at', { ascending: false });
 
@@ -1290,7 +1290,7 @@ async function loadCompletedTasks() {
     return;
   }
   el.innerHTML = data.map(t => {
-    const late = t.status === 'Completed Late';
+    const late = t.status === 'Completed_Late';
     return '<div class="task-item">' +
       '<div class="task-priority" style="background:' + (late ? 'var(--yellow)' : 'var(--green)') + ';width:4px;height:32px;border-radius:2px;flex-shrink:0;"></div>' +
       '<div class="task-info">' +
@@ -1335,7 +1335,7 @@ async function confirmStartTask() {
   btn.disabled = true; btn.textContent = 'শুরু হচ্ছে...';
 
   const { error } = await db.from('task_master')
-    .update({ status: 'In Progress', updated_at: new Date().toISOString() })
+    .update({ status: 'In_Progress', updated_at: new Date().toISOString() })
     .eq('task_id', currentTaskId);
 
   if (error) {
@@ -1958,9 +1958,9 @@ async function loadMyMeetings() {
   // আমি যে meetings-এ participant সেগুলো
   const { data: allMtg } = await db
     .from('meetings')
-    .select('meeting_id, title, meeting_type, scheduled_date, status, field_visit_compliance_status')
+    .select('meeting_id, title, meeting_type, scheduled_start, status, field_visit_compliance_status, participants')
     .eq('is_active', true)
-    .order('scheduled_date', { ascending: false });
+    .order('scheduled_start', { ascending: false });
 
   // participant JSON-এ আমার employee_id আছে কিনা filter
   const myMtgs = (allMtg || []).filter(m => {
@@ -1978,12 +1978,12 @@ async function loadMyMeetings() {
   if (myMtgs.length === 0) {
     mtgList.innerHTML = '<div class="empty-state">No meetings assigned to you yet.</div>';
   } else {
-    const statusColor = { 'Scheduled':'present','In Progress':'field','Completed':'pending','Closed':'pending' };
+    const statusColor = { 'Scheduled':'present','In_Progress':'field','Completed':'pending','Closed':'pending' };
     mtgList.innerHTML = myMtgs.map(m => {
-      const d = m.scheduled_date ? new Date(m.scheduled_date).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const d = m.scheduled_start ? new Date(m.scheduled_start).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
       const sc = statusColor[m.status] || 'pending';
       const compliance = m.meeting_type === 'Field_Visit' ?
-        '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status === 'VERIFIED' ? 'var(--green)' : 'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status || 'UNVERIFIED') + '</span>' : '';
+        '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status === 'Verified' ? 'var(--green)' : 'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status || 'Unverified') + '</span>' : '';
       return '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
         '<div>' +
           '<div style="font-size:13px;font-weight:600;">' + (m.title || 'Untitled') + compliance + '</div>' +
@@ -2017,8 +2017,8 @@ async function loadMyMeetings() {
 
   actionList.innerHTML = actions.map(a => {
     const overdue = a.due_date && a.due_date < today && a.status !== 'Completed';
-    const statusOpts = ['Pending','In Progress','Completed'].map(s =>
-      '<option value="' + s + '"' + (a.status === s ? ' selected' : '') + '>' + s + '</option>'
+    const statusOpts = ['Pending','In_Progress','Completed'].map(s =>
+      '<option value="' + s + '"' + (a.status === s ? ' selected' : '') + '>' + s.replace('_',' ') + '</option>'
     ).join('');
     return '<div style="padding:13px 18px;border-bottom:1px solid var(--border);' + (overdue ? 'background:#fff8f8;' : '') + '">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">' +
