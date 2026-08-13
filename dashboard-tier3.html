@@ -1224,7 +1224,7 @@ async function loadDashboardStats() {
   const { data: myPending } = await db.from('task_master')
     .select('task_id,title,priority,status,due_date', {count:'exact'})
     .eq('primary_assignee', myEmployeeId)
-    .in('status', ['Pending','In Progress'])
+    .in('status', ['Pending','In_Progress'])
     .eq('is_active', true);
 
   document.getElementById('dashMyPending').textContent = myPending?.length || 0;
@@ -1233,14 +1233,14 @@ async function loadDashboardStats() {
   const { data: teamActive } = await db.from('task_master')
     .select('task_id,title,priority,status,due_date,primary_assignee')
     .eq('assigned_by', myEmployeeId)
-    .in('status', ['Pending','In Progress'])
+    .in('status', ['Pending','In_Progress'])
     .eq('is_active', true);
 
   document.getElementById('dashTeamActive').textContent = teamActive?.length || 0;
 
   // Overdue (both my tasks and team tasks)
   const allActive = [...(myPending || []), ...(teamActive || [])];
-  const overdue = allActive.filter(t => t.due_date && t.due_date < today && t.status !== 'Completed On Time');
+  const overdue = allActive.filter(t => t.due_date && t.due_date < today && t.status !== 'Completed_On_Time');
   document.getElementById('dashOverdue').textContent = overdue.length;
 
   // KPI
@@ -1317,7 +1317,7 @@ function taskRowHTML(t, isTeam) {
 }
 
 function statusPill(s) {
-  const map = {'Pending':'pending','In Progress':'late','Completed On Time':'present','Completed Late':'late','Overdue':'absent'};
+  const map = {'Pending':'pending','In_Progress':'late','Completed_On_Time':'present','Completed_Late':'late','Overdue':'absent'};
   return '<span class="pill ' + (map[s]||'pending') + '">' + (s||'—') + '</span>';
 }
 
@@ -1395,14 +1395,14 @@ async function loadMyTasks() {
   const { data: active } = await db.from('task_master')
     .select('task_id, title, priority, status, due_date, task_type, performance_impact_score')
     .eq('primary_assignee', myEmployeeId)
-    .in('status', ['Pending','In Progress'])
+    .in('status', ['Pending','In_Progress'])
     .eq('is_active', true)
     .order('due_date', {ascending:true});
 
   const { data: completed } = await db.from('task_master')
     .select('task_id, title, priority, status, due_date, updated_at')
     .eq('primary_assignee', myEmployeeId)
-    .in('status', ['Completed On Time','Completed Late'])
+    .in('status', ['Completed_On_Time','Completed_Late'])
     .gte('updated_at', tdAgo)
     .eq('is_active', true)
     .order('updated_at', {ascending:false});
@@ -1411,7 +1411,7 @@ async function loadMyTasks() {
 
   // Stats
   const pending    = (active||[]).filter(t => t.status === 'Pending').length;
-  const inProgress = (active||[]).filter(t => t.status === 'In Progress').length;
+  const inProgress = (active||[]).filter(t => t.status === 'In_Progress').length;
   const overdueN   = (active||[]).filter(t => t.due_date && t.due_date < today).length;
   document.getElementById('mtStatPending').textContent    = pending;
   document.getElementById('mtStatInProgress').textContent = inProgress;
@@ -1428,7 +1428,7 @@ async function loadMyTasks() {
     activeEl.innerHTML = active.map(t => {
       const overdue = t.due_date && t.due_date < today;
       const isPending = t.status === 'Pending';
-      const isIP      = t.status === 'In Progress';
+      const isIP      = t.status === 'In_Progress';
       return '<div class="task-item">' +
         '<div class="task-priority priority-' + (t.priority||'low').toLowerCase() + '"></div>' +
         '<div class="task-info">' +
@@ -1451,7 +1451,7 @@ async function loadMyTasks() {
     compEl.innerHTML = '<div class="empty-state">গত ৩০ দিনে কোনো task সম্পন্ন হয়নি।</div>';
   } else {
     compEl.innerHTML = completed.map(t => {
-      const late = t.status === 'Completed Late';
+      const late = t.status === 'Completed_Late';
       return '<div class="task-item">' +
         '<div class="task-priority" style="background:' + (late?'var(--yellow)':'var(--green)') + ';width:4px;height:32px;border-radius:2px;flex-shrink:0;"></div>' +
         '<div class="task-info"><div class="task-name">' + (t.title||'Untitled') + '</div><div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date||'—') + '</div></div>' +
@@ -1488,7 +1488,7 @@ function openStartTask(taskId) {
 async function confirmStartTask() {
   const btn = document.getElementById('btnConfirmStart');
   btn.disabled = true; btn.textContent = 'শুরু হচ্ছে...';
-  const { error } = await db.from('task_master').update({status:'In Progress',updated_at:new Date().toISOString()}).eq('task_id',currentTaskId);
+  const { error } = await db.from('task_master').update({status:'In_Progress',updated_at:new Date().toISOString()}).eq('task_id',currentTaskId);
   if (error) showModalMsg('startMsg','error','সমস্যা: ' + error.message);
   else { closeModal('modalStartTask'); await loadMyTasks(); }
   btn.disabled = false; btn.textContent = '✅ Start Task';
@@ -1706,9 +1706,9 @@ async function loadKPI() {
 // ── Meetings ────────────────────────────────────────────────────
 async function loadMeetings() {
   const { data: allMtg } = await db.from('meetings')
-    .select('meeting_id, title, meeting_type, scheduled_date, status, field_visit_compliance_status, participants')
+    .select('meeting_id, title, meeting_type, scheduled_start, status, field_visit_compliance_status, participants')
     .eq('is_active', true)
-    .order('scheduled_date', {ascending:false});
+    .order('scheduled_start', {ascending:false});
 
   const myMtgs = (allMtg||[]).filter(m => {
     try {
@@ -1726,13 +1726,13 @@ async function loadMeetings() {
   const mtgEl = document.getElementById('mtgList');
   if (!myMtgs.length) { mtgEl.innerHTML = '<div class="empty-state">No meetings found.</div>'; }
   else {
-    const pillMap = {'Scheduled':'present','In Progress':'late','Completed':'pending','Closed':'pending'};
+    const pillMap = {'Scheduled':'present','In_Progress':'late','Completed':'pending','Closed':'pending'};
     mtgEl.innerHTML = myMtgs.map(m => {
       const compliance = m.meeting_type === 'Field_Visit'
-        ? '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status==='VERIFIED'?'var(--green)':'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status||'UNVERIFIED') + '</span>'
+        ? '<span style="font-size:11px;font-weight:700;color:' + (m.field_visit_compliance_status==='Verified'?'var(--green)':'var(--red)') + ';margin-left:8px;">' + (m.field_visit_compliance_status||'Unverified') + '</span>'
         : '';
       return '<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
-        '<div><div style="font-size:13px;font-weight:600;">' + (m.title||'Untitled') + compliance + '</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + m.meeting_type + ' · ' + fmtDate(m.scheduled_date) + '</div></div>' +
+        '<div><div style="font-size:13px;font-weight:600;">' + (m.title||'Untitled') + compliance + '</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + m.meeting_type + ' · ' + fmtDate(m.scheduled_start) + '</div></div>' +
         '<span class="pill ' + (pillMap[m.status]||'pending') + '">' + m.status + '</span>' +
       '</div>';
     }).join('');
@@ -1756,7 +1756,7 @@ async function loadMeetings() {
   const prioColor = {Critical:'var(--red)',High:'var(--yellow)',Medium:'var(--blue)',Low:'var(--green)'};
   actionEl.innerHTML = actions.map(a => {
     const overdue = a.due_date && a.due_date < today && a.status !== 'Completed';
-    const opts = ['Pending','In Progress','Completed'].map(s => '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+s+'</option>').join('');
+    const opts = ['Pending','In_Progress','Completed'].map(s => '<option value="'+s+'"'+(a.status===s?' selected':'')+'>'+s.replace('_',' ')+'</option>').join('');
     return '<div style="padding:13px 18px;border-bottom:1px solid var(--border);' + (overdue?'background:#fff8f8;':'') + '">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">' +
         '<div style="flex:1;">' +
@@ -1868,7 +1868,7 @@ async function loadTeamTasks() {
   const today = todayStr();
 
   const pending    = (data||[]).filter(t => t.status === 'Pending').length;
-  const inProgress = (data||[]).filter(t => t.status === 'In Progress').length;
+  const inProgress = (data||[]).filter(t => t.status === 'In_Progress').length;
   const overdueN   = (data||[]).filter(t => t.due_date && t.due_date < today && !t.status.includes('Completed')).length;
   const completedN = (data||[]).filter(t => t.status.includes('Completed')).length;
 
