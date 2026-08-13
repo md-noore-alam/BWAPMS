@@ -58,6 +58,20 @@
 
 ## ✅ Resolved
 
+### 2026-08-01 — Fourth audit wave: Leave submission (Tier 3), Meeting creation, and a sitewide status-format bug across Tier 2/3/4
+
+- [x] **Tier 3 leave application submission was broken** — same `total_days` (NOT NULL, no default) missing bug that a previous session already fixed in Tier 4's file, but it was never applied to Tier 3. Fixed to compute `total_days` the same way Tier 2/4 do.
+- [x] **Tier 2 "Create Meeting" was completely broken** — `organizer_id`/`organizer_tier` (NOT NULL) missing entirely; `scheduled_date`/`scheduled_time` columns don't exist (actual: single `scheduled_start` + `scheduled_end` timestamptz pair — `scheduled_end` had no form field at all, now defaults to +1hr); `location` wrote to a nonexistent column (actual: `location_or_platform`); `field_visit_compliance_status` was written as `'UNVERIFIED'` (wrong case, actual: `'Unverified'`). Fixed the insert and both read-side functions that referenced the same wrong columns.
+- [x] **Sitewide status-value format bug (~46 occurrences across Tier 2/3/4)** — `task_master`, `issues`, and `meetings` all use underscore-formatted status values (`In_Progress`, `Under_Review`, `Pending_External_Action`, `Completed_On_Time`, `Completed_Late`, `Verified`/`Unverified`) at the database level, but dozens of places across the Tasks, Issues, and Meetings sections in all three files compared against space-formatted strings (`'In Progress'`, etc.). Two categories of impact:
+  - **Actual write bugs** (task-start actions in Tier 2/3/4): `task_master.update({status: 'In Progress'})` would fail the CHECK constraint outright — clicking "Start Task" has likely never worked anywhere in the app.
+  - **Silent display/filter bugs** (everywhere else): comparisons like `t.status === 'In Progress'` against a real value of `'In_Progress'` just always evaluate false — wrong status-pill colors, broken status filters, but the underlying data itself wasn't corrupted.
+  Fixed all occurrences with a verified global replace per file (confirmed visible button/dropdown label text was preserved as human-readable, e.g. "In Progress", while only the underlying value arguments changed to the correct underscore form).
+- [x] **Tier 4 "My Meetings" has likely always shown empty, regardless of real data** — `loadMyMeetings()` never selected the `participants` column at all, but immediately tried to read `m.participants` to filter which meetings belong to the logged-in user. Every meeting failed that filter silently (caught by a try/catch), so the list was always empty. Also had the same `scheduled_date` (not a real column) bug as everywhere else. Tier 3 had the identical `scheduled_date` bug in its own meetings view (participants was fine there).
+- [x] Start-task fix verified via direct SQL (`Pending` → `In_Progress` update succeeded against the real CHECK constraint), meeting creation verified via direct SQL insert matching the corrected shape, both cleaned up after.
+  → `dashboard-tier2.html`, `dashboard-tier3.html`, `dashboard-tier4.html`
+
+**Running total across all four audit waves this session: 18 critical pre-existing bugs found and fixed.** The common theme: every one of these was invisible to a "does the page load and look right" check. Forms, buttons, dropdowns, and tables all rendered correctly — the failures were entirely in the data layer (wrong column names, GENERATED-column writes, CHECK-constraint value mismatches, missing NOT NULL fields, and a select-then-read-a-column-that-was-never-selected bug), which only a schema-vs-code diff or actually clicking "Save" and checking the network response would catch.
+
 ### 2026-08-01 — Third audit wave: 4 more CRITICAL "always fails" write bugs (Holiday, Issue Tracker, Task Updates x2)
 
 Continuation of the same systematic insert/update-vs-schema sweep. Found more of the identical bug pattern (wrong column names, writes to GENERATED columns, missing NOT NULL fields, CHECK-constraint value mismatches) in the remaining unaudited tables. All pre-existing, all verified fixed via direct SQL testing, all test data cleaned up.
