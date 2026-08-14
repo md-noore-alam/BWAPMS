@@ -580,6 +580,33 @@
 </div>
 
 <!-- My Task Modals -->
+<div class="modal-overlay" id="modalGrievance">
+  <div class="modal-box" style="width:500px;">
+    <div class="modal-header"><div class="modal-title">⚖️ Grievance জমা দিন</div><button class="modal-close" onclick="closeModal('modalGrievance')">✕</button></div>
+    <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">KPI penalty, payroll deduction, বা attendance decision নিয়ে দ্বিমত থাকলে এখানে জমা দিন। Tier 2 ৪৮ ঘণ্টার মধ্যে লিখিত সিদ্ধান্ত দেবে।</p>
+    <div class="form-group">
+      <label class="form-label">সম্পর্কিত বিষয়</label>
+      <select id="grvRelatedType" class="form-select">
+        <option value="KPI_Penalty">KPI Penalty</option>
+        <option value="Payroll_Deduction">Payroll Deduction</option>
+        <option value="Attendance_Decision">Attendance Decision</option>
+        <option value="Disciplinary_Action">Disciplinary Action</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subject</label>
+      <input type="text" id="grvSubject" class="form-input" placeholder="সংক্ষেপে বিষয়..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিস্তারিত বর্ণনা</label>
+      <textarea id="grvDescription" rows="5" class="form-input" placeholder="কী নিয়ে আপত্তি..."></textarea>
+    </div>
+    <button class="btn-full btn-green" onclick="submitGrievance()">জমা দিন</button>
+    <div class="modal-msg" id="grvSubmitMsg"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalStartTask">
   <div class="modal-box">
     <div class="modal-header"><div class="modal-title">▶ Start Task</div><button class="modal-close" onclick="closeModal('modalStartTask')">✕</button></div>
@@ -698,7 +725,9 @@
 
 <!-- ════════════════ KPI ════════════════ -->
 <div id="sec-kpi" style="display:none;">
-  <p class="section-title">My KPI & Performance</p>
+  <p class="section-title" style="display:flex;justify-content:space-between;align-items:center;">My KPI & Performance
+    <button class="btn-icon-sm" onclick="openModal('modalGrievance')">⚖️ File a Grievance</button>
+  </p>
   <div class="two-col">
     <div class="card">
       <div class="card-header">
@@ -1475,6 +1504,37 @@ function showModalMsg(id, type, text) {
   el.style.background = type === 'success' ? 'var(--green-dim)' : 'var(--red-bg)';
   el.style.color = type === 'success' ? 'var(--green)' : 'var(--red)';
   el.textContent = text;
+}
+
+// ── Grievance Submission — Blueprint §6.4 ──
+async function submitGrievance() {
+  const related_module = document.getElementById('grvRelatedType').value;
+  const subject = document.getElementById('grvSubject').value.trim();
+  const description = document.getElementById('grvDescription').value.trim();
+
+  if (!subject || !description) {
+    showModalMsg('grvSubmitMsg', 'error', 'Subject ও বিস্তারিত বর্ণনা দুটোই দিন।');
+    return;
+  }
+
+  const { error } = await db.from('grievances').insert({
+    employee_id: myEmployeeId, subject, description,
+    related_module, status: 'Open', risk_score: 3,
+    created_by: myEmployeeId,
+  });
+
+  if (error) {
+    showModalMsg('grvSubmitMsg', 'error', 'সমস্যা হয়েছে: ' + error.message);
+  } else {
+    await db.from('audit_logs').insert({
+      user_id: myEmployeeId, action: 'Grievance_Filed', module: 'Grievances',
+      risk_score: 3, risk_level: 'Low', new_value: JSON.stringify({ subject, related_module }),
+    });
+    showModalMsg('grvSubmitMsg', 'success', '✓ Grievance জমা হয়েছে।');
+    document.getElementById('grvSubject').value = '';
+    document.getElementById('grvDescription').value = '';
+    setTimeout(() => closeModal('modalGrievance'), 1200);
+  }
 }
 
 function openStartTask(taskId) {
