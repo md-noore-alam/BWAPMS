@@ -1778,9 +1778,43 @@
     <!-- ══ GRIEVANCE MANAGEMENT (Blueprint v1.2 §6.4) ══ -->
     <div id="sec-grievances" style="display:none;">
       <p class="section-title">Grievance & Appeal Management</p>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn-primary" onclick="openGrievanceSubmitModal()">+ File Grievance</button>
+      </div>
       <div class="card">
         <div class="card-header"><div class="card-title">All Grievances</div><span class="card-badge badge-yellow" id="grievanceCountBadge">—</span></div>
         <div id="grievanceList"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- Grievance: Submit Modal — Blueprint §6.4 -->
+    <div class="modal-overlay" id="grievanceSubmitModalBackdrop" onclick="if(event.target===this) closeGrievanceSubmitModal()">
+      <div class="modal-box" style="width:520px;">
+        <div class="modal-title">Grievance জমা দিন</div>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">KPI penalty, payroll deduction, বা attendance decision নিয়ে দ্বিমত থাকলে এখানে জমা দিন। Tier 2 ৪৮ ঘণ্টার মধ্যে লিখিত সিদ্ধান্ত দেবে।</p>
+        <div style="margin-bottom:12px;">
+          <label class="form-label">সম্পর্কিত বিষয় (Related To)</label>
+          <select id="grvRelatedType" class="form-select">
+            <option value="KPI_Penalty">KPI Penalty</option>
+            <option value="Payroll_Deduction">Payroll Deduction</option>
+            <option value="Attendance_Decision">Attendance Decision</option>
+            <option value="Disciplinary_Action">Disciplinary Action</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="form-label">Subject</label>
+          <input type="text" id="grvSubject" class="form-input" placeholder="সংক্ষেপে বিষয়..." />
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">বিস্তারিত বর্ণনা</label>
+          <textarea id="grvDescription" rows="5" class="form-textarea" placeholder="কী নিয়ে আপত্তি, কেন মনে করছেন এটা সঠিক না..."></textarea>
+        </div>
+        <div id="grvSubmitMsg" style="display:none;font-size:13px;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-secondary" onclick="closeGrievanceSubmitModal()" style="flex:1;">Cancel</button>
+          <button class="btn-primary" onclick="submitGrievance()" style="flex:1;">জমা দিন</button>
+        </div>
       </div>
     </div>
 
@@ -3715,6 +3749,48 @@ async function loadRankings() {
 // ══════════════════════════════════════════════════════════
 // GRIEVANCE MANAGEMENT (Blueprint v1.2 §6.4)
 // ══════════════════════════════════════════════════════════
+// ── Grievance Submission — Blueprint §6.4 ──
+function openGrievanceSubmitModal() {
+  document.getElementById('grvRelatedType').value = 'KPI_Penalty';
+  document.getElementById('grvSubject').value = '';
+  document.getElementById('grvDescription').value = '';
+  document.getElementById('grvSubmitMsg').style.display = 'none';
+  document.getElementById('grievanceSubmitModalBackdrop').classList.add('open');
+}
+function closeGrievanceSubmitModal() {
+  document.getElementById('grievanceSubmitModalBackdrop').classList.remove('open');
+}
+async function submitGrievance() {
+  const related_module = document.getElementById('grvRelatedType').value;
+  const subject = document.getElementById('grvSubject').value.trim();
+  const description = document.getElementById('grvDescription').value.trim();
+  const msg = document.getElementById('grvSubmitMsg');
+
+  if (!subject || !description) {
+    msg.style.display='block'; msg.style.color='var(--red)';
+    msg.textContent = 'Subject ও বিস্তারিত বর্ণনা দুটোই দিন।';
+    return;
+  }
+
+  const { error } = await db.from('grievances').insert({
+    employee_id: employeeData.employee_id, subject, description,
+    related_module, status: 'Open', risk_score: 3,
+    created_by: employeeData.employee_id,
+  });
+
+  msg.style.display = 'block';
+  if (error) {
+    msg.style.color = 'var(--red)'; msg.textContent = 'সমস্যা হয়েছে: ' + error.message;
+  } else {
+    await db.from('audit_logs').insert({
+      user_id: employeeData.employee_id, action: 'Grievance_Filed', module: 'Grievances',
+      risk_score: 3, risk_level: 'Low', new_value: JSON.stringify({ subject, related_module }),
+    });
+    closeGrievanceSubmitModal();
+    await loadGrievances();
+  }
+}
+
 async function loadGrievances() {
   const { data, error } = await db.from('grievances')
     .select('grievance_id, employee_id, subject, tier2_decision, tier2_response_date, tier1_decision, tier1_response_date, status, created_at, employee_master(full_name)')
