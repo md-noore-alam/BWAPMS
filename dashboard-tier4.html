@@ -544,6 +544,38 @@
     </div>
 
     <!-- Progress Update Modal -->
+    <div id="modalGrievance" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);">⚖️ Grievance জমা দিন</h3>
+          <button onclick="closeModal('modalGrievance')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">✕</button>
+        </div>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">KPI penalty, payroll deduction, বা attendance decision নিয়ে দ্বিমত থাকলে এখানে জমা দিন। Tier 2 ৪৮ ঘণ্টার মধ্যে লিখিত সিদ্ধান্ত দেবে।</p>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">সম্পর্কিত বিষয়</label>
+            <select id="grvRelatedType" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;">
+              <option value="KPI_Penalty">KPI Penalty</option>
+              <option value="Payroll_Deduction">Payroll Deduction</option>
+              <option value="Attendance_Decision">Attendance Decision</option>
+              <option value="Disciplinary_Action">Disciplinary Action</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">Subject</label>
+            <input type="text" id="grvSubject" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;" placeholder="সংক্ষেপে বিষয়..." />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:5px;">বিস্তারিত বর্ণনা</label>
+            <textarea id="grvDescription" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;resize:vertical;" placeholder="কী নিয়ে আপত্তি..."></textarea>
+          </div>
+        </div>
+        <div id="grvSubmitMsg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:7px;font-size:13px;font-weight:600;"></div>
+        <button onclick="submitGrievance()" style="width:100%;margin-top:16px;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">জমা দিন</button>
+      </div>
+    </div>
+
     <div id="modalProgress" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:#fff;border-radius:12px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
@@ -764,7 +796,9 @@
 
     <!-- KPI -->
     <div id="sec-kpi" style="display:none;">
-      <p class="section-title">My KPI & Performance</p>
+      <p class="section-title" style="display:flex;justify-content:space-between;align-items:center;">My KPI & Performance
+        <button class="btn-icon-sm" onclick="document.getElementById('modalGrievance').style.display='flex'">⚖️ File a Grievance</button>
+      </p>
       <div class="card">
         <div class="card-header"><div class="card-title">Performance Score</div><span class="card-badge badge-gray">Latest</span></div>
         <div class="card-body" id="kpiFull"><div class="empty-state">Loading...</div></div>
@@ -1305,6 +1339,40 @@ async function loadCompletedTasks() {
 // ── Task Modal Helpers ────────────────────────────────────────
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
+}
+
+// ── Grievance Submission — Blueprint §6.4 ──
+async function submitGrievance() {
+  const related_module = document.getElementById('grvRelatedType').value;
+  const subject = document.getElementById('grvSubject').value.trim();
+  const description = document.getElementById('grvDescription').value.trim();
+  const msg = document.getElementById('grvSubmitMsg');
+
+  if (!subject || !description) {
+    msg.style.display='block'; msg.style.background='var(--red-bg)'; msg.style.color='var(--red)';
+    msg.textContent = 'Subject ও বিস্তারিত বর্ণনা দুটোই দিন।';
+    return;
+  }
+
+  const { error } = await db.from('grievances').insert({
+    employee_id: myEmployeeId, subject, description,
+    related_module, status: 'Open', risk_score: 3,
+    created_by: myEmployeeId,
+  });
+
+  msg.style.display = 'block';
+  if (error) {
+    msg.style.background='var(--red-bg)'; msg.style.color = 'var(--red)'; msg.textContent = 'সমস্যা হয়েছে: ' + error.message;
+  } else {
+    await db.from('audit_logs').insert({
+      user_id: myEmployeeId, action: 'Grievance_Filed', module: 'Grievances',
+      risk_score: 3, risk_level: 'Low', new_value: JSON.stringify({ subject, related_module }),
+    });
+    msg.style.background='var(--green-dim)'; msg.style.color='var(--green)'; msg.textContent = '✓ Grievance জমা হয়েছে।';
+    document.getElementById('grvSubject').value = '';
+    document.getElementById('grvDescription').value = '';
+    setTimeout(() => closeModal('modalGrievance'), 1200);
+  }
 }
 
 function getTaskById(taskId) {
