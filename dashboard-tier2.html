@@ -782,6 +782,12 @@
           </table>
         </div>
       </div>
+
+      <p class="section-title">GPS Exception Requests <span style="font-size:11px;color:var(--text-muted);font-weight:500;">— Blueprint §3.2</span></p>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pending &amp; Recent Requests</div><span class="card-badge badge-yellow" id="gpsExcCountBadge">—</span></div>
+        <div id="gpsExcList"><div class="empty-state">Loading...</div></div>
+      </div>
     </div>
 
     <div id="sec-leave" style="display:none;">
@@ -4212,9 +4218,74 @@ async function handleLogout() {
 // ── ATTENDANCE SECTION ────────────────────────────────────
 // ══════════════════════════════════════════════════════════
 
+// ── GPS Exception Requests — Blueprint §3.2 ──
+async function loadGpsExceptions() {
+  const { data, error } = await db.from('gps_exception_requests')
+    .select('request_id, employee_id, request_date, gps_lat, gps_lng, distance_from_nearest_m, reason, status, review_note, created_at')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  const list = document.getElementById('gpsExcList');
+  const badge = document.getElementById('gpsExcCountBadge');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div class="empty-state">কোনো GPS Exception Request নেই।</div>';
+    badge.textContent = '0';
+    return;
+  }
+  const pendingCount = data.filter(r => r.status === 'Pending').length;
+  badge.textContent = pendingCount + ' pending';
+  badge.className = pendingCount > 0 ? 'card-badge badge-yellow' : 'card-badge badge-green';
+
+  const { data: emps } = await db.from('employee_master').select('employee_id, full_name');
+  const empMap = {};
+  (emps || []).forEach(e => { empMap[e.employee_id] = e.full_name; });
+
+  const statusPill = { Pending: 'pending', Approved: 'present', Rejected: 'absent' };
+
+  list.innerHTML = data.map(r => `
+    <div class="ann-item">
+      <div class="ann-icon" style="background:${r.status === 'Pending' ? 'var(--yellow-bg)' : 'var(--cream)'};">📍</div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="ann-title">${empMap[r.employee_id] || '—'} — ${r.request_date}</div>
+          <span class="pill ${statusPill[r.status]}">${r.status}</span>
+        </div>
+        <div class="ann-body">${r.reason}${r.distance_from_nearest_m ? ` (nearest location থেকে ~${Math.round(r.distance_from_nearest_m)}m দূরে)` : ''}</div>
+        ${r.review_note ? `<div class="ann-body"><b>Review Note:</b> ${r.review_note}</div>` : ''}
+        <div class="ann-meta">
+          ${new Date(r.created_at).toLocaleString('en-GB')}
+          ${r.status === 'Pending' ? `
+            <button class="btn-icon-sm" style="margin-left:10px;background:var(--green-dim);color:var(--green);" onclick="reviewGpsException('${r.request_id}', 'Approved')">✓ Approve</button>
+            <button class="btn-icon-sm" style="margin-left:6px;background:var(--red-bg);color:var(--red);" onclick="reviewGpsException('${r.request_id}', 'Rejected')">✕ Reject</button>
+          ` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function reviewGpsException(requestId, decision) {
+  const note = prompt(decision === 'Approved' ? 'Approve করার কারণ/মন্তব্য (optional):' : 'Reject করার কারণ লিখুন:');
+  if (decision === 'Rejected' && !note) { alert('Reject করার কারণ দিতে হবে।'); return; }
+
+  const { error } = await db.from('gps_exception_requests').update({
+    status: decision, review_note: note || null,
+    reviewed_by: employeeData.employee_id, reviewed_at: new Date().toISOString(),
+  }).eq('request_id', requestId);
+
+  if (error) { alert('সমস্যা হয়েছে: ' + error.message); return; }
+
+  await db.from('audit_logs').insert({
+    user_id: employeeData.employee_id, action: 'GPS_Exception_' + decision, module: 'Attendance',
+    risk_score: 3, risk_level: 'Low', new_value: JSON.stringify({ requestId, decision }),
+  });
+  await loadGpsExceptions();
+}
+
 async function loadAttendanceSection() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('attSectionDate').textContent = today;
+  loadGpsExceptions();
 
   // 1. My own attendance (last 30 days)
   const thirtyDaysAgo = new Date();
