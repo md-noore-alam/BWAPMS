@@ -1251,7 +1251,7 @@ async function loadDashboardStats() {
 
   // My pending tasks
   const { data: myPending } = await db.from('task_master')
-    .select('task_id,title,priority,status,due_date', {count:'exact'})
+    .select('task_id,task_title,priority,status,due_date', {count:'exact'})
     .eq('primary_assignee', myEmployeeId)
     .in('status', ['Pending','In_Progress'])
     .eq('is_active', true);
@@ -1260,7 +1260,7 @@ async function loadDashboardStats() {
 
   // Team tasks active (assigned_by = me, Tier 4 doing)
   const { data: teamActive } = await db.from('task_master')
-    .select('task_id,title,priority,status,due_date,primary_assignee')
+    .select('task_id,task_title,priority,status,due_date,primary_assignee')
     .eq('assigned_by', myEmployeeId)
     .in('status', ['Pending','In_Progress'])
     .eq('is_active', true);
@@ -1338,7 +1338,7 @@ function taskRowHTML(t, isTeam) {
   return '<div class="task-item">' +
     '<div class="task-priority priority-' + (t.priority||'low').toLowerCase() + '"></div>' +
     '<div class="task-info">' +
-      '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.title || 'Untitled') + '</div>' +
+      '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.task_title || 'Untitled') + '</div>' +
       '<div class="task-meta">' + (t.priority||'—') + ' · Due: ' + (t.due_date||'—') + (isTeam ? ' · <em>Team</em>' : '') + '</div>' +
     '</div>' +
     statusPill(t.status) +
@@ -1422,14 +1422,14 @@ async function loadMyTasks() {
   const tdAgo   = thirtyDaysAgo();
 
   const { data: active } = await db.from('task_master')
-    .select('task_id, title, priority, status, due_date, task_type, performance_impact_score')
+    .select('task_id, task_title, priority, status, due_date, task_type, performance_impact_score')
     .eq('primary_assignee', myEmployeeId)
     .in('status', ['Pending','In_Progress'])
     .eq('is_active', true)
     .order('due_date', {ascending:true});
 
   const { data: completed } = await db.from('task_master')
-    .select('task_id, title, priority, status, due_date, updated_at')
+    .select('task_id, task_title, priority, status, due_date, updated_at')
     .eq('primary_assignee', myEmployeeId)
     .in('status', ['Completed_On_Time','Completed_Late'])
     .gte('updated_at', tdAgo)
@@ -1461,7 +1461,7 @@ async function loadMyTasks() {
       return '<div class="task-item">' +
         '<div class="task-priority priority-' + (t.priority||'low').toLowerCase() + '"></div>' +
         '<div class="task-info">' +
-          '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.title || 'Untitled') + '</div>' +
+          '<div class="task-name">' + (overdue ? '⚠️ ' : '') + (t.task_title || 'Untitled') + '</div>' +
           '<div class="task-meta">' + (t.priority||'—') + ' · Due: ' + (t.due_date||'—') + ' · Impact: ' + (t.performance_impact_score||'—') + '</div>' +
         '</div>' +
         statusPill(t.status) +
@@ -1483,7 +1483,7 @@ async function loadMyTasks() {
       const late = t.status === 'Completed_Late';
       return '<div class="task-item">' +
         '<div class="task-priority" style="background:' + (late?'var(--yellow)':'var(--green)') + ';width:4px;height:32px;border-radius:2px;flex-shrink:0;"></div>' +
-        '<div class="task-info"><div class="task-name">' + (t.title||'Untitled') + '</div><div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date||'—') + '</div></div>' +
+        '<div class="task-info"><div class="task-name">' + (t.task_title||'Untitled') + '</div><div class="task-meta">' + t.priority + ' · Due: ' + (t.due_date||'—') + '</div></div>' +
         '<span class="pill ' + (late?'late':'present') + '">' + (late?'Late ✓':'On Time ✓') + '</span>' +
       '</div>';
     }).join('');
@@ -1495,7 +1495,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function getMyTask(id) { return allMyTasks.find(t => t.task_id === id); }
 function taskInfoHTML(t) {
-  return '<strong>' + (t.title||'Untitled') + '</strong><br>' +
+  return '<strong>' + (t.task_title||'Untitled') + '</strong><br>' +
     '<span style="font-size:12px;color:var(--text-muted);">' + t.priority + ' Priority · Due: ' + (t.due_date||'—') + '</span>';
 }
 function showModalMsg(id, type, text) {
@@ -1917,7 +1917,7 @@ async function assignTask() {
 async function loadTeamTasks() {
   const filterStatus = document.getElementById('ttFilterStatus').value;
   let query = db.from('task_master')
-    .select('task_id, title, priority, status, due_date, primary_assignee, employee_master!primary_assignee(full_name)')
+    .select('task_id, task_title, priority, status, due_date, primary_assignee, employee_master!primary_assignee(full_name)')
     .eq('assigned_by', myEmployeeId)
     .eq('is_active', true)
     .order('due_date', {ascending:true});
@@ -1949,12 +1949,12 @@ async function loadTeamTasks() {
     const overdue = t.due_date && t.due_date < today && !t.status.includes('Completed');
     const empName = t.employee_master?.full_name || 'Unknown';
     return '<tr>' +
-      '<td><div style="font-weight:600;font-size:13px;">' + (overdue?'⚠️ ':'') + (t.title||'—') + '</div></td>' +
+      '<td><div style="font-weight:600;font-size:13px;">' + (overdue?'⚠️ ':'') + (t.task_title||'—') + '</div></td>' +
       '<td style="font-size:13px;">' + empName + '</td>' +
       '<td><span style="font-size:12px;font-weight:700;color:' + (prioColors[t.priority]||'var(--text-muted)') + ';">' + (t.priority||'—') + '</span></td>' +
       '<td style="font-size:13px;">' + (t.due_date||'—') + (overdue?' <span style="color:var(--red);font-size:11px;font-weight:700;">OVERDUE</span>':'') + '</td>' +
       '<td>' + statusPill(t.status) + '</td>' +
-      '<td><button class="btn-sm btn-secondary" onclick="openAdjustDeadline(\''+t.task_id+'\',\''+t.due_date+'\',\''+t.title+'\')">Adjust</button></td>' +
+      '<td><button class="btn-sm btn-secondary" onclick="openAdjustDeadline(\''+t.task_id+'\',\''+t.due_date+'\',\''+t.task_title+'\')">Adjust</button></td>' +
     '</tr>';
   }).join('');
 }
@@ -1993,7 +1993,7 @@ async function submitDeadlineAdjust() {
 // ── Help Requests ───────────────────────────────────────────────
 async function loadHelpRequests(dashboardOnly = false) {
   const { data } = await db.from('help_requests')
-    .select('request_id, task_id, from_employee_id, to_employee_id, message, status, resolved_at, created_at, employee_master!from_employee_id(full_name), task_master!task_id(title)')
+    .select('request_id, task_id, from_employee_id, to_employee_id, message, status, resolved_at, created_at, employee_master!from_employee_id(full_name), task_master!task_id(task_title)')
     .eq('to_employee_id', myEmployeeId)
     .eq('is_active', true)
     .order('created_at', {ascending:false});
@@ -2023,16 +2023,16 @@ async function loadHelpRequests(dashboardOnly = false) {
 
   const pendEl = document.getElementById('helpPendingList');
   pendEl.innerHTML = !pending.length ? '<div class="empty-state">No pending help requests.</div>'
-    : pending.map(r => helpItemHTML(r) + '<div style="padding:0 18px 12px;"><button class="btn-sm btn-primary" onclick="openHelpRespond(\''+r.request_id+'\',\''+r.message+'\',\''+(r.employee_master?.full_name||'Unknown')+'\',\''+(r.task_master?.title||'—')+'\')">Respond</button></div>').join('');
+    : pending.map(r => helpItemHTML(r) + '<div style="padding:0 18px 12px;"><button class="btn-sm btn-primary" onclick="openHelpRespond(\''+r.request_id+'\',\''+r.message+'\',\''+(r.employee_master?.full_name||'Unknown')+'\',\''+(r.task_master?.task_title||'—')+'\')">Respond</button></div>').join('');
 
   const resolEl = document.getElementById('helpResolvedList');
   resolEl.innerHTML = !resolved.length ? '<div class="empty-state">No resolved requests yet.</div>'
-    : resolved.map(r => '<div class="help-item"><div class="help-item-title">' + (r.employee_master?.full_name||'—') + ' — ' + (r.task_master?.title||'Unknown task') + '</div><div class="help-item-meta">' + fmtDate(r.created_at) + ' · <span style="color:' + (r.status==='Accepted'?'var(--green)':'var(--red)') + ';font-weight:700;">' + r.status + '</span></div></div>').join('');
+    : resolved.map(r => '<div class="help-item"><div class="help-item-title">' + (r.employee_master?.full_name||'—') + ' — ' + (r.task_master?.task_title||'Unknown task') + '</div><div class="help-item-meta">' + fmtDate(r.created_at) + ' · <span style="color:' + (r.status==='Accepted'?'var(--green)':'var(--red)') + ';font-weight:700;">' + r.status + '</span></div></div>').join('');
 }
 
 function helpItemHTML(r) {
   return '<div class="help-item">' +
-    '<div class="help-item-title">🆘 ' + (r.employee_master?.full_name||'Unknown') + ' — ' + (r.task_master?.title||'Unknown task') + '</div>' +
+    '<div class="help-item-title">🆘 ' + (r.employee_master?.full_name||'Unknown') + ' — ' + (r.task_master?.task_title||'Unknown task') + '</div>' +
     '<div class="help-item-meta">' + fmtDate(r.created_at) + '</div>' +
     '<div class="help-item-desc">' + (r.message||'No message') + '</div>' +
   '</div>';
